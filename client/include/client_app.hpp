@@ -33,12 +33,12 @@ struct ClientApp final : Application, network::IConnectionListener {
 	gameplay::Player player_;
 	DynamicArray <gameplay::Entity> entities_;
 
-	gameplay::Interpolator interpolator_;
 	gameplay::Inputinator inputinator_;
 	Vector2 oldPos_;
 	Vector2 newPos_;
 	uint32 tick_;
 	uint32 server_tick_;
+	Time server_time_;
 };
 
 #endif // !CLIENT_APP_HPP_INCLUDED

@@ -134,19 +134,35 @@ namespace charlie {
 		{
 		}
 
-		Interpolator::Interpolator() : interpolateTime_(Time(0.1)), acc_(0), index_(0), bufferSize_(0)
+		PosSnapshot::PosSnapshot() : tick_(0)
 		{
-			bufferSize_ = 60; // 60 ticks ~= 1 sec buffer
 		}
 
-		Vector2 Interpolator::interpolate(const Vector2 start, const Vector2 end, const Time rtt) const
+		Interpolator::Interpolator() : interpolateTime_(Time(0.1)), acc_(Time(0.0)), buffersize_(60)
 		{
-			const auto startTime = Time::now().as_seconds() - interpolateTime_.as_seconds() - rtt.as_seconds() / 2;
-			const auto endTime = Time::now();
-			const auto t = endTime - startTime + acc_;
-			printf("lerp t: %f\n", t.as_seconds());
-			const Vector2 newPos = Vector2::lerp(start, end, t.as_seconds());
+		}
+
+		Vector2 Interpolator::interpolate(const Time rtt) const
+		{
+			if (snapshots_.size() < 2)
+			{
+				return Vector2(0, 0);
+			}
+			const auto start = snapshots_[snapshots_.size() - 2];
+			const auto end = snapshots_[snapshots_.size() - 1];
+
+			const auto diff = end.servertime_ - start.servertime_ + interpolateTime_;
+			const float t = (acc_.as_seconds() / diff.as_seconds()) * 100;
+			printf("lerp t: %f \n", t);
+
+			const Vector2 newPos = Vector2::lerp(start.position, end.position, t);
 			return newPos;
+		}
+
+		void Interpolator::add_position(PosSnapshot snapshot)
+		{
+			snapshots_.push_back(snapshot);
+			acc_ = Time(0.0);
 		}
 
 		Inputinator::Inputinator() : index_(0), bufferSize_(0)

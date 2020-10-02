@@ -42,10 +42,10 @@ bool ServerApp::on_tick(const Time& dt)
 		for (auto& player : players_)
 		{
 			// note: update player
-			const bool player_move_up = player_.input_bits_ & (1 << int32(gameplay::Action::Up));
-			const bool player_move_down = player_.input_bits_ & (1 << int32(gameplay::Action::Down));
-			const bool player_move_left = player_.input_bits_ & (1 << int32(gameplay::Action::Left));
-			const bool player_move_right = player_.input_bits_ & (1 << int32(gameplay::Action::Right));
+			const bool player_move_up = player.input_bits_ & (1 << int32(gameplay::Action::Up));
+			const bool player_move_down = player.input_bits_ & (1 << int32(gameplay::Action::Down));
+			const bool player_move_left = player.input_bits_ & (1 << int32(gameplay::Action::Left));
+			const bool player_move_right = player.input_bits_ & (1 << int32(gameplay::Action::Right));
 
 			Vector2 direction;
 			if (player_move_up) {
@@ -64,7 +64,7 @@ bool ServerApp::on_tick(const Time& dt)
 			const float speed = 100.0;
 			if (direction.length() > 0.0f) {
 				direction.normalize();
-				player_.position_ += direction * speed * tickrate_.as_seconds();
+				player.position_ += direction * speed * tickrate_.as_seconds();
 			}
 		}
 
@@ -95,8 +95,18 @@ void ServerApp::on_draw()
 void ServerApp::on_timeout(network::Connection* connection)
 {
 	connection->set_listener(nullptr);
-	auto id = clients_.find_client((uint64)connection);
-	// ...
+	const uint32 id = clients_.find_client((uint64)connection);
+
+	auto it = players_.begin();
+	while (it != players_.end())
+	{
+		if ((*it).id_ == id)
+		{
+			players_.erase(it);
+			break;
+		}
+		++it;
+	}
 	clients_.remove_client((uint64)connection);
 }
 
@@ -117,8 +127,19 @@ void ServerApp::on_connect(network::Connection* connection)
 void ServerApp::on_disconnect(network::Connection* connection)
 {
 	connection->set_listener(nullptr);
-	auto id = clients_.find_client((uint64)connection);
-	// ...
+
+	const uint32 id = clients_.find_client((uint64)connection);
+	auto it = players_.begin();
+	while (it != players_.end())
+	{
+		if ((*it).id_ == id)
+		{
+			players_.erase(it);
+			break;
+		}
+		++it;
+	}
+
 	clients_.remove_client((uint64)connection);
 }
 
@@ -131,7 +152,7 @@ void ServerApp::on_acknowledge(network::Connection* connection,
 void ServerApp::on_receive(network::Connection* connection,
 	network::NetworkStreamReader& reader)
 {
-	auto id = clients_.find_client((uint64)connection);
+	const uint32 id = clients_.find_client((uint64)connection);
 
 	while (reader.position() < reader.length()) {
 		if (reader.peek() != network::NETWORK_MESSAGE_INPUT_COMMAND) {
@@ -156,7 +177,7 @@ void ServerApp::on_send(network::Connection* connection,
 	const uint16 sequence,
 	network::NetworkStreamWriter& writer)
 {
-	auto id = clients_.find_client((uint64)connection);
+	const uint32 id = clients_.find_client((uint64)connection);
 
 	{
 		network::NetworkMessageServerTick message(Time::now().as_ticks(), tick_);
@@ -183,20 +204,25 @@ void ServerApp::on_send(network::Connection* connection,
 			}
 		}
 
+		/*
 		network::NetworkMessageEntityState message(player_.position_, player_.id_);
 		if (!message.write(writer)) {
 			assert(!"failed to write message!");
 		}
+		*/
 	}
 
 	{
-		for (auto& player : playersToSpawn_)
+		for (auto& players : players_)
 		{
-			if (player.id_ != id)
+			for (auto& player : playersToSpawn_)
 			{
-				network::NetworkMessagePlayerSpawn message(player.position_, player.id_);
-				if (!message.write(writer)) {
-					assert(!"failed to write message!");
+				if (player.id_ != id)
+				{
+					network::NetworkMessagePlayerSpawn message(player.position_, player.id_);
+					if (!message.write(writer)) {
+						assert(!"failed to write message!");
+					}
 				}
 			}
 		}

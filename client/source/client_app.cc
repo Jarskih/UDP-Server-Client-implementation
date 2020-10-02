@@ -47,22 +47,22 @@ bool ClientApp::on_tick(const Time& dt)
 		accumulator_ -= tickrate_;
 		tick_++;
 
-		const bool player_move_up = player_.input_bits_ & (1 << int32(gameplay::Action::Up));
-		const bool player_move_down = player_.input_bits_ & (1 << int32(gameplay::Action::Down));
-		const bool player_move_left = player_.input_bits_ & (1 << int32(gameplay::Action::Left));
-		const bool player_move_right = player_.input_bits_ & (1 << int32(gameplay::Action::Right));
-
 		Vector2 direction;
-		if (player_move_up) {
+		player_.input_bits_ = 0;
+		if (keyboard_.down(Keyboard::Key::W)) {
+			player_.input_bits_ |= (1 << int32(gameplay::Action::Up));
 			direction.y_ -= 1.0f;
 		}
-		if (player_move_down) {
+		if (keyboard_.down(Keyboard::Key::S)) {
+			player_.input_bits_ |= (1 << int32(gameplay::Action::Down));
 			direction.y_ += 1.0f;
 		}
-		if (player_move_left) {
+		if (keyboard_.down(Keyboard::Key::A)) {
+			player_.input_bits_ |= (1 << int32(gameplay::Action::Left));
 			direction.x_ -= 1.0f;
 		}
-		if (player_move_right) {
+		if (keyboard_.down(Keyboard::Key::D)) {
+			player_.input_bits_ |= (1 << int32(gameplay::Action::Right));
 			direction.x_ += 1.0f;
 		}
 
@@ -71,24 +71,21 @@ bool ClientApp::on_tick(const Time& dt)
 			direction.normalize();
 			player_.position_ += direction * speed * tickrate_.as_seconds();
 		}
+
+		gameplay::InputSnapshot snapshot;
+		snapshot.input_bits_ = player_.input_bits_;
+		snapshot.tick_ = tick_;
+		snapshot.position_ = player_.position_;
+
+		inputinator_.add_snapshot(snapshot);
+
+		for (auto& entity : entities_)
+		{
+			entity.interpolator_.acc_ += dt;
+			entity.position_ = entity.interpolator_.interpolate(rtt_);
+		}
 	}
-
-	gameplay::InputSnapshot snapshot;
-	snapshot.input_bits_ = player_.input_bits_;
-	snapshot.tick_ = tick_;
-	snapshot.position_ = player_.position_;
-
-	inputinator_.add_snapshot(snapshot);
-
-	interpolator_.acc_ += dt.as_seconds();
-
-	for (auto& entity : entities_)
-	{
-		// interpolator_.interpolate();
-	}
-}
-
-return true;
+	return true;
 }
 
 void ClientApp::on_draw()
@@ -125,6 +122,7 @@ void ClientApp::on_receive(network::Connection* connection,
 
 			const Time current = Time(message.server_time_);
 			server_tick_ = message.server_tick_;
+			server_time_ = current;
 			lastReceive_ = Time::now();
 		} break;
 
@@ -135,22 +133,39 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			auto id = message.id_;
-			for (auto& entity : entities_)
+			const uint32 id = message.id_;
+
+			if (entities_.empty())
 			{
-				if (entity.id_ == id)
-				{
+				entities_.push_back(gameplay::Entity(message.position_, message.id_));
+				printf("Remote player connected: %i \n", (int)entities_.size());
+			}
+
+			auto it = entities_.begin();
+			while (it != entities_.end())
+			{
+				if ((*it).id_ == id) {
 					break;
 				}
-				entities_.push_back(gameplay::Entity(message.position_, message.id_));
-				printf("Remote player connected\n");
+
+				++it;
+				if (it == entities_.end())
+				{
+					entities_.push_back(gameplay::Entity(message.position_, message.id_));
+					printf("Remote player connected: %i \n", (int)entities_.size());
+					break;
+				}
 			}
 
 			for (auto& entity : entities_)
 			{
 				if (entity.id_ == id)
 				{
-					entity.position_ = message.position_;
+					gameplay::PosSnapshot snapshot;
+					snapshot.servertime_ = server_time_;
+					snapshot.position = message.position_;
+
+					entity.interpolator_.add_position(snapshot);
 					break;
 				}
 			}
@@ -163,17 +178,16 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			auto playerPos_ = inputinator_.get_position(server_tick_, tickrate_);
-			auto diff = message.position_ - playerPos_;
+			auto recalculated = inputinator_.get_position(server_tick_, tickrate_);
+			auto diff = message.position_ - recalculated;
 			if (diff.length() > 5.0f)
 			{
-				player_.position_ = playerPos_;
-				printf("Player position corrected new simulated pos\n");
+				player_.position_ = recalculated;
 			}
-			if (diff.length() > 5.0f)
+			auto newdiff = message.position_ - player_.position_;
+			if (newdiff.length() > 5.0f)
 			{
 				player_.position_ = message.position_;
-				printf("Player position corrected to server pos\n");
 			}
 		} break;
 
