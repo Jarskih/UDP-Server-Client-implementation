@@ -30,15 +30,15 @@ struct ClientApp final : Application, network::IConnectionListener {
 	Time lastSend_;
 	Time lastReceive_;
 
-	uint8 input_bits_;
 	gameplay::Player player_;
-	gameplay::Entity entity_;
+	DynamicArray <gameplay::Entity> entities_;
 
 	gameplay::Interpolator interpolator_;
+	gameplay::Inputinator inputinator_;
 	Vector2 oldPos_;
 	Vector2 newPos_;
 	uint32 tick_;
-	Vector2 playerPos_;
+	uint32 server_tick_;
 };
 
 #endif // !CLIENT_APP_HPP_INCLUDED

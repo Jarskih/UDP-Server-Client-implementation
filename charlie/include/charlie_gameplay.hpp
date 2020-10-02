@@ -5,10 +5,16 @@
 
 #include <charlie.hpp>
 
+#include "charlie_messages.hpp"
+
 namespace charlie {
 	namespace gameplay {
 		struct Entity {
+			Entity();
+
+			explicit Entity(Vector2 pos, uint32 id);
 			Vector2 position_;
+			uint32 id_;
 		};
 
 		enum class Action {
@@ -19,7 +25,13 @@ namespace charlie {
 		};
 
 		struct Player {
+			Player();
+
+			explicit Player(Vector2& pos, uint32 id);
+			void update(Time tickrate);
 			Vector2 position_;
+			uint8 input_bits_;
+			int32 id_;
 		};
 
 		struct ComponentBase {
@@ -309,14 +321,22 @@ namespace charlie {
 			Interpolator();
 
 			Vector2 interpolate(Vector2 start, Vector2 end, Time rtt) const;
+			Time interpolateTime_;
+			float acc_;
+			uint32 index_;
+			uint32 bufferSize_;
+		};
+
+		struct Inputinator
+		{
+			Inputinator();
+
 			void add_snapshot(InputSnapshot snapshot);
 			Vector2 get_position(uint32 tick, const Time tickrate);
 
 			InputSnapshot inputSnapshots_[20]; // buffer for 200ms = 12 ticks
-			Time interpolateTime_;
 			uint32 index_;
 			uint32 bufferSize_;
-			float acc_;
 		};
 	} // !gameplay
 } // !charlie
