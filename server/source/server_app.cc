@@ -41,6 +41,7 @@ bool ServerApp::on_tick(const Time& dt)
 
 		for (auto& player : players_)
 		{
+			// note: update player
 			const bool player_move_up = player_.input_bits_ & (1 << int32(gameplay::Action::Up));
 			const bool player_move_down = player_.input_bits_ & (1 << int32(gameplay::Action::Down));
 			const bool player_move_left = player_.input_bits_ & (1 << int32(gameplay::Action::Left));
