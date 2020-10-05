@@ -12,16 +12,21 @@ namespace charlie {
 		{
 		}
 
-		Player::Player() : input_bits_(0), id_(0)
+		Player::Player() : input_bits_(0), id_(0), speed_(100)
 		{
 		}
 
-		Player::Player(Vector2& pos, uint32 id) : position_(pos), input_bits_(0), id_(id)
+		Player::Player(Vector2& pos, uint32 id) : position_(pos), input_bits_(0), id_(id), speed_(100)
 		{
 		}
 
 		void Player::update(Time tickrate)
 		{
+		}
+
+		uint8 Player::get_input_bits()
+		{
+			return input_bits_;
 		}
 
 		// static 
@@ -138,11 +143,11 @@ namespace charlie {
 		{
 		}
 
-		Interpolator::Interpolator() : interpolateTime_(Time(0.1)), acc_(Time(0.0)), buffersize_(60)
+		Interpolator::Interpolator() : interpolateTime_(Time(0.2)), acc_(Time(0.0)), buffersize_(60)
 		{
 		}
 
-		Vector2 Interpolator::interpolate(const Time rtt) const
+		Vector2 Interpolator::interpolate() const
 		{
 			if (snapshots_.size() < 2)
 			{
@@ -150,10 +155,7 @@ namespace charlie {
 			}
 			const auto start = snapshots_[snapshots_.size() - 2];
 			const auto end = snapshots_[snapshots_.size() - 1];
-
-			const auto diff = end.servertime_ - start.servertime_ + interpolateTime_;
-			const float t = (acc_.as_seconds() / diff.as_seconds()) * 100;
-			printf("lerp t: %f \n", t);
+			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
 
 			const Vector2 newPos = Vector2::lerp(start.position, end.position, t);
 			return newPos;
@@ -165,34 +167,36 @@ namespace charlie {
 			acc_ = Time(0.0);
 		}
 
-		Inputinator::Inputinator() : index_(0), bufferSize_(0)
+		Inputinator::Inputinator()
 		{
-			bufferSize_ = 12;
 		}
 
 		void Inputinator::add_snapshot(InputSnapshot snapshot)
 		{
-			inputSnapshots_[index_ % bufferSize_] = snapshot;
-			index_++;
+			inputSnapshots_.push(snapshot);
 		}
 
-		Vector2 Inputinator::get_position(uint32 tick, const Time tickrate)
+		Vector2 Inputinator::get_position(const uint32 tick, const Time tickrate, const Vector2 serverpos, const float speed)
 		{
-			Vector2 startingPos;
-			for (auto& snapshot : inputSnapshots_)
+			Vector2 startingPos = serverpos;
+			const auto inputSnapshots = inputSnapshots_;
+			for (int i = 0; i < static_cast<int>(inputSnapshots.size()); i++)
 			{
-				if (snapshot.tick_ == tick)
-				{
-					startingPos = snapshot.position_;
-				}
+				const auto input = inputSnapshots_.front();
 
-				if (snapshot.tick_ > tick)
+				if(inputSnapshots_.empty())
 				{
-					// note: update player
-					const bool player_move_up = snapshot.input_bits_ & (1 << int32(gameplay::Action::Up));
-					const bool player_move_down = snapshot.input_bits_ & (1 << int32(gameplay::Action::Down));
-					const bool player_move_left = snapshot.input_bits_ & (1 << int32(gameplay::Action::Left));
-					const bool player_move_right = snapshot.input_bits_ & (1 << int32(gameplay::Action::Right));
+					break;
+				}
+				inputSnapshots_.pop();
+				
+				if (input.tick_ > tick)
+				{
+					// simulate player past movement
+					const bool player_move_up = input.input_bits_ & (1 << int32(gameplay::Action::Up));
+					const bool player_move_down = input.input_bits_ & (1 << int32(gameplay::Action::Down));
+					const bool player_move_left = input.input_bits_ & (1 << int32(gameplay::Action::Left));
+					const bool player_move_right = input.input_bits_ & (1 << int32(gameplay::Action::Right));
 
 					Vector2 direction;
 					if (player_move_up) {
@@ -208,7 +212,6 @@ namespace charlie {
 						direction.x_ += 1.0f;
 					}
 
-					const float speed = 100.0;
 					if (direction.length() > 0.0f) {
 						direction.normalize();
 						startingPos += direction * speed * tickrate.as_seconds();
@@ -216,6 +219,26 @@ namespace charlie {
 				}
 			}
 			return startingPos;
+		}
+
+		Vector2 Inputinator::old_pos(uint32 tick)
+		{
+			const auto inputSnapshots = inputSnapshots_;
+			for (int i = 0; i < static_cast<int>(inputSnapshots.size()); i++)
+			{
+				const auto input = inputSnapshots_.front();
+				inputSnapshots_.pop();
+				if(input.tick_ < tick)
+				{
+					inputSnapshots_.pop();
+					continue;
+				}
+				if(input.tick_ == tick)
+				{
+					return input.position_;
+				}
+			}
+			return Vector2(0,0);
 		}
 	} // !gameplay
 } // !charlie

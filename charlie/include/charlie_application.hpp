@@ -6,6 +6,7 @@
 #include <charlie.hpp>
 #include <charlie_network.hpp>
 #include <charlie_gameplay.hpp>
+#include <charlie_networkinfo.hpp>
 
 namespace charlie {
    struct Application {

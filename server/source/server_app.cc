@@ -7,7 +7,7 @@
 
 ServerApp::ServerApp()
 	: tickrate_(1.0 / 60.0)
-	, tick_(0)
+	  , tick_(0), reliable_queue_(), index_(0), event_list_()
 {
 }
 
@@ -20,10 +20,6 @@ bool ServerApp::on_init()
 	}
 
 	network_.add_service_listener(this);
-
-	player_.position_ = { 300.0f, 180.0f };
-	player_.id_ = 1000;
-	playersToSpawn_.push_back(player_);
 
 	return true;
 }
@@ -42,10 +38,10 @@ bool ServerApp::on_tick(const Time& dt)
 		for (auto& player : players_)
 		{
 			// note: update player
-			const bool player_move_up = player.input_bits_ & (1 << int32(gameplay::Action::Up));
-			const bool player_move_down = player.input_bits_ & (1 << int32(gameplay::Action::Down));
-			const bool player_move_left = player.input_bits_ & (1 << int32(gameplay::Action::Left));
-			const bool player_move_right = player.input_bits_ & (1 << int32(gameplay::Action::Right));
+			const bool player_move_up = player.get_input_bits() & (1 << int32(gameplay::Action::Up));
+			const bool player_move_down = player.get_input_bits() & (1 << int32(gameplay::Action::Down));
+			const bool player_move_left = player.get_input_bits() & (1 << int32(gameplay::Action::Left));
+			const bool player_move_right = player.get_input_bits() & (1 << int32(gameplay::Action::Right));
 
 			Vector2 direction;
 			if (player_move_up) {
@@ -64,12 +60,9 @@ bool ServerApp::on_tick(const Time& dt)
 			const float speed = 100.0;
 			if (direction.length() > 0.0f) {
 				direction.normalize();
-				player.position_ += direction * speed * tickrate_.as_seconds();
+				player.position_ += direction * player.speed_ * tickrate_.as_seconds();
 			}
 		}
-
-		player_.position_.x_ = 300.0f + std::cosf(Time::now().as_seconds()) * 150.0f;
-		player_.position_.y_ = 180.0f + std::sinf(Time::now().as_seconds()) * 100.0f;
 	}
 
 	return true;
@@ -82,8 +75,6 @@ void ServerApp::on_draw()
 	char myString[10] = "";
 	sprintf_s(myString, "%ld", long(tick_));
 	renderer_.render_text({ 150, 2 }, Color::White, 1, myString);
-	renderer_.render_rectangle_fill({ static_cast<int32>(send_position_.x_), static_cast<int32>(send_position_.y_),  20, 20 }, Color::Yellow);
-	renderer_.render_rectangle_fill({ static_cast<int32>(player_.position_.x_), static_cast<int32>(player_.position_.y_),  20, 20 }, Color::Red);
 
 
 	for (auto& player : players_)
@@ -122,6 +113,11 @@ void ServerApp::on_connect(network::Connection* connection)
 	player.position_.y_ = 200.0f + random_() % 100;
 	players_.push_back(player);
 	playersToSpawn_.push_back(player);
+
+	event_list_.id_ = index_;
+	event_list_.event_.push_back(player.id_);
+
+	index_++;
 }
 
 void ServerApp::on_disconnect(network::Connection* connection)
@@ -146,7 +142,11 @@ void ServerApp::on_disconnect(network::Connection* connection)
 void ServerApp::on_acknowledge(network::Connection* connection,
 	const uint16 sequence)
 {
-
+	// find if queue contains sequence
+	if(sequence == reliable_queue_.seq_)
+	{
+		// remove all events with id
+	}
 }
 
 void ServerApp::on_receive(network::Connection* connection,
@@ -177,12 +177,33 @@ void ServerApp::on_send(network::Connection* connection,
 	const uint16 sequence,
 	network::NetworkStreamWriter& writer)
 {
+	reliable_queue_.seq_ = sequence;
+	reliable_queue_.id_ = event_list_.id_;
+	
 	const uint32 id = clients_.find_client((uint64)connection);
 
 	{
 		network::NetworkMessageServerTick message(Time::now().as_ticks(), tick_);
 		if (!message.write(writer)) {
 			assert(!"failed to write message!");
+		}
+	}
+
+	{
+		// for each item in the queue send a packet
+		for (auto& players : players_)
+		{
+			for (auto& player : playersToSpawn_)
+			{
+				if (player.id_ != id)
+				{
+					network::NetworkMessagePlayerSpawn message(player.position_, player.id_);
+					if (!message.write(writer)) {
+						assert(!"failed to write message!");
+					}
+					// add player id and sequence to queue
+				}
+			}
 		}
 	}
 
@@ -203,29 +224,5 @@ void ServerApp::on_send(network::Connection* connection,
 				assert(!"failed to write message!");
 			}
 		}
-
-		/*
-		network::NetworkMessageEntityState message(player_.position_, player_.id_);
-		if (!message.write(writer)) {
-			assert(!"failed to write message!");
-		}
-		*/
-	}
-
-	{
-		for (auto& players : players_)
-		{
-			for (auto& player : playersToSpawn_)
-			{
-				if (player.id_ != id)
-				{
-					network::NetworkMessagePlayerSpawn message(player.position_, player.id_);
-					if (!message.write(writer)) {
-						assert(!"failed to write message!");
-					}
-				}
-			}
-		}
-		playersToSpawn_.clear();
 	}
 }

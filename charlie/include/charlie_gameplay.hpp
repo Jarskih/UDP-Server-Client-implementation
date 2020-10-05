@@ -16,16 +16,6 @@ namespace charlie {
 			Right,
 		};
 
-		struct Player {
-			Player();
-
-			explicit Player(Vector2& pos, uint32 id);
-			void update(Time tickrate);
-			Vector2 position_;
-			uint8 input_bits_;
-			uint32 id_;
-		};
-
 		struct ComponentBase {
 			static uint32 next();
 		};
@@ -320,7 +310,7 @@ namespace charlie {
 		struct Interpolator {
 			Interpolator();
 
-			Vector2 interpolate(Time rtt) const;
+			Vector2 interpolate() const;
 			void add_position(PosSnapshot snapshot);
 			DynamicArray<PosSnapshot> snapshots_;
 			Time interpolateTime_;
@@ -333,11 +323,10 @@ namespace charlie {
 			Inputinator();
 
 			void add_snapshot(InputSnapshot snapshot);
-			Vector2 get_position(uint32 tick, const Time tickrate);
+			Vector2 get_position(uint32 tick, const Time tickrate, Vector2 serverpos, float speed);
+			Vector2 old_pos(uint32 uint32);
 
-			InputSnapshot inputSnapshots_[20]; // buffer for 200ms = 12 ticks
-			uint32 index_;
-			uint32 bufferSize_;
+			Queue<InputSnapshot> inputSnapshots_;
 		};
 
 		struct Entity {
@@ -347,6 +336,18 @@ namespace charlie {
 			Vector2 position_;
 			uint32 id_;
 			Interpolator interpolator_;
+		};
+
+		struct Player {
+			Player();
+
+			explicit Player(Vector2& pos, uint32 id);
+			void update(Time tickrate);
+			uint8 get_input_bits();
+			Vector2 position_;
+			uint8 input_bits_;
+			uint32 id_;
+			float speed_;
 		};
 	} // !gameplay
 } // !charlie

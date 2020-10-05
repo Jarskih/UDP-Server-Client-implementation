@@ -95,12 +95,12 @@ namespace charlie {
 			return serialize(writer);
 		}
 
-		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn() : type_(NETWORK_MESSAGE_SPAWN), id_(0)
+		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn() : type_(NETWORK_MESSAGE_PLAYER_SPAWN), id_(0)
 		{
 		}
 
-		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn(const Vector2& position, const uint32& id) :
-			type_(NETWORK_MESSAGE_SPAWN), position_(position), id_(id)
+		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn(const Vector2& position, const uint32 id) :
+			type_(NETWORK_MESSAGE_PLAYER_SPAWN), position_(position), id_(id)
 		{
 		}
 

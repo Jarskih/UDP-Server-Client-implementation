@@ -1,3 +1,4 @@
+
 // charlie_network.cc
 
 #include "charlie_network.hpp"
@@ -143,6 +144,11 @@ namespace charlie {
 				(host_ >> 0) & 0xff,
 				port_);
 			return string;
+		}
+
+		IPAddress IPAddress::get_broadcast(const uint16 port)
+		{
+			return IPAddress(192,168,1,255, port);
 		}
 
 		// static 
@@ -881,6 +887,11 @@ namespace charlie {
 			g_service->send_stream(this, stream);
 		}
 
+		bool Connection::is_broadcast() const
+		{
+			return address_ == IPAddress::get_broadcast(address_.port_);
+		}
+
 		ConnectionPool::ConnectionPool(const int32 capacity)
 			: capacity_(capacity)
 			, connection_count_(0)
@@ -1128,6 +1139,7 @@ namespace charlie {
 		{
 			connection->set_key(random_());
 			pending_connections_.push_back(connection);
+			printf("Pending connection added \n");
 		}
 
 		void Service::remove_pending_connection(Connection* connection)
@@ -1136,6 +1148,7 @@ namespace charlie {
 			while (it != pending_connections_.end()) {
 				if ((*it) == connection) {
 					pending_connections_.erase(it);
+					printf("Pending connection removed \n");
 					return;
 				}
 				++it;
@@ -1146,8 +1159,14 @@ namespace charlie {
 
 		Connection* Service::find_pending_connection(const IPAddress& address) const
 		{
-			for (auto& connection : pending_connections_) {
+			for (const auto& connection : pending_connections_) {
 				if (connection->is_endpoint(address)) {
+					return connection;
+				}
+				// Update broadcast address to received one
+				if(connection->is_broadcast())
+				{
+					connection->set_address(address);
 					return connection;
 				}
 			}
@@ -1156,6 +1175,7 @@ namespace charlie {
 
 		void Service::add_established_connection(Connection* connection)
 		{
+			printf("Connection established \n");
 			established_connections_.push_back(connection);
 		}
 
@@ -1165,6 +1185,7 @@ namespace charlie {
 			while (it != established_connections_.end()) {
 				if ((*it) == connection) {
 					established_connections_.erase(it);
+					printf("Established connection removed \n");
 					return;
 				}
 				++it;

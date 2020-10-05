@@ -26,7 +26,6 @@ struct ClientApp final : Application, network::IConnectionListener {
 	network::Connection connection_;
 	const Time tickrate_;
 	Time accumulator_;
-	Time rtt_;
 	Time lastSend_;
 	Time lastReceive_;
 
@@ -34,11 +33,13 @@ struct ClientApp final : Application, network::IConnectionListener {
 	DynamicArray <gameplay::Entity> entities_;
 
 	gameplay::Inputinator inputinator_;
+	Networkinfo networkinfo_;
 	Vector2 oldPos_;
 	Vector2 newPos_;
 	uint32 tick_;
 	uint32 server_tick_;
 	Time server_time_;
+
 };
 
 #endif // !CLIENT_APP_HPP_INCLUDED

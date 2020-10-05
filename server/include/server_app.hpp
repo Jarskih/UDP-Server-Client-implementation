@@ -76,11 +76,24 @@ struct ServerApp final : Application, network::IServiceListener, network::IConne
 	ClientList clients_;
 	DynamicArray<gameplay::Player> players_;
 	DynamicArray<gameplay::Player> playersToSpawn_;
-
-	gameplay::Player player_;
+	
 	Vector2 send_position_;
-
 	Random random_;
+
+	struct Message
+	{
+		uint16 seq_;
+		uint32 id_;
+	};
+	Message reliable_queue_;
+	uint32 index_;
+
+	struct EventList
+	{
+		uint32 id_{};
+		DynamicArray<uint32> event_;
+	};
+	EventList event_list_;
 };
 
 #endif // !SERVER_APP_HPP_INCLUDED

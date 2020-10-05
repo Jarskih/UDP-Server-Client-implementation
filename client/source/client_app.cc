@@ -12,9 +12,10 @@ constexpr auto array_size(T(&)[N])
 
 ClientApp::ClientApp()
 	: mouse_(window_.mouse_)
-	, keyboard_(window_.keyboard_)
-	, tickrate_(1.0 / 60.0)
-	, tick_(0), server_tick_(0)
+	  , keyboard_(window_.keyboard_)
+	  , tickrate_(1.0 / 60.0)
+	  , tick_(0)
+	  , server_tick_(0)
 {
 }
 
@@ -27,7 +28,7 @@ bool ClientApp::on_init()
 
 	connection_.set_listener(this);
 
-	connection_.connect(network::IPAddress(192, 168, 1, 230, 54345));
+	connection_.connect(network::IPAddress::get_broadcast(54345));
 
 	return true;
 }
@@ -45,7 +46,9 @@ bool ClientApp::on_tick(const Time& dt)
 	accumulator_ += dt;
 	while (accumulator_ >= tickrate_) {
 		accumulator_ -= tickrate_;
-		tick_++;
+		server_tick_++;
+
+		networkinfo_.update(dt, connection_);
 
 		Vector2 direction;
 		player_.input_bits_ = 0;
@@ -66,15 +69,14 @@ bool ClientApp::on_tick(const Time& dt)
 			direction.x_ += 1.0f;
 		}
 
-		const float speed = 100.0;
 		if (direction.length() > 0.0f) {
 			direction.normalize();
-			player_.position_ += direction * speed * tickrate_.as_seconds();
+			player_.position_ += direction * player_.speed_ * tickrate_.as_seconds();
 		}
 
 		gameplay::InputSnapshot snapshot;
 		snapshot.input_bits_ = player_.input_bits_;
-		snapshot.tick_ = tick_;
+		snapshot.tick_ = server_tick_;
 		snapshot.position_ = player_.position_;
 
 		inputinator_.add_snapshot(snapshot);
@@ -82,7 +84,7 @@ bool ClientApp::on_tick(const Time& dt)
 		for (auto& entity : entities_)
 		{
 			entity.interpolator_.acc_ += dt;
-			entity.position_ = entity.interpolator_.interpolate(rtt_);
+			entity.position_ = entity.interpolator_.interpolate();
 		}
 	}
 	return true;
@@ -92,10 +94,9 @@ void ClientApp::on_draw()
 {
 	renderer_.clear({ 0.2f, 0.3f, 0.4f, 1.0f });
 	renderer_.render_text({ 2, 2 }, Color::White, 1, "CLIENT");
-	char latency[10] = "";
-	sprintf_s(latency, "%ld ms", (long)connection_.latency().as_milliseconds());
-	renderer_.render_text({ 100, 2 }, Color::White, 1, latency);
 
+	networkinfo_.render(renderer_, connection_);
+	
 	for (auto& entity : entities_)
 	{
 		renderer_.render_rectangle_fill({ int32(entity.position_.x_), int32(entity.position_.y_), 20, 20 }, Color::Green);
@@ -111,6 +112,8 @@ void ClientApp::on_acknowledge(network::Connection* connection,
 void ClientApp::on_receive(network::Connection* connection,
 	network::NetworkStreamReader& reader)
 {
+	networkinfo_.packet_received(reader.length());
+	
 	while (reader.position() < reader.length()) {
 		switch (reader.peek()) {
 		case network::NETWORK_MESSAGE_SERVER_TICK:
@@ -137,8 +140,8 @@ void ClientApp::on_receive(network::Connection* connection,
 
 			if (entities_.empty())
 			{
-				entities_.push_back(gameplay::Entity(message.position_, message.id_));
-				printf("Remote player connected: %i \n", (int)entities_.size());
+				//entities_.push_back(gameplay::Entity(message.position_, message.id_));
+				//printf("Remote player connected: %i \n", (int)entities_.size());
 			}
 
 			auto it = entities_.begin();
@@ -151,8 +154,8 @@ void ClientApp::on_receive(network::Connection* connection,
 				++it;
 				if (it == entities_.end())
 				{
-					entities_.push_back(gameplay::Entity(message.position_, message.id_));
-					printf("Remote player connected: %i \n", (int)entities_.size());
+					//entities_.push_back(gameplay::Entity(message.position_, message.id_));
+					//printf("Remote player connected: %i \n", (int)entities_.size());
 					break;
 				}
 			}
@@ -161,7 +164,7 @@ void ClientApp::on_receive(network::Connection* connection,
 			{
 				if (entity.id_ == id)
 				{
-					gameplay::PosSnapshot snapshot;
+					gameplay::PosSnapshot snapshot ;
 					snapshot.servertime_ = server_time_;
 					snapshot.position = message.position_;
 
@@ -178,29 +181,41 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			auto recalculated = inputinator_.get_position(server_tick_, tickrate_);
+			Vector2 recalculated = inputinator_.old_pos(server_tick_);
 			auto diff = message.position_ - recalculated;
-			if (diff.length() > 5.0f)
+			if (abs(diff.x_) > 5.0f || abs(diff.y_) > 5.0f)
 			{
-				player_.position_ = recalculated;
-			}
-			auto newdiff = message.position_ - player_.position_;
-			if (newdiff.length() > 5.0f)
-			{
-				player_.position_ = message.position_;
+				player_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.position_, player_.speed_);
+				networkinfo_.input_misprediction_++;
 			}
 		} break;
 
-		case network::NETWORK_MESSAGE_SPAWN:
+		case network::NETWORK_MESSAGE_PLAYER_SPAWN:
 		{
+			printf("Spawn message received");
 			network::NetworkMessagePlayerSpawn message;
 			if (!message.read(reader)) {
 				assert(!"could not read message!");
 			}
 
-			gameplay::Entity entity(message.position_, message.id_);
-			entities_.push_back(entity);
-			printf("Spawn message received \n");
+			for (auto &entity : entities_)
+			{
+				if(entity.id_ == message.id_)
+				{
+					break;
+				}
+
+				gameplay::Entity e(message.position_, message.id_);
+				entities_.push_back(e);
+				printf("Player spawned %i \n", message.id_);
+			}
+
+			if(entities_.empty())
+			{
+				gameplay::Entity e(message.position_, message.id_);
+				entities_.push_back(e);
+				printf("Player spawned %i \n", message.id_);
+			}
 		}
 		default:
 		{
@@ -219,4 +234,6 @@ void ClientApp::on_send(network::Connection* connection,
 		assert(!"could not write network command!");
 	}
 	lastSend_ = Time::now();
+
+	networkinfo_.packet_sent(writer.length());
 }
