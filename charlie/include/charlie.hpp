@@ -412,6 +412,7 @@ namespace charlie {
 		void set_position(const Vector2& position);
 		void set_scale(const Vector2& scale);
 		void set_rotation(const float rotation);
+		Vector2 forward() const;
 
 		Vector2 origin_;
 		Vector2 position_;

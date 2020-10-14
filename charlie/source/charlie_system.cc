@@ -8,6 +8,7 @@
 #include <ShellScalingApi.h> // SetProcessDpiAwareness
 #include <gl/GL.h>
 #include <cmath>
+#include <SDL_stdinc.h>
 
 struct input_t {
    charlie::Mouse mouse_;
@@ -1252,6 +1253,19 @@ namespace charlie {
    void Transform::set_rotation(const float rotation)
    {
       rotation_ = rotation;
+   }
+
+   Vector2 Transform::forward() const
+   {
+   		const float rad = (rotation_ * (float)M_PI)/180.0f;
+		const float s = sin(rad);
+        const float c = cos(rad);
+
+   		Vector2 up = Vector2(0,-1);
+        return Vector2(
+            up.x_ * c - up.y_ * s,
+            up.x_ * s + up.y_ * c
+		);
    }
 
    Material::Material()

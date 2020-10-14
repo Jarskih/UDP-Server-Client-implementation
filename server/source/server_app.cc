@@ -51,22 +51,22 @@ bool ServerApp::on_tick(const Time& dt)
 
 			Vector2 direction;
 			if (player_move_up) {
-				direction.y_ -= 1.0f;
+				//direction.y_ -= 1.0f;
 			}
 			if (player_move_down) {
-				direction.y_ += 1.0f;
+				//direction.y_ += 1.0f;
 			}
 			if (player_move_left) {
-				direction.x_ -= 1.0f;
+				//direction.x_ -= 1.0f;
 			}
 			if (player_move_right) {
-				direction.x_ += 1.0f;
+				//direction.x_ += 1.0f;
 			}
 
 			const float speed = 100.0;
 			if (direction.length() > 0.0f) {
 				direction.normalize();
-				player.position_ += direction * player.speed_ * tickrate_.as_seconds();
+				player.transform_.position_ += direction * player.speed_ * tickrate_.as_seconds();
 			}
 		}
 	}
@@ -115,8 +115,8 @@ void ServerApp::on_connect(network::Connection* connection)
 	// event : "player_connected"
 	Player player;
 	player.id_ = id;
-	player.position_.x_ = 20.0f + random_() % 200;
-	player.position_.y_ = 200.0f + random_() % 100;
+	player.transform_.position_.x_ = 20.0f + random_() % 200;
+	player.transform_.position_.y_ = 200.0f + random_() % 100;
 	players_.push_back(player);
 	playersToSpawn_.push_back(player);
 
@@ -203,7 +203,7 @@ void ServerApp::on_send(network::Connection* connection,
 			{
 				if (player.id_ != id)
 				{
-					network::NetworkMessagePlayerSpawn message(player.position_, player.id_);
+					network::NetworkMessagePlayerSpawn message(player.transform_.position_, player.id_);
 					if (!message.write(writer)) {
 						assert(!"failed to write message!");
 					}
@@ -218,14 +218,14 @@ void ServerApp::on_send(network::Connection* connection,
 		{
 			if (player.id_ == id)
 			{
-				network::NetworkMessagePlayerState message(player.position_);
+				network::NetworkMessagePlayerState message(player.transform_.position_);
 				if (!message.write(writer)) {
 					assert(!"failed to write message!");
 				}
 				continue;
 			}
 
-			network::NetworkMessageEntityState message(player.position_, player.id_);
+			network::NetworkMessageEntityState message(player.transform_.position_, player.id_);
 			if (!message.write(writer)) {
 				assert(!"failed to write message!");
 			}

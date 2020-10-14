@@ -10,20 +10,24 @@ namespace charlie
 		Player();
 		void init(SDL_Renderer* renderer, Vector2& pos, uint32 id);
 
-		void update(Time tickrate);
+		void update(Time deltaTime);
 		void render();
-		void load_sprite(const char* path, int p_srcX, int p_srcY, int p_srcW, int p_srcH);
+		void load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
+		void load_turret_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
 		uint8 get_input_bits() const;
 
 		// SDL
-		SDL_Rect window_rect_;
 		SDL_Renderer* renderer_;
-		SDLSprite* sprite_;
+		SDLSprite* body_sprite_;
+		SDL_Rect body_window_rect_;
+		SDLSprite* turret_sprite_;
+		SDL_Rect turret_window_rect_;
 
-		Vector2 position_;
+		Transform transform_;
 		uint8 input_bits_;
 		uint32 id_;
 		float speed_;
-
+		float tank_turn_speed_;
+		float turret_turn_speed_;
 	};
 }

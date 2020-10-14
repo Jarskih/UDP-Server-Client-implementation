@@ -32,8 +32,9 @@ bool ClientApp::on_init()
 
 	Vector2 pos = Vector2(200, 300);
 	player_.init(renderer_.get_renderer(), pos, 0);
-	player_.load_sprite("../assets/tank_body.png", 0, 0, 50, 50);
-
+	player_.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 0);
+	player_.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 0);
+	
 	return true;
 }
 
@@ -62,7 +63,7 @@ bool ClientApp::on_tick(const Time& dt)
 			gameplay::InputSnapshot snapshot;
 			snapshot.input_bits_ = player_.input_bits_;
 			snapshot.tick_ = server_tick_;
-			snapshot.position_ = player_.position_;
+			snapshot.position_ = player_.transform_.position_;
 
 			inputinator_.add_snapshot(snapshot);
 		}
@@ -181,7 +182,7 @@ void ClientApp::on_receive(network::Connection* connection,
 			auto diff = message.position_ - recalculated;
 			if (abs(diff.x_) > 5.0f || abs(diff.y_) > 5.0f)
 			{
-				player_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.position_, player_.speed_);
+				player_.transform_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.position_, player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
 		} break;
