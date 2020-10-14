@@ -7,7 +7,7 @@
 
 ServerApp::ServerApp()
 	: tickrate_(1.0 / 60.0)
-	  , tick_(0), reliable_queue_(), index_(0), event_list_()
+	, tick_(0), reliable_queue_(), index_(0)
 {
 }
 
@@ -30,6 +30,12 @@ void ServerApp::on_exit()
 
 bool ServerApp::on_tick(const Time& dt)
 {
+	input_handler_.HandleEvents();
+	if (input_handler_.IsKeyDown(SDL_SCANCODE_ESCAPE))
+	{
+		return false;
+	}
+
 	accumulator_ += dt;
 	while (accumulator_ >= tickrate_) {
 		accumulator_ -= tickrate_;
@@ -70,16 +76,16 @@ bool ServerApp::on_tick(const Time& dt)
 
 void ServerApp::on_draw()
 {
-	renderer_.clear({ 0.4f, 0.3f, 0.2f, 1.0f });
-	renderer_.render_text({ 2, 2 }, Color::White, 2, "SERVER");
+	//renderer_.clear({ 0.4f, 0.3f, 0.2f, 1.0f });
+	//renderer_.render_text({ 2, 2 }, Color::White, 2, "SERVER");
 	char myString[10] = "";
 	sprintf_s(myString, "%ld", long(tick_));
-	renderer_.render_text({ 150, 2 }, Color::White, 1, myString);
+	//renderer_.render_text({ 150, 2 }, Color::White, 1, myString);
 
 
 	for (auto& player : players_)
 	{
-		renderer_.render_rectangle_fill({ static_cast<int32>(player.position_.x_), static_cast<int32>(player.position_.y_),  20, 20 }, Color::Magenta);
+		//renderer_.render_rectangle_fill({ static_cast<int32>(player.position_.x_), static_cast<int32>(player.position_.y_),  20, 20 }, Color::Magenta);
 	}
 }
 
@@ -107,7 +113,7 @@ void ServerApp::on_connect(network::Connection* connection)
 
 	auto id = clients_.add_client((uint64)connection);
 	// event : "player_connected"
-	gameplay::Player player;
+	Player player;
 	player.id_ = id;
 	player.position_.x_ = 20.0f + random_() % 200;
 	player.position_.y_ = 200.0f + random_() % 100;
@@ -143,7 +149,7 @@ void ServerApp::on_acknowledge(network::Connection* connection,
 	const uint16 sequence)
 {
 	// find if queue contains sequence
-	if(sequence == reliable_queue_.seq_)
+	if (sequence == reliable_queue_.seq_)
 	{
 		// remove all events with id
 	}
@@ -179,7 +185,7 @@ void ServerApp::on_send(network::Connection* connection,
 {
 	reliable_queue_.seq_ = sequence;
 	reliable_queue_.id_ = event_list_.id_;
-	
+
 	const uint32 id = clients_.find_client((uint64)connection);
 
 	{

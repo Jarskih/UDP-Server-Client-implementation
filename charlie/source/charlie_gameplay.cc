@@ -12,23 +12,6 @@ namespace charlie {
 		{
 		}
 
-		Player::Player() : input_bits_(0), id_(0), speed_(100)
-		{
-		}
-
-		Player::Player(Vector2& pos, uint32 id) : position_(pos), input_bits_(0), id_(id), speed_(100)
-		{
-		}
-
-		void Player::update(Time tickrate)
-		{
-		}
-
-		uint8 Player::get_input_bits()
-		{
-			return input_bits_;
-		}
-
 		// static 
 		uint32 ComponentBase::next()
 		{
@@ -184,12 +167,12 @@ namespace charlie {
 			{
 				const auto input = inputSnapshots_.front();
 
-				if(inputSnapshots_.empty())
+				if (inputSnapshots_.empty())
 				{
 					break;
 				}
 				inputSnapshots_.pop();
-				
+
 				if (input.tick_ > tick)
 				{
 					// simulate player past movement
@@ -228,17 +211,16 @@ namespace charlie {
 			{
 				const auto input = inputSnapshots_.front();
 				inputSnapshots_.pop();
-				if(input.tick_ < tick)
+				if (input.tick_ < tick)
 				{
-					inputSnapshots_.pop();
 					continue;
 				}
-				if(input.tick_ == tick)
+				if (input.tick_ == tick)
 				{
 					return input.position_;
 				}
 			}
-			return Vector2(0,0);
+			return Vector2(0, 0);
 		}
 	} // !gameplay
 } // !charlie

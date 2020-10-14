@@ -4,6 +4,8 @@
 #include <charlie_messages.hpp>
 #include <cstdio>
 
+#include "Singleton.hpp"
+
 template <typename T, std::size_t N>
 constexpr auto array_size(T(&)[N])
 {
@@ -11,11 +13,9 @@ constexpr auto array_size(T(&)[N])
 }
 
 ClientApp::ClientApp()
-	: mouse_(window_.mouse_)
-	  , keyboard_(window_.keyboard_)
-	  , tickrate_(1.0 / 60.0)
-	  , tick_(0)
-	  , server_tick_(0)
+	: tickrate_(1.0 / 60.0)
+	, tick_(0)
+	, server_tick_(0)
 {
 }
 
@@ -30,6 +30,10 @@ bool ClientApp::on_init()
 
 	connection_.connect(network::IPAddress::get_broadcast(54345));
 
+	Vector2 pos = Vector2(200, 300);
+	player_.init(renderer_.get_renderer(), pos, 0);
+	player_.load_sprite("../assets/tank_body.png", 0, 0, 50, 50);
+
 	return true;
 }
 
@@ -39,7 +43,9 @@ void ClientApp::on_exit()
 
 bool ClientApp::on_tick(const Time& dt)
 {
-	if (keyboard_.pressed(Keyboard::Key::Escape)) {
+	input_handler_.HandleEvents();
+	if (input_handler_.IsKeyDown(SDL_SCANCODE_ESCAPE))
+	{
 		return false;
 	}
 
@@ -50,36 +56,16 @@ bool ClientApp::on_tick(const Time& dt)
 
 		networkinfo_.update(dt, connection_);
 
-		Vector2 direction;
-		player_.input_bits_ = 0;
-		if (keyboard_.down(Keyboard::Key::W)) {
-			player_.input_bits_ |= (1 << int32(gameplay::Action::Up));
-			direction.y_ -= 1.0f;
-		}
-		if (keyboard_.down(Keyboard::Key::S)) {
-			player_.input_bits_ |= (1 << int32(gameplay::Action::Down));
-			direction.y_ += 1.0f;
-		}
-		if (keyboard_.down(Keyboard::Key::A)) {
-			player_.input_bits_ |= (1 << int32(gameplay::Action::Left));
-			direction.x_ -= 1.0f;
-		}
-		if (keyboard_.down(Keyboard::Key::D)) {
-			player_.input_bits_ |= (1 << int32(gameplay::Action::Right));
-			direction.x_ += 1.0f;
-		}
+		player_.update(dt);
 
-		if (direction.length() > 0.0f) {
-			direction.normalize();
-			player_.position_ += direction * player_.speed_ * tickrate_.as_seconds();
+		{
+			gameplay::InputSnapshot snapshot;
+			snapshot.input_bits_ = player_.input_bits_;
+			snapshot.tick_ = server_tick_;
+			snapshot.position_ = player_.position_;
+
+			inputinator_.add_snapshot(snapshot);
 		}
-
-		gameplay::InputSnapshot snapshot;
-		snapshot.input_bits_ = player_.input_bits_;
-		snapshot.tick_ = server_tick_;
-		snapshot.position_ = player_.position_;
-
-		inputinator_.add_snapshot(snapshot);
 
 		for (auto& entity : entities_)
 		{
@@ -92,16 +78,26 @@ bool ClientApp::on_tick(const Time& dt)
 
 void ClientApp::on_draw()
 {
-	renderer_.clear({ 0.2f, 0.3f, 0.4f, 1.0f });
-	renderer_.render_text({ 2, 2 }, Color::White, 1, "CLIENT");
+	// CLEARING SCREEN
 
-	networkinfo_.render(renderer_, connection_);
-	
-	for (auto& entity : entities_)
-	{
-		renderer_.render_rectangle_fill({ int32(entity.position_.x_), int32(entity.position_.y_), 20, 20 }, Color::Green);
-	}
-	renderer_.render_rectangle_fill({ int32(player_.position_.x_), int32(player_.position_.y_), 20, 20 }, Color::Magenta);
+
+	// UPDATING FSM
+	//stateMachine.Update();
+	player_.render();
+
+	// PRESENTING TO THE SCREEN
+
+
+	//renderer_.clear({ 0.2f, 0.3f, 0.4f, 1.0f });
+	//renderer_.render_text({ 2, 2 }, Color::White, 1, "CLIENT");
+
+	//networkinfo_.render(renderer_, connection_);
+
+	//for (auto& entity : entities_)
+	//{
+	//	renderer_.render_rectangle_fill({ int32(entity.position_.x_), int32(entity.position_.y_), 20, 20 }, Color::Green);
+	//}
+	//renderer_.render_rectangle_fill({ int32(player_.position_.x_), int32(player_.position_.y_), 20, 20 }, Color::Magenta);
 }
 
 void ClientApp::on_acknowledge(network::Connection* connection,
@@ -113,7 +109,7 @@ void ClientApp::on_receive(network::Connection* connection,
 	network::NetworkStreamReader& reader)
 {
 	networkinfo_.packet_received(reader.length());
-	
+
 	while (reader.position() < reader.length()) {
 		switch (reader.peek()) {
 		case network::NETWORK_MESSAGE_SERVER_TICK:
@@ -164,7 +160,7 @@ void ClientApp::on_receive(network::Connection* connection,
 			{
 				if (entity.id_ == id)
 				{
-					gameplay::PosSnapshot snapshot ;
+					gameplay::PosSnapshot snapshot;
 					snapshot.servertime_ = server_time_;
 					snapshot.position = message.position_;
 
@@ -198,9 +194,9 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			for (auto &entity : entities_)
+			for (auto& entity : entities_)
 			{
-				if(entity.id_ == message.id_)
+				if (entity.id_ == message.id_)
 				{
 					break;
 				}
@@ -210,7 +206,7 @@ void ClientApp::on_receive(network::Connection* connection,
 				printf("Player spawned %i \n", message.id_);
 			}
 
-			if(entities_.empty())
+			if (entities_.empty())
 			{
 				gameplay::Entity e(message.position_, message.id_);
 				entities_.push_back(e);

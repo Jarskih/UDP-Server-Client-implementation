@@ -3,7 +3,7 @@
 #ifndef SERVER_APP_HPP_INCLUDED
 #define SERVER_APP_HPP_INCLUDED
 
-#include <charlie_application.hpp>
+#include <sdl_application.hpp>
 
 using namespace charlie;
 
@@ -51,7 +51,7 @@ struct ClientList {
 	DynamicArray<Client> clients_;
 };
 
-struct ServerApp final : Application, network::IServiceListener, network::IConnectionListener {
+struct ServerApp final : SDLApplication, network::IServiceListener, network::IConnectionListener {
 	ServerApp();
 
 	// note: Application
@@ -74,9 +74,9 @@ struct ServerApp final : Application, network::IServiceListener, network::IConne
 	Time accumulator_;
 	uint32 tick_;
 	ClientList clients_;
-	DynamicArray<gameplay::Player> players_;
-	DynamicArray<gameplay::Player> playersToSpawn_;
-	
+	DynamicArray<Player> players_;
+	DynamicArray<Player> playersToSpawn_;
+
 	Vector2 send_position_;
 	Random random_;
 

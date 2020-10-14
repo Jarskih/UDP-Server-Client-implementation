@@ -4,6 +4,8 @@
 #define CHARLIE_GAMEPLAY_HPP_INCLUDED
 
 #include <charlie.hpp>
+#include <string>
+
 
 #include "charlie_messages.hpp"
 
@@ -336,18 +338,6 @@ namespace charlie {
 			Vector2 position_;
 			uint32 id_;
 			Interpolator interpolator_;
-		};
-
-		struct Player {
-			Player();
-
-			explicit Player(Vector2& pos, uint32 id);
-			void update(Time tickrate);
-			uint8 get_input_bits();
-			Vector2 position_;
-			uint8 input_bits_;
-			uint32 id_;
-			float speed_;
 		};
 	} // !gameplay
 } // !charlie
