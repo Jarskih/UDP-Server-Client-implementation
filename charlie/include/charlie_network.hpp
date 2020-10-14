@@ -30,6 +30,7 @@ namespace charlie {
 			bool operator!=(const IPAddress& rhs) const;
 
 			const char* as_string() const;
+			static IPAddress get_broadcast(uint16 port);
 
 			uint32 host_;
 			uint16 port_;
@@ -162,6 +163,7 @@ namespace charlie {
 			void set_listener(IConnectionListener* listener);
 			void receive(NetworkStreamReader& reader);
 			void send();
+			bool is_broadcast() const;
 
 			State state_;
 			IPAddress address_;

@@ -4,22 +4,18 @@
 #define CHARLIE_GAMEPLAY_HPP_INCLUDED
 
 #include <charlie.hpp>
+#include <string>
+
+
+#include "charlie_messages.hpp"
 
 namespace charlie {
 	namespace gameplay {
-		struct Entity {
-			Vector2 position_;
-		};
-
 		enum class Action {
 			Up,
 			Down,
 			Left,
 			Right,
-		};
-
-		struct Player {
-			Vector2 position_;
 		};
 
 		struct ComponentBase {
@@ -305,18 +301,43 @@ namespace charlie {
 			Vector2 position_;
 		};
 
+		struct PosSnapshot
+		{
+			PosSnapshot();
+			uint32 tick_;
+			Vector2 position;
+			Time servertime_;
+		};
+
 		struct Interpolator {
 			Interpolator();
 
-			Vector2 interpolate(Vector2 start, Vector2 end, Time rtt) const;
-			void add_snapshot(InputSnapshot snapshot);
-			Vector2 get_position(uint32 tick, const Time tickrate);
-
-			InputSnapshot inputSnapshots_[20]; // buffer for 200ms = 12 ticks
+			Vector2 interpolate() const;
+			void add_position(PosSnapshot snapshot);
+			DynamicArray<PosSnapshot> snapshots_;
 			Time interpolateTime_;
-			uint32 index_;
-			uint32 bufferSize_;
-			float acc_;
+			Time acc_;
+			uint32 buffersize_;
+		};
+
+		struct Inputinator
+		{
+			Inputinator();
+
+			void add_snapshot(InputSnapshot snapshot);
+			Vector2 get_position(uint32 tick, const Time tickrate, Vector2 serverpos, float speed);
+			Vector2 old_pos(uint32 uint32);
+
+			Queue<InputSnapshot> inputSnapshots_;
+		};
+
+		struct Entity {
+			Entity();
+
+			explicit Entity(Vector2 pos, uint32 id);
+			Vector2 position_;
+			uint32 id_;
+			Interpolator interpolator_;
 		};
 	} // !gameplay
 } // !charlie
