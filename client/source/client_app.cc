@@ -179,12 +179,13 @@ void ClientApp::on_receive(network::Connection* connection,
 			}
 
 			Vector2 recalculated = inputinator_.old_pos(server_tick_);
-			auto diff = message.position_ - recalculated;
+			auto diff = message.transform_.position_ - recalculated;
 			if (abs(diff.x_) > 5.0f || abs(diff.y_) > 5.0f)
 			{
-				player_.transform_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.position_, player_.speed_);
+				player_.transform_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.transform_.position_, player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
+			player_.transform_.rotation_ = message.transform_.rotation_;
 		} break;
 
 		case network::NETWORK_MESSAGE_PLAYER_SPAWN:

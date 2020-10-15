@@ -79,9 +79,9 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessagePlayerState::NetworkMessagePlayerState(const Vector2& position)
+		NetworkMessagePlayerState::NetworkMessagePlayerState(const Transform& transform)
 			: type_(NETWORK_MESSAGE_PLAYER_STATE)
-			, position_(position)
+			, transform_(transform)
 		{
 		}
 

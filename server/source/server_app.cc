@@ -20,7 +20,7 @@ bool ServerApp::on_init()
 	}
 
 	network_.add_service_listener(this);
-
+	
 	return true;
 }
 
@@ -43,31 +43,36 @@ bool ServerApp::on_tick(const Time& dt)
 
 		for (auto& player : players_)
 		{
-			// note: update player
+			float direction = 0;
+			float rotation = 0;
+			
 			const bool player_move_up = player.get_input_bits() & (1 << int32(gameplay::Action::Up));
 			const bool player_move_down = player.get_input_bits() & (1 << int32(gameplay::Action::Down));
 			const bool player_move_left = player.get_input_bits() & (1 << int32(gameplay::Action::Left));
 			const bool player_move_right = player.get_input_bits() & (1 << int32(gameplay::Action::Right));
 
-			Vector2 direction;
 			if (player_move_up) {
-				//direction.y_ -= 1.0f;
+				direction -= 1.0f;
 			}
 			if (player_move_down) {
-				//direction.y_ += 1.0f;
+				direction += 1.0f;
 			}
 			if (player_move_left) {
-				//direction.x_ -= 1.0f;
+				rotation -= 1.0f;
 			}
 			if (player_move_right) {
-				//direction.x_ += 1.0f;
+				rotation += 1.0f;
 			}
 
-			const float speed = 100.0;
-			if (direction.length() > 0.0f) {
-				direction.normalize();
-				player.transform_.position_ += direction * player.speed_ * tickrate_.as_seconds();
-			}
+		if(abs(rotation) > 0.0f)
+		{
+			const float rot = player.transform_.rotation_ + rotation * player.tank_turn_speed_ * dt.as_seconds();
+			player.transform_.set_rotation(rot);
+		}
+		
+		if (abs(direction) > 0.0f) {
+			player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+		}
 		}
 	}
 
@@ -78,6 +83,7 @@ void ServerApp::on_draw()
 {
 	//renderer_.clear({ 0.4f, 0.3f, 0.2f, 1.0f });
 	//renderer_.render_text({ 2, 2 }, Color::White, 2, "SERVER");
+	
 	char myString[10] = "";
 	sprintf_s(myString, "%ld", long(tick_));
 	//renderer_.render_text({ 150, 2 }, Color::White, 1, myString);
@@ -85,7 +91,7 @@ void ServerApp::on_draw()
 
 	for (auto& player : players_)
 	{
-		//renderer_.render_rectangle_fill({ static_cast<int32>(player.position_.x_), static_cast<int32>(player.position_.y_),  20, 20 }, Color::Magenta);
+		player.render();
 	}
 }
 
@@ -115,8 +121,12 @@ void ServerApp::on_connect(network::Connection* connection)
 	// event : "player_connected"
 	Player player;
 	player.id_ = id;
-	player.transform_.position_.x_ = 20.0f + random_() % 200;
-	player.transform_.position_.y_ = 200.0f + random_() % 100;
+
+	Vector2 pos = Vector2(20.0f + random_() % 200, 200.0f + random_() % 100);
+	player.init(renderer_.get_renderer(), pos, 0);
+	player.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 0);
+	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 0);
+	
 	players_.push_back(player);
 	playersToSpawn_.push_back(player);
 
@@ -218,7 +228,7 @@ void ServerApp::on_send(network::Connection* connection,
 		{
 			if (player.id_ == id)
 			{
-				network::NetworkMessagePlayerState message(player.transform_.position_);
+				network::NetworkMessagePlayerState message(player.transform_);
 				if (!message.write(writer)) {
 					assert(!"failed to write message!");
 				}

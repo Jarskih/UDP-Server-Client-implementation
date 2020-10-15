@@ -91,7 +91,7 @@ namespace charlie {
 
 		struct NetworkMessagePlayerState {
 			NetworkMessagePlayerState();
-			explicit NetworkMessagePlayerState(const Vector2& position);
+			explicit NetworkMessagePlayerState(const Transform& transform);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -101,13 +101,14 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
-				result &= stream.serialize(position_.x_);
-				result &= stream.serialize(position_.y_);
+				result &= stream.serialize(transform_.position_.x_);
+				result &= stream.serialize(transform_.position_.y_);
+				result &= stream.serialize(transform_.rotation_);
 				return result;
 			}
 
 			uint8 type_;
-			Vector2 position_;
+			Transform transform_;
 		};
 
 		struct NetworkMessagePlayerSpawn
