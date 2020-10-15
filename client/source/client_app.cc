@@ -43,6 +43,9 @@ bool ClientApp::on_init()
 	level_manager_ = LevelManager();
 	level_manager_.load_assets(data);
 
+	LEVEL_WIDTH = level_manager_.width_;
+	LEVEL_HEIGHT = level_manager_.height_;
+
 	return true;
 }
 
@@ -65,7 +68,7 @@ bool ClientApp::on_tick(const Time& dt)
 
 		networkinfo_.update(dt, connection_);
 
-		player_.update(dt);
+		player_.update(dt, LEVEL_HEIGHT, LEVEL_WIDTH);
 
 		{
 			gameplay::InputSnapshot snapshot;
@@ -83,7 +86,27 @@ bool ClientApp::on_tick(const Time& dt)
 			entity.transform_.rotation_ = entity.interpolator_.interpolate_rot();
 		}
 
-		camera_.look_at(player_.transform_.position_);
+			    //Center the camera over the dot
+                cam_.x = (int)player_.transform_.position_.x_ + player_.body_sprite_->get_area().w / 2 - SCREEN_WIDTH / 2;
+                cam_.y = (int)player_.transform_.position_.y_ + player_.body_sprite_->get_area().h / 2 - SCREEN_HEIGHT / 2;
+
+                //Keep the camera in bounds
+                if( cam_.x < 0 )
+                { 
+                    cam_.x = 0;
+                }
+                if( cam_.y < 0 )
+                {
+                    cam_.y = 0;
+                }
+                if( cam_.x > LEVEL_WIDTH - cam_.w )
+                {
+                    cam_.x = LEVEL_WIDTH - cam_.w;
+                }
+                if( cam_.y > LEVEL_HEIGHT - cam_.h )
+                {
+                    cam_.y = LEVEL_HEIGHT - cam_.h;
+                }
 	}
 	return true;
 }
@@ -95,15 +118,12 @@ void ClientApp::on_draw()
 
 	// UPDATING FSM
 	//stateMachine.Update();
-	level_manager_.render(camera_, renderer_.get_renderer());
-	Vector2 screenPos;
-	camera_.worldToScreen(player_.transform_.position_, screenPos);
-	player_.render(camera_, camera_.lookAt_);
+	level_manager_.render(cam_, renderer_.get_renderer());
+	player_.render(cam_);
 
 	for (auto& entity : entities_)
 	{
-		camera_.worldToScreen(entity.transform_.position_, screenPos);
-		entity.render();
+		entity.render(cam_);
 	}
 
 	// PRESENTING TO THE SCREEN

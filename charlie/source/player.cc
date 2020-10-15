@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "charlie_gameplay.hpp"
 #include "input_handler.h"
+#include "sdl_application.hpp"
 #include "Singleton.hpp"
 #include "sprite_handler.hpp"
 
@@ -30,7 +31,7 @@ namespace charlie
 		id_ = id;
 	}
 
-	void Player::update(Time deltaTime)
+	void Player::update(Time deltaTime, int LEVEL_HEIGHT, int LEVEL_WIDTH)
 	{
 		float direction = 0;
 		float rotation = 0;
@@ -63,22 +64,22 @@ namespace charlie
 			transform_.position_ += transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
 
-		if ((transform_.position_.x_ < 0) || (transform_.position_.x_ + (float)body_sprite_->get_area().w > 1280.0f))
+		if ((transform_.position_.x_ < 0) || (transform_.position_.x_ + (float)body_sprite_->get_area().w > LEVEL_WIDTH))
 		{
-			transform_.position_.x_ -= speed_ * deltaTime.as_seconds();
+			transform_.position_ -= transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
 
-		if ((transform_.position_.y_ < 0) || (transform_.position_.y_ + (float)body_sprite_->get_area().h > 720.0f))
+		if ((transform_.position_.y_ < 0) || (transform_.position_.y_ + (float)body_sprite_->get_area().h > LEVEL_HEIGHT))
 		{
-			transform_.position_.y_ -= speed_ * deltaTime.as_seconds();
+			transform_.position_ -= transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
 
 	}
 
-	void Player::render(Camera camera, SDL_Rect cameraPos)
+	void Player::render(SDL_Rect cam)
 	{
-		body_window_rect_.x = int(transform_.position_.x_) - cameraPos.x;
-		body_window_rect_.y = int(transform_.position_.y_) - cameraPos.y;
+		body_window_rect_.x = int(transform_.position_.x_) - cam.x;
+		body_window_rect_.y = int(transform_.position_.y_) - cam.y;
 		turret_window_rect_.x = body_window_rect_.x;
 		turret_window_rect_.y = body_window_rect_.y;
 

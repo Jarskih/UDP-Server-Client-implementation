@@ -17,12 +17,12 @@ namespace charlie
 			printf("Unable to load map file!\n");
 		}
 
-		sizeX_ = 3;
-		sizeY_ = 3;
-		tiles_.resize(sizeY_ * sizeX_);
+		sizeX_ = 18;
+		sizeY_ = 22;
+		tiles_.resize(size_t(sizeY_ * sizeX_));
 
-		for (int y = 0; y < sizeX_; y++) {
-			for (int x = 0; x < sizeY_; x++) {
+		for (int y = 0; y < sizeY_; y++) {
+			for (int x = 0; x < sizeX_; x++) {
 
 				//Determines what kind of block will be made
 				int id = -1;
@@ -37,10 +37,13 @@ namespace charlie
 					printf("Error loading map: Unexpected end of file!\n");
 					break;
 				}
-				else
+				if(id < 0)
 				{
-					tiles_[y * sizeX_ + x] = id;
+					printf("Wrong id for x: %i y: %i", x, y);
+					return;
 				}
+				tiles_[y * sizeX_ + x] = id;
+				
 			}
 		}
 	}

@@ -20,11 +20,11 @@ namespace charlie
 		~LevelManager();
 		SDLSprite* load_asset_with_id(int type, int x, int y);
 		bool load_assets(Leveldata& data);
-		void render(Camera camera, SDL_Renderer* renderer);
+		void render(SDL_Rect camera, SDL_Renderer* renderer);
 
 		int height_;
 		int width_;
 		DynamicArray<LevelObject> levelObjects_;
-		SDLSprite* bg_;
+		int PIXEL_PER_UNIT = 50;
 	};
 }

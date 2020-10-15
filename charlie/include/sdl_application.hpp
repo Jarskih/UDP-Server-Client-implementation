@@ -23,8 +23,9 @@
 
 namespace charlie {
 	struct SDLApplication {
-		SDLApplication() = default;
-
+		SDLApplication();
+		virtual ~SDLApplication() = default;
+		
 		bool init();
 		void run();
 		void exit();
@@ -37,9 +38,14 @@ namespace charlie {
 		SDLWindow window_;
 		SDLRenderer renderer_;
 		Camera camera_;
+		SDL_Rect cam_;
 		charlie::network::Service network_;
 		InputHandler input_handler_;
 		SpriteHandler sprite_handler_;
+		int SCREEN_WIDTH = 640;
+		int SCREEN_HEIGHT = 480;
+		int LEVEL_WIDTH;
+		int LEVEL_HEIGHT;
 	};
 } // !charlies
 

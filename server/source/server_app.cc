@@ -21,6 +21,14 @@ bool ServerApp::on_init()
 
 	network_.add_service_listener(this);
 
+	auto data = Leveldata();
+	data.create_level("../assets/map.txt");
+	level_manager_ = LevelManager();
+	level_manager_.load_assets(data);
+
+	LEVEL_WIDTH = level_manager_.width_;
+	LEVEL_HEIGHT = level_manager_.height_;
+
 	return true;
 }
 
@@ -73,6 +81,40 @@ bool ServerApp::on_tick(const Time& dt)
 			if (abs(direction) > 0.0f) {
 				player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 			}
+
+
+			if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w > LEVEL_WIDTH))
+			{
+				player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+			}
+
+			if ((player.transform_.position_.y_ < 0) || (player.transform_.position_.y_ + (float)player.body_sprite_->get_area().h > LEVEL_HEIGHT))
+			{
+				player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+			}
+			
+
+				//Center the camera over the dot
+                cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - SCREEN_WIDTH / 2;
+                cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - SCREEN_HEIGHT / 2;
+
+                //Keep the camera in bounds
+                if( cam_.x < 0 )
+                { 
+                    cam_.x = 0;
+                }
+                if( cam_.y < 0 )
+                {
+                    cam_.y = 0;
+                }
+                if( cam_.x > LEVEL_WIDTH - cam_.w )
+                {
+                    cam_.x = LEVEL_WIDTH - cam_.w;
+                }
+                if( cam_.y > LEVEL_HEIGHT - cam_.h )
+                {
+                    cam_.y = LEVEL_HEIGHT - cam_.h;
+                }
 		}
 	}
 
@@ -88,12 +130,9 @@ void ServerApp::on_draw()
 	sprintf_s(myString, "%ld", long(tick_));
 	//renderer_.render_text({ 150, 2 }, Color::White, 1, myString);
 
-	Vector2 screenPos;
 	for (auto& player : players_)
 	{
-		camera_.worldToScreen(player.transform_.position_, screenPos);
-		player.render(camera_, camera_.lookAt_);
-		camera_.look_at(player.transform_.position_);
+		player.render(cam_);
 	}
 }
 

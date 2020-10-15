@@ -5,6 +5,8 @@
 
 #include <sdl_application.hpp>
 
+#include "level_manager.h"
+
 using namespace charlie;
 
 struct ClientList {
@@ -76,6 +78,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	ClientList clients_;
 	DynamicArray<Player> players_;
 	DynamicArray<Player> playersToSpawn_;
+	LevelManager level_manager_;
 
 	Vector2 send_position_;
 	Random random_;

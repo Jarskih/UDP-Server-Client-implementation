@@ -36,10 +36,10 @@ namespace charlie
 		turret_window_rect_ = { 0, 0, turret_sprite_->get_area().w, turret_sprite_->get_area().h };
 	}
 
-	void Entity::render()
+	void Entity::render(SDL_Rect cam)
 	{
-		body_window_rect_.x = int(transform_.position_.x_ + transform_.origin_.x_);
-		body_window_rect_.y = int(transform_.position_.y_ + transform_.origin_.y_);
+		body_window_rect_.x = int(transform_.position_.x_) - cam.x;
+		body_window_rect_.y = int(transform_.position_.y_) - cam.y;
 		turret_window_rect_.x = body_window_rect_.x;
 		turret_window_rect_.y = body_window_rect_.y;
 
