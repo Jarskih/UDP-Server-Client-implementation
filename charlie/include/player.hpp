@@ -4,6 +4,7 @@
 
 namespace charlie
 {
+	struct Camera;
 	struct Vector2;
 
 	struct Player {
@@ -11,7 +12,7 @@ namespace charlie
 		void init(SDL_Renderer* renderer, Vector2& pos, uint32 id);
 
 		void update(Time deltaTime);
-		void render();
+		void render(Camera camera, SDL_Rect cameraPos);
 		void load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
 		void load_turret_sprite(const char* turret, int srcX, int srcY, int srcW, int srcH);
 		uint8 get_input_bits() const;

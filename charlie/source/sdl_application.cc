@@ -40,6 +40,8 @@ namespace charlie {
 		Singleton<SpriteHandler>::Set(&sprite_handler_);
 		Singleton<InputHandler>::Set(&input_handler_);
 
+		camera_.init(640, 480, 320.0f, 0);
+
 		return on_init();
 	}
 
@@ -53,12 +55,12 @@ namespace charlie {
 			}
 			network_.update();
 
-			const auto dt = charlie::Time::deltatime();
+			const auto dt = Time::deltatime();
 			if (!on_tick(dt)) {
 				running = false;
 			}
 
-			renderer_.clear(charlie::Color::Black);
+			renderer_.clear(Color::Black);
 			on_draw();
 			renderer_.present();
 		}

@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Camera.h"
 #include "leveldata.h"
 #include "sprite_handler.hpp"
 
@@ -6,17 +7,24 @@ namespace charlie
 {
 	struct Leveldata;
 
+	struct LevelObject
+	{
+		LevelObject();
+		Vector2 pos_;
+		SDLSprite* sprite_;
+	};
+
 	struct LevelManager
 	{
 		LevelManager();
-		LevelManager(Leveldata& data);
-		void load_asset_with_id(int type, int x, int y);
-		bool load_assets();
-		void render(SDL_Renderer* renderer);
+		~LevelManager();
+		SDLSprite* load_asset_with_id(int type, int x, int y);
+		bool load_assets(Leveldata& data);
+		void render(Camera camera, SDL_Renderer* renderer);
 
-		Leveldata data_;
 		int height_;
 		int width_;
-		SDLSprite* sprite_;
+		DynamicArray<LevelObject> levelObjects_;
+		SDLSprite* bg_;
 	};
 }

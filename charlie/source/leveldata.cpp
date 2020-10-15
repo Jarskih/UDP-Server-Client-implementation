@@ -23,9 +23,6 @@ namespace charlie
 
 		for (int y = 0; y < sizeX_; y++) {
 			for (int x = 0; x < sizeY_; x++) {
-				int posX = x * 20;
-				int posY = y * 20;
-				bool hasCollider = true;
 
 				//Determines what kind of block will be made
 				int id = -1;

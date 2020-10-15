@@ -40,7 +40,8 @@ bool ClientApp::on_init()
 
 	auto data = Leveldata();
 	data.create_level("../assets/map.txt");
-	level_manager_ = LevelManager(data);
+	level_manager_ = LevelManager();
+	level_manager_.load_assets(data);
 
 	return true;
 }
@@ -81,6 +82,8 @@ bool ClientApp::on_tick(const Time& dt)
 			entity.transform_.position_ = entity.interpolator_.interpolate_pos();
 			entity.transform_.rotation_ = entity.interpolator_.interpolate_rot();
 		}
+
+		camera_.look_at(player_.transform_.position_);
 	}
 	return true;
 }
@@ -92,11 +95,14 @@ void ClientApp::on_draw()
 
 	// UPDATING FSM
 	//stateMachine.Update();
-	level_manager_.render(renderer_.get_renderer());
-	player_.render();
+	level_manager_.render(camera_, renderer_.get_renderer());
+	Vector2 screenPos;
+	camera_.worldToScreen(player_.transform_.position_, screenPos);
+	player_.render(camera_, camera_.lookAt_);
 
 	for (auto& entity : entities_)
 	{
+		camera_.worldToScreen(entity.transform_.position_, screenPos);
 		entity.render();
 	}
 

@@ -11,7 +11,7 @@ namespace charlie
 		height_ = settings.height_;
 		width_ = settings.width_;
 		window_ = SDL_CreateWindow(settings.title_, SDL_WINDOWPOS_UNDEFINED,
-			SDL_WINDOWPOS_UNDEFINED, width_, height_, SDL_WINDOW_SHOWN);
+			SDL_WINDOWPOS_UNDEFINED, width_, height_, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 		if (window_ == nullptr) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not create SDL_Window: %s", SDL_GetError());
 			return false;

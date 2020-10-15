@@ -1,5 +1,7 @@
 #include "player.hpp"
 
+
+#include "Camera.h"
 #include "charlie_gameplay.hpp"
 #include "input_handler.h"
 #include "Singleton.hpp"
@@ -60,12 +62,23 @@ namespace charlie
 		if (abs(direction) > 0.0f) {
 			transform_.position_ += transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
+
+		if ((transform_.position_.x_ < 0) || (transform_.position_.x_ + (float)body_sprite_->get_area().w > 1280.0f))
+		{
+			transform_.position_.x_ -= speed_ * deltaTime.as_seconds();
+		}
+
+		if ((transform_.position_.y_ < 0) || (transform_.position_.y_ + (float)body_sprite_->get_area().h > 720.0f))
+		{
+			transform_.position_.y_ -= speed_ * deltaTime.as_seconds();
+		}
+
 	}
 
-	void Player::render()
+	void Player::render(Camera camera, SDL_Rect cameraPos)
 	{
-		body_window_rect_.x = int(transform_.position_.x_ + transform_.origin_.x_);
-		body_window_rect_.y = int(transform_.position_.y_ + transform_.origin_.y_);
+		body_window_rect_.x = int(transform_.position_.x_) - cameraPos.x;
+		body_window_rect_.y = int(transform_.position_.y_) - cameraPos.y;
 		turret_window_rect_.x = body_window_rect_.x;
 		turret_window_rect_.y = body_window_rect_.y;
 

@@ -88,10 +88,12 @@ void ServerApp::on_draw()
 	sprintf_s(myString, "%ld", long(tick_));
 	//renderer_.render_text({ 150, 2 }, Color::White, 1, myString);
 
-
+	Vector2 screenPos;
 	for (auto& player : players_)
 	{
-		player.render();
+		camera_.worldToScreen(player.transform_.position_, screenPos);
+		player.render(camera_, camera_.lookAt_);
+		camera_.look_at(player.transform_.position_);
 	}
 }
 

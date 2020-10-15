@@ -16,6 +16,8 @@
 #include <SDL_mixer.h>
 #include <SDL.h>
 
+
+#include "Camera.h"
 #include "input_handler.h"
 #include "sprite_handler.hpp"
 
@@ -34,6 +36,7 @@ namespace charlie {
 
 		SDLWindow window_;
 		SDLRenderer renderer_;
+		Camera camera_;
 		charlie::network::Service network_;
 		InputHandler input_handler_;
 		SpriteHandler sprite_handler_;
