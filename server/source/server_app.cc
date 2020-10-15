@@ -123,9 +123,9 @@ void ServerApp::on_connect(network::Connection* connection)
 	player.id_ = id;
 
 	Vector2 pos = Vector2(20.0f + random_() % 200, 200.0f + random_() % 100);
-	player.init(renderer_.get_renderer(), pos, 0);
-	player.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 0);
-	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 0);
+	player.init(renderer_.get_renderer(), pos, index_);
+	player.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
+	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
 
 	players_.push_back(player);
 	playersToSpawn_.push_back(player);
@@ -207,18 +207,15 @@ void ServerApp::on_send(network::Connection* connection,
 
 	{
 		// for each item in the queue send a packet
-		for (auto& players : players_)
+		for (auto& player : playersToSpawn_)
 		{
-			for (auto& player : playersToSpawn_)
+			if (player.id_ != id)
 			{
-				if (player.id_ != id)
-				{
-					network::NetworkMessagePlayerSpawn message(player.transform_.position_, player.id_);
-					if (!message.write(writer)) {
-						assert(!"failed to write message!");
-					}
-					// add player id and sequence to queue
+				network::NetworkMessagePlayerSpawn message(player.transform_.position_, player.id_);
+				if (!message.write(writer)) {
+					assert(!"failed to write message!");
 				}
+				// add player id and sequence to queue
 			}
 		}
 	}

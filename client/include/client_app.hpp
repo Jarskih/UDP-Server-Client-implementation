@@ -6,6 +6,8 @@
 #include <sdl_application.hpp>
 
 
+
+#include "entity.h"
 #include "level_manager.h"
 #include "player.hpp"
 #include "sprite_handler.hpp"
@@ -33,7 +35,7 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	Time lastReceive_;
 
 	Player player_;
-	DynamicArray <gameplay::Entity> entities_;
+	DynamicArray <Entity> entities_;
 	LevelManager level_manager_;
 
 	gameplay::Inputinator inputinator_;

@@ -14,8 +14,8 @@ namespace charlie
 	}
 
 
-	SDLSprite* SpriteHandler::create_sprite(const char* p_filePath, int p_x, int p_y, int p_w = 0, int p_h = 0)
-	{	
+	SDLSprite* SpriteHandler::create_sprite(const char* p_filePath, int p_x, int p_y, int p_w, int p_h)
+	{
 		const auto it = textures_.find(p_filePath);
 		if (it == textures_.end())
 		{
@@ -27,14 +27,6 @@ namespace charlie
 			}
 			SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_, surface);
 
-			if(p_w == 0)
-			{
-				p_w = p_h * surface->h/surface->w;
-			} else if(p_h == 0)
-			{
-				p_h = p_w * surface->h/surface->w;
-			}
-			
 			textures_[p_filePath] = texture;
 			SDLSprite* const sprite = new SDLSprite(*texture, p_x, p_y, p_w, p_h);
 			sprites_.push_back(sprite);

@@ -98,6 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="include\leveldata.cpp" />
     <ClCompile Include="source\level_manager.cpp" />
     <ClCompile Include="source\sdl_collider.cpp" />
@@ -131,6 +132,7 @@
     <ClInclude Include="include\charlie_messages.hpp" />
     <ClInclude Include="include\charlie_network.hpp" />
     <ClInclude Include="include\charlie_networkinfo.hpp" />
+    <ClInclude Include="include\entity.h" />
     <ClInclude Include="include\leveldata.h" />
     <ClInclude Include="include\level_manager.h" />
     <ClInclude Include="include\sdl_collider.h" />

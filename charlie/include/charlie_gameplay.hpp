@@ -307,12 +307,14 @@ namespace charlie {
 			uint32 tick_;
 			Vector2 position;
 			Time servertime_;
+			float rotation;
 		};
 
 		struct Interpolator {
 			Interpolator();
 
-			Vector2 interpolate() const;
+			Vector2 interpolate_pos() const;
+			float interpolate_rot() const;
 			void add_position(PosSnapshot snapshot);
 			DynamicArray<PosSnapshot> snapshots_;
 			Time interpolateTime_;
@@ -329,15 +331,6 @@ namespace charlie {
 			Vector2 old_pos(uint32 uint32);
 
 			Queue<InputSnapshot> inputSnapshots_;
-		};
-
-		struct Entity {
-			Entity();
-
-			explicit Entity(Vector2 pos, uint32 id);
-			Vector2 position_;
-			uint32 id_;
-			Interpolator interpolator_;
 		};
 	} // !gameplay
 } // !charlie

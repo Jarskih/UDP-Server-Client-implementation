@@ -4,14 +4,6 @@
 
 namespace charlie {
 	namespace gameplay {
-		Entity::Entity() : id_(0)
-		{
-		}
-
-		Entity::Entity(const Vector2 pos, const uint32 id) : position_(pos), id_(0)
-		{
-		}
-
 		// static 
 		uint32 ComponentBase::next()
 		{
@@ -130,7 +122,7 @@ namespace charlie {
 		{
 		}
 
-		Vector2 Interpolator::interpolate() const
+		Vector2 Interpolator::interpolate_pos() const
 		{
 			if (snapshots_.size() < 2)
 			{
@@ -142,6 +134,19 @@ namespace charlie {
 
 			const Vector2 newPos = Vector2::lerp(start.position, end.position, t);
 			return newPos;
+		}
+
+		float Interpolator::interpolate_rot() const
+		{
+			if (snapshots_.size() < 2)
+			{
+				return 0;
+			}
+			const auto start = snapshots_[snapshots_.size() - 2];
+			const auto end = snapshots_[snapshots_.size() - 1];
+			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
+
+			return Vector2::lerp(start.rotation, end.rotation, t);;
 		}
 
 		void Interpolator::add_position(PosSnapshot snapshot)

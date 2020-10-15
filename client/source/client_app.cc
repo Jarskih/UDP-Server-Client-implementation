@@ -4,6 +4,8 @@
 #include <charlie_messages.hpp>
 #include <cstdio>
 
+
+#include "entity.h"
 #include "level_manager.h"
 
 template <typename T, std::size_t N>
@@ -33,8 +35,8 @@ bool ClientApp::on_init()
 
 	Vector2 pos = Vector2(200, 300);
 	player_.init(renderer_.get_renderer(), pos, 0);
-	player_.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 0);
-	player_.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 0);
+	player_.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
+	player_.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
 
 	auto data = Leveldata();
 	data.create_level("../assets/map.txt");
@@ -76,7 +78,8 @@ bool ClientApp::on_tick(const Time& dt)
 		for (auto& entity : entities_)
 		{
 			entity.interpolator_.acc_ += dt;
-			entity.position_ = entity.interpolator_.interpolate();
+			entity.transform_.position_ = entity.interpolator_.interpolate_pos();
+			entity.transform_.rotation_ = entity.interpolator_.interpolate_rot();
 		}
 	}
 	return true;
@@ -91,6 +94,11 @@ void ClientApp::on_draw()
 	//stateMachine.Update();
 	level_manager_.render(renderer_.get_renderer());
 	player_.render();
+
+	for (auto& entity : entities_)
+	{
+		entity.render();
+	}
 
 	// PRESENTING TO THE SCREEN
 
@@ -170,6 +178,7 @@ void ClientApp::on_receive(network::Connection* connection,
 					gameplay::PosSnapshot snapshot;
 					snapshot.servertime_ = server_time_;
 					snapshot.position = message.position_;
+					snapshot.rotation = message.rotation_;
 
 					entity.interpolator_.add_position(snapshot);
 					break;
@@ -191,15 +200,28 @@ void ClientApp::on_receive(network::Connection* connection,
 				player_.transform_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.position_, player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
-			player_.transform_.rotation_ = message.rotation_;
+			if (abs(player_.transform_.rotation_ - message.rotation_) > 5)
+			{
+				player_.transform_.set_rotation(message.rotation_);
+			}
 		} break;
 
 		case network::NETWORK_MESSAGE_PLAYER_SPAWN:
 		{
-			printf("Spawn message received");
 			network::NetworkMessagePlayerSpawn message;
 			if (!message.read(reader)) {
 				assert(!"could not read message!");
+			}
+
+			if (entities_.empty())
+			{
+				Entity e = Entity();
+				e.init(renderer_.get_renderer(), message.position_, message.id_);
+				e.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
+				e.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
+				entities_.push_back(e);
+				printf("Player spawned %i \n", message.id_);
+				break;
 			}
 
 			for (auto& entity : entities_)
@@ -209,18 +231,14 @@ void ClientApp::on_receive(network::Connection* connection,
 					break;
 				}
 
-				gameplay::Entity e(message.position_, message.id_);
+				Entity e = Entity();
+				e.init(renderer_.get_renderer(), message.position_, message.id_);
+				e.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
+				e.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
 				entities_.push_back(e);
-				printf("Player spawned %i \n", message.id_);
+				printf("Player spawned with id: %i \n", message.id_);
 			}
-
-			if (entities_.empty())
-			{
-				gameplay::Entity e(message.position_, message.id_);
-				entities_.push_back(e);
-				printf("Player spawned %i \n", message.id_);
-			}
-		}
+		} break;
 		default:
 		{
 			assert(!"unknown message type received from server!");

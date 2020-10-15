@@ -126,6 +126,7 @@ namespace charlie {
 
 		static float distance(const Vector2& lhs, const Vector2& rhs);
 		static Vector2 lerp(const Vector2& start, const Vector2& end, const float t);
+		static float lerp(float start, float end, float t);
 		static Vector2 min(const Vector2& lhs, const Vector2& rhs);
 		static Vector2 max(const Vector2& lhs, const Vector2& rhs);
 		static Vector2 unit(const Vector2& rhs);
