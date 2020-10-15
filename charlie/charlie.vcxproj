@@ -49,7 +49,7 @@
     <OutDir>..\build\</OutDir>
     <IntDir>..\build\_intermediate\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName).$(Configuration.toLower())</TargetName>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -63,7 +63,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>include\;..\charlie\include\;..\vendor\SDL2_image-2.0.4\include;..\vendor\SDL2-2.0.12\include;..\vendor\SDL2_ttf-2.0.15\include;..\vendor\SDL2_mixer-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include\;..\charlie\include\;..\vendor\SDL2_image-2.0.4\include;..\vendor\SDL2-2.0.12\include;..\vendor\SDL2_ttf-2.0.15\include;..\vendor\SDL2_mixer-2.0.4\include;..\vendor\tileson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4100;4189;4505;</DisableSpecificWarnings>
@@ -83,7 +83,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include\;..\charlie\include\;..\vendor\SDL2_image-2.0.4\include;..\vendor\SDL2-2.0.12\include;..\vendor\SDL2_ttf-2.0.15\include;..\vendor\SDL2_mixer-2.0.4\include;..\vendor\tileson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DisableSpecificWarnings>4100;4189;4505;</DisableSpecificWarnings>
@@ -98,9 +98,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="include\input_handler.cpp" />
-    <ClCompile Include="include\SDLKeyboard.cpp" />
-    <ClCompile Include="include\SDLMouse.cpp" />
+    <ClCompile Include="include\leveldata.cpp" />
+    <ClCompile Include="source\level_manager.cpp" />
+    <ClCompile Include="source\sdl_collider.cpp" />
+    <ClCompile Include="source\collision_handler.cpp" />
+    <ClCompile Include="source\timer.cpp" />
+    <ClCompile Include="source\sdl_text_handler.cpp" />
+    <ClCompile Include="source\sdl_music.cpp" />
+    <ClCompile Include="source\sdl_font.cpp" />
+    <ClCompile Include="source\input_handler.cpp" />
+    <ClCompile Include="source\sdl_keyboard.cc" />
+    <ClCompile Include="source\sdl_mouse.cc" />
     <ClCompile Include="source\charlie_networkinfo.cc" />
     <ClCompile Include="source\charlie_application.cc" />
     <ClCompile Include="source\charlie_gameplay.cc" />
@@ -123,13 +131,21 @@
     <ClInclude Include="include\charlie_messages.hpp" />
     <ClInclude Include="include\charlie_network.hpp" />
     <ClInclude Include="include\charlie_networkinfo.hpp" />
+    <ClInclude Include="include\leveldata.h" />
+    <ClInclude Include="include\level_manager.h" />
+    <ClInclude Include="include\sdl_collider.h" />
+    <ClInclude Include="include\collision_handler.h" />
     <ClInclude Include="include\input_handler.h" />
     <ClInclude Include="include\player.hpp" />
-    <ClInclude Include="include\SDLKeyboard.h" />
-    <ClInclude Include="include\SDLMouse.h" />
+    <ClInclude Include="include\sdl_font.h" />
+    <ClInclude Include="include\sdl_keyboard.hpp" />
+    <ClInclude Include="include\sdl_mouse.hpp" />
     <ClInclude Include="include\sdl_application.hpp" />
+    <ClInclude Include="include\sdl_music.h" />
     <ClInclude Include="include\sdl_renderer.hpp" />
     <ClInclude Include="include\sdl_sprite.hpp" />
+    <ClInclude Include="include\sdl_text_handler.h" />
+    <ClInclude Include="include\timer.h" />
     <ClInclude Include="include\sdl_window.hpp" />
     <ClInclude Include="include\Singleton.hpp" />
     <ClInclude Include="include\sprite_handler.hpp" />

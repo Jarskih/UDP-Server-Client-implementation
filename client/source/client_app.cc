@@ -4,7 +4,7 @@
 #include <charlie_messages.hpp>
 #include <cstdio>
 
-#include "Singleton.hpp"
+#include "level_manager.h"
 
 template <typename T, std::size_t N>
 constexpr auto array_size(T(&)[N])
@@ -14,6 +14,7 @@ constexpr auto array_size(T(&)[N])
 
 ClientApp::ClientApp()
 	: tickrate_(1.0 / 60.0)
+	, level_manager_()
 	, tick_(0)
 	, server_tick_(0)
 {
@@ -34,7 +35,11 @@ bool ClientApp::on_init()
 	player_.init(renderer_.get_renderer(), pos, 0);
 	player_.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 0);
 	player_.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 0);
-	
+
+	auto data = Leveldata();
+	data.create_level("../assets/map.txt");
+	level_manager_ = LevelManager(data);
+
 	return true;
 }
 
@@ -84,6 +89,7 @@ void ClientApp::on_draw()
 
 	// UPDATING FSM
 	//stateMachine.Update();
+	level_manager_.render(renderer_.get_renderer());
 	player_.render();
 
 	// PRESENTING TO THE SCREEN
@@ -179,13 +185,13 @@ void ClientApp::on_receive(network::Connection* connection,
 			}
 
 			Vector2 recalculated = inputinator_.old_pos(server_tick_);
-			auto diff = message.transform_.position_ - recalculated;
+			auto diff = message.position_ - recalculated;
 			if (abs(diff.x_) > 5.0f || abs(diff.y_) > 5.0f)
 			{
-				player_.transform_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.transform_.position_, player_.speed_);
+				player_.transform_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.position_, player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
-			player_.transform_.rotation_ = message.transform_.rotation_;
+			player_.transform_.rotation_ = message.rotation_;
 		} break;
 
 		case network::NETWORK_MESSAGE_PLAYER_SPAWN:

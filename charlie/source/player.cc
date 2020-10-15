@@ -1,10 +1,7 @@
 #include "player.hpp"
 
-
-
 #include "charlie_gameplay.hpp"
 #include "input_handler.h"
-#include "SDLKeyboard.h"
 #include "Singleton.hpp"
 #include "sprite_handler.hpp"
 
@@ -12,15 +9,15 @@ namespace charlie
 {
 	Player::Player()
 		: renderer_(nullptr)
-		  , body_sprite_(nullptr)
-		  , body_window_rect_()
-		  , turret_sprite_(nullptr)
-		  , turret_window_rect_()
-		  , input_bits_(0)
-		  , id_(0)
-		  , speed_(100.0f)
-		  , tank_turn_speed_(50.0f)
-	      , turret_turn_speed_(1)
+		, body_sprite_(nullptr)
+		, body_window_rect_()
+		, turret_sprite_(nullptr)
+		, turret_window_rect_()
+		, input_bits_(0)
+		, id_(0)
+		, speed_(100.0f)
+		, tank_turn_speed_(50.0f)
+		, turret_turn_speed_(1)
 	{
 	}
 
@@ -54,12 +51,12 @@ namespace charlie
 			rotation += 1.0f;
 		}
 
-		if(abs(rotation) > 0.0f)
+		if (abs(rotation) > 0.0f)
 		{
 			const float rot = transform_.rotation_ + rotation * tank_turn_speed_ * deltaTime.as_seconds();
 			transform_.set_rotation(rot);
 		}
-		
+
 		if (abs(direction) > 0.0f) {
 			transform_.position_ += transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
@@ -77,7 +74,7 @@ namespace charlie
 		// angle_deg = (atan2(delta_y, delta_x)*180.0000)/3.1416
 		// delta_y = origin_y - mouse_y
 		// delta_x = origin_x - mouse_x
-		
+
 		SDL_Point* point = new SDL_Point();
 		point->x = (int)transform_.origin_.x_;
 		point->y = (int)transform_.origin_.y_;
@@ -85,7 +82,7 @@ namespace charlie
 
 		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, transform_.rotation_, point, (SDL_RendererFlip)flip);
 		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, transform_.rotation_, point, (SDL_RendererFlip)flip);
-		SDL_SetRenderDrawColor(renderer_, 255  ,0,  0, 255);
+		SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
 		SDL_RenderDrawRect(renderer_, &body_window_rect_);
 		SDL_RenderDrawRect(renderer_, &turret_window_rect_);
 	}
@@ -94,7 +91,7 @@ namespace charlie
 	{
 		body_sprite_ = Singleton<SpriteHandler>::Get()->create_sprite(body, srcX, srcY, srcW, srcH);
 		body_window_rect_ = { 0, 0, body_sprite_->get_area().w, body_sprite_->get_area().h };
-		transform_.set_origin(Vector2(body_window_rect_.w/2, body_window_rect_.h/2));
+		transform_.set_origin(Vector2(body_window_rect_.w / 2, body_window_rect_.h / 2));
 	}
 
 	void Player::load_turret_sprite(const char* turret, int srcX, int srcY, int srcW, int srcH)

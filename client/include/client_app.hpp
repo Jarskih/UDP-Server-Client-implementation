@@ -5,6 +5,8 @@
 
 #include <sdl_application.hpp>
 
+
+#include "level_manager.h"
 #include "player.hpp"
 #include "sprite_handler.hpp"
 
@@ -32,6 +34,7 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 
 	Player player_;
 	DynamicArray <gameplay::Entity> entities_;
+	LevelManager level_manager_;
 
 	gameplay::Inputinator inputinator_;
 	Networkinfo networkinfo_;

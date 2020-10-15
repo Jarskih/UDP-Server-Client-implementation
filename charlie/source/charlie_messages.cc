@@ -35,9 +35,10 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageEntityState::NetworkMessageEntityState(const Vector2& position, uint32 id)
+		NetworkMessageEntityState::NetworkMessageEntityState(const Transform& transform, uint32 id)
 			: type_(NETWORK_MESSAGE_ENTITY_STATE)
-			, position_(position)
+			, position_(transform.position_)
+			, rotation_(transform.rotation_)
 			, id_(id)
 		{
 		}
@@ -81,7 +82,8 @@ namespace charlie {
 
 		NetworkMessagePlayerState::NetworkMessagePlayerState(const Transform& transform)
 			: type_(NETWORK_MESSAGE_PLAYER_STATE)
-			, transform_(transform)
+			, position_(transform.position_)
+			, rotation_(transform.rotation_)
 		{
 		}
 

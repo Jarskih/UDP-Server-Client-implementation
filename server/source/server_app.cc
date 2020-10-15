@@ -20,7 +20,7 @@ bool ServerApp::on_init()
 	}
 
 	network_.add_service_listener(this);
-	
+
 	return true;
 }
 
@@ -45,7 +45,7 @@ bool ServerApp::on_tick(const Time& dt)
 		{
 			float direction = 0;
 			float rotation = 0;
-			
+
 			const bool player_move_up = player.get_input_bits() & (1 << int32(gameplay::Action::Up));
 			const bool player_move_down = player.get_input_bits() & (1 << int32(gameplay::Action::Down));
 			const bool player_move_left = player.get_input_bits() & (1 << int32(gameplay::Action::Left));
@@ -64,15 +64,15 @@ bool ServerApp::on_tick(const Time& dt)
 				rotation += 1.0f;
 			}
 
-		if(abs(rotation) > 0.0f)
-		{
-			const float rot = player.transform_.rotation_ + rotation * player.tank_turn_speed_ * dt.as_seconds();
-			player.transform_.set_rotation(rot);
-		}
-		
-		if (abs(direction) > 0.0f) {
-			player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
-		}
+			if (abs(rotation) > 0.0f)
+			{
+				const float rot = player.transform_.rotation_ + rotation * player.tank_turn_speed_ * dt.as_seconds();
+				player.transform_.set_rotation(rot);
+			}
+
+			if (abs(direction) > 0.0f) {
+				player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+			}
 		}
 	}
 
@@ -83,7 +83,7 @@ void ServerApp::on_draw()
 {
 	//renderer_.clear({ 0.4f, 0.3f, 0.2f, 1.0f });
 	//renderer_.render_text({ 2, 2 }, Color::White, 2, "SERVER");
-	
+
 	char myString[10] = "";
 	sprintf_s(myString, "%ld", long(tick_));
 	//renderer_.render_text({ 150, 2 }, Color::White, 1, myString);
@@ -126,7 +126,7 @@ void ServerApp::on_connect(network::Connection* connection)
 	player.init(renderer_.get_renderer(), pos, 0);
 	player.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 0);
 	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 0);
-	
+
 	players_.push_back(player);
 	playersToSpawn_.push_back(player);
 
@@ -235,7 +235,7 @@ void ServerApp::on_send(network::Connection* connection,
 				continue;
 			}
 
-			network::NetworkMessageEntityState message(player.transform_.position_, player.id_);
+			network::NetworkMessageEntityState message(player.transform_, player.id_);
 			if (!message.write(writer)) {
 				assert(!"failed to write message!");
 			}

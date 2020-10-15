@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../vendor/SDL2-2.0.12/include/SDL.h"
+#include <SDL.h>
 
 namespace charlie
 {

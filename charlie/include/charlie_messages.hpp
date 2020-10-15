@@ -48,7 +48,7 @@ namespace charlie {
 
 		struct NetworkMessageEntityState {
 			NetworkMessageEntityState();
-			explicit NetworkMessageEntityState(const Vector2& position, uint32 id);
+			explicit NetworkMessageEntityState(const Transform& transform, uint32 id);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -60,12 +60,14 @@ namespace charlie {
 				result &= stream.serialize(type_);
 				result &= stream.serialize(position_.x_);
 				result &= stream.serialize(position_.y_);
+				result &= stream.serialize(rotation_);
 				result &= stream.serialize(id_);
 				return result;
 			}
 
 			uint8 type_;
 			Vector2 position_;
+			float rotation_;
 			uint32 id_;
 		};
 
@@ -101,14 +103,15 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
-				result &= stream.serialize(transform_.position_.x_);
-				result &= stream.serialize(transform_.position_.y_);
-				result &= stream.serialize(transform_.rotation_);
+				result &= stream.serialize(position_.x_);
+				result &= stream.serialize(position_.y_);
+				result &= stream.serialize(rotation_);
 				return result;
 			}
 
 			uint8 type_;
-			Transform transform_;
+			float rotation_;
+			Vector2 position_;
 		};
 
 		struct NetworkMessagePlayerSpawn
