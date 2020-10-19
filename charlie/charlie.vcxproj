@@ -98,7 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="include\Camera.cpp" />
+    <ClCompile Include="source\Camera.cpp" />
     <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="source\leveldata.cpp" />
     <ClCompile Include="source\level_manager.cpp" />
