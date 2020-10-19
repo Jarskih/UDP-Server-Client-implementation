@@ -7,13 +7,15 @@
 
 ServerApp::ServerApp()
 	: tickrate_(1.0 / 60.0)
-	, tick_(0), reliable_queue_(), index_(0)
+	, tick_(0)
+	, reliable_queue_()
+	, index_(0)
 {
 }
 
 bool ServerApp::on_init()
 {
-	network_.set_send_rate(Time(1.0 / 10.0));
+	network_.set_send_rate(Time(1.0 / 20.0));
 	network_.set_allow_connections(true);
 	if (!network_.initialize(network::IPAddress(network::IPAddress::ANY_HOST, 54345))) {
 		return false;
@@ -59,6 +61,8 @@ bool ServerApp::on_tick(const Time& dt)
 			const bool player_move_left = player.get_input_bits() & (1 << int32(gameplay::Action::Left));
 			const bool player_move_right = player.get_input_bits() & (1 << int32(gameplay::Action::Right));
 
+			player.input_bits_ = 0;
+
 			if (player_move_up) {
 				direction -= 1.0f;
 			}
@@ -92,29 +96,28 @@ bool ServerApp::on_tick(const Time& dt)
 			{
 				player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 			}
-			
 
-				//Center the camera over the dot
-                cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - SCREEN_WIDTH / 2;
-                cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - SCREEN_HEIGHT / 2;
+			{
+				cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - SCREEN_WIDTH / 2;
+				cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - SCREEN_HEIGHT / 2;
 
-                //Keep the camera in bounds
-                if( cam_.x < 0 )
-                { 
-                    cam_.x = 0;
-                }
-                if( cam_.y < 0 )
-                {
-                    cam_.y = 0;
-                }
-                if( cam_.x > LEVEL_WIDTH - cam_.w )
-                {
-                    cam_.x = LEVEL_WIDTH - cam_.w;
-                }
-                if( cam_.y > LEVEL_HEIGHT - cam_.h )
-                {
-                    cam_.y = LEVEL_HEIGHT - cam_.h;
-                }
+				if (cam_.x < 0)
+				{
+					cam_.x = 0;
+				}
+				if (cam_.y < 0)
+				{
+					cam_.y = 0;
+				}
+				if (cam_.x > LEVEL_WIDTH - cam_.w)
+				{
+					cam_.x = LEVEL_WIDTH - cam_.w;
+				}
+				if (cam_.y > LEVEL_HEIGHT - cam_.h)
+				{
+					cam_.y = LEVEL_HEIGHT - cam_.h;
+				}
+			}
 		}
 	}
 
@@ -165,16 +168,31 @@ void ServerApp::on_connect(network::Connection* connection)
 
 	Vector2 pos = Vector2(20.0f + random_() % 200, 200.0f + random_() % 100);
 	player.init(renderer_.get_renderer(), pos, index_);
-	player.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
-	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
+	player.load_body_sprite("../assets/tank_body.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
+	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
+
+	// inform all existing players of new player
+	for (Player p : players_)
+	{
+		Event spawn_event;
+		spawn_event.id_ = player.id_; // player to spawn
+		spawn_event.send_to_ = p.id_; // player to receive the event
+		spawn_event_list.push_back(spawn_event);
+	}
+
+	// inform joining player of others
+	for (Player p : players_)
+	{
+		Event spawn_event;
+		spawn_event.id_ = p.id_;
+		spawn_event.send_to_ = player.id_;
+		spawn_event_list.push_back(spawn_event);
+	}
 
 	players_.push_back(player);
-	playersToSpawn_.push_back(player);
+	index_ += 1;
 
-	event_list_.id_ = index_;
-	event_list_.event_.push_back(player.id_);
-
-	index_++;
+	printf("player joined. players: %i\n", (int)players_.size());
 }
 
 void ServerApp::on_disconnect(network::Connection* connection)
@@ -182,6 +200,7 @@ void ServerApp::on_disconnect(network::Connection* connection)
 	connection->set_listener(nullptr);
 
 	const uint32 id = clients_.find_client((uint64)connection);
+
 	auto it = players_.begin();
 	while (it != players_.end())
 	{
@@ -193,17 +212,23 @@ void ServerApp::on_disconnect(network::Connection* connection)
 		++it;
 	}
 
+	// inform joining player of others
+	for (Player p : players_)
+	{
+		Event destroy_event_;
+		destroy_event_.id_ = id;
+		destroy_event_.send_to_ = p.id_;
+		destroy_event__list_.push_back(destroy_event_);
+	}
+
 	clients_.remove_client((uint64)connection);
+
+	printf("player disconnected. players: %i\n", (int)players_.size());
 }
 
 void ServerApp::on_acknowledge(network::Connection* connection,
 	const uint16 sequence)
 {
-	// find if queue contains sequence
-	if (sequence == reliable_queue_.seq_)
-	{
-		// remove all events with id
-	}
 }
 
 void ServerApp::on_receive(network::Connection* connection,
@@ -228,15 +253,22 @@ void ServerApp::on_receive(network::Connection* connection,
 			}
 		}
 	}
+
+	for (auto message : reliable_queue_)
+	{
+		if (connection->acknowledge_ == message.seq_)
+		{
+			printf("Spawn command %i acknowledged on sequence %i \n", message.id_, message.seq_);
+			remove_from_array(spawn_event_list, message.id_);
+			break;
+		}
+	}
 }
 
 void ServerApp::on_send(network::Connection* connection,
 	const uint16 sequence,
 	network::NetworkStreamWriter& writer)
 {
-	reliable_queue_.seq_ = sequence;
-	reliable_queue_.id_ = event_list_.id_;
-
 	const uint32 id = clients_.find_client((uint64)connection);
 
 	{
@@ -247,17 +279,37 @@ void ServerApp::on_send(network::Connection* connection,
 	}
 
 	{
-		// for each item in the queue send a packet
-		for (auto& player : playersToSpawn_)
+		for (auto& event : spawn_event_list)
 		{
-			if (player.id_ != id)
+			for (auto p : players_)
 			{
-				network::NetworkMessagePlayerSpawn message(player.transform_.position_, player.id_);
-				if (!message.write(writer)) {
-					assert(!"failed to write message!");
+				if (p.id_ == id)
+				{
+					continue;
 				}
-				// add player id and sequence to queue
+				if (p.id_ == event.id_)
+				{
+					Message spawnMessage = Message();
+					spawnMessage.id_ = event.id_; // player to spawn
+					spawnMessage.seq_ = sequence;
+					reliable_queue_.push_back(spawnMessage);
+
+					network::NetworkMessagePlayerSpawn message(p.transform_.position_, p.id_);
+					if (!message.write(writer)) {
+						assert(!"failed to write message!");
+					}
+
+					printf("Server sent request to: %i to spawn %i on sequence %i\n", id, event.id_, sequence);
+					break;
+				}
 			}
+		}
+	}
+
+	{
+		for (auto destroy_event : destroy_event__list_)
+		{
+			// TODO Create destroy message
 		}
 	}
 
@@ -266,17 +318,36 @@ void ServerApp::on_send(network::Connection* connection,
 		{
 			if (player.id_ == id)
 			{
-				network::NetworkMessagePlayerState message(player.transform_);
+				network::NetworkMessagePlayerState message(player.transform_, (float)player.turret_rotation_);
 				if (!message.write(writer)) {
 					assert(!"failed to write message!");
 				}
 				continue;
 			}
 
-			network::NetworkMessageEntityState message(player.transform_, player.id_);
+			network::NetworkMessageEntityState message(player.transform_, (float)player.turret_rotation_, player.id_);
 			if (!message.write(writer)) {
 				assert(!"failed to write message!");
 			}
 		}
+	}
+}
+
+bool ServerApp::contains(const DynamicArray<uint32>& arr, uint32 id)
+{
+	return std::find(arr.begin(), arr.end(), id) != arr.end();
+}
+
+void ServerApp::remove_from_array(DynamicArray<Event>& arr, uint32 id)
+{
+	auto it = arr.begin();
+	while (it != arr.end())
+	{
+		if ((*it).id_ == id)
+		{
+			arr.erase(it);
+			break;
+		}
+		++it;
 	}
 }

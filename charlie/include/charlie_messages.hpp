@@ -18,6 +18,7 @@ namespace charlie {
 			NETWORK_MESSAGE_INPUT_COMMAND,
 			NETWORK_MESSAGE_PLAYER_STATE,
 			NETWORK_MESSAGE_PLAYER_SPAWN,
+			NETWORK_MESSAGE_PLAYER_SPAWN_ACK,
 			NETWORK_MESSAGE_COUNT,
 		};
 
@@ -48,7 +49,7 @@ namespace charlie {
 
 		struct NetworkMessageEntityState {
 			NetworkMessageEntityState();
-			explicit NetworkMessageEntityState(const Transform& transform, uint32 id);
+			explicit NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 id);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -62,6 +63,7 @@ namespace charlie {
 				result &= stream.serialize(position_.y_);
 				result &= stream.serialize(rotation_);
 				result &= stream.serialize(id_);
+				result &= stream.serialize(turret_rotation_);
 				return result;
 			}
 
@@ -69,6 +71,7 @@ namespace charlie {
 			Vector2 position_;
 			float rotation_;
 			uint32 id_;
+			float turret_rotation_;
 		};
 
 		struct NetworkMessageInputCommand {
@@ -93,7 +96,7 @@ namespace charlie {
 
 		struct NetworkMessagePlayerState {
 			NetworkMessagePlayerState();
-			explicit NetworkMessagePlayerState(const Transform& transform);
+			explicit NetworkMessagePlayerState(const Transform& transform, float turret_rotation);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -106,12 +109,14 @@ namespace charlie {
 				result &= stream.serialize(position_.x_);
 				result &= stream.serialize(position_.y_);
 				result &= stream.serialize(rotation_);
+				result &= stream.serialize(turret_rotation_);
 				return result;
 			}
 
 			uint8 type_;
 			float rotation_;
 			Vector2 position_;
+			float turret_rotation_;
 		};
 
 		struct NetworkMessagePlayerSpawn
@@ -134,6 +139,26 @@ namespace charlie {
 
 			uint8 type_;
 			Vector2 position_;
+			uint32 id_;
+		};
+
+		struct NetworkMessagePlayerSpawnAck
+		{
+			NetworkMessagePlayerSpawnAck();
+			explicit NetworkMessagePlayerSpawnAck(const uint32 id);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(id_);
+				return result;
+			}
+
+			uint8 type_;
 			uint32 id_;
 		};
 	} // !network

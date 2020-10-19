@@ -4,7 +4,7 @@
 
 namespace charlie
 {
-	enum COLLIDERTYPE
+	enum class COLLIDERTYPE
 	{
 		RECTANGLE
 	};
@@ -19,7 +19,9 @@ namespace charlie
 		void SetPosition(int p_x, int p_y);
 		virtual SDL_Rect GetBounds() = 0;
 		COLLIDERTYPE GetType() { return m_type; };
-		Collider() {};
+		Collider() : m_bounds(), m_type()
+		{
+		};
 		virtual ~Collider() {};
 	};
 

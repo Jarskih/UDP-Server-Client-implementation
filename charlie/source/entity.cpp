@@ -13,6 +13,7 @@ namespace charlie
 		, turret_sprite_(nullptr)
 		, turret_window_rect_()
 		, id_(0)
+		, turret_rotation_(0)
 	{
 	}
 
@@ -46,10 +47,9 @@ namespace charlie
 		SDL_Point* point = new SDL_Point();
 		point->x = (int)transform_.origin_.x_;
 		point->y = (int)transform_.origin_.y_;
-		int flip = SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL;
 
-		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, transform_.rotation_, point, (SDL_RendererFlip)flip);
-		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, transform_.rotation_, point, (SDL_RendererFlip)flip);
+		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, transform_.rotation_, point, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, turret_rotation_, point, SDL_FLIP_NONE);
 		SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
 		SDL_RenderDrawRect(renderer_, &body_window_rect_);
 		SDL_RenderDrawRect(renderer_, &turret_window_rect_);

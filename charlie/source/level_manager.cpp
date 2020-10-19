@@ -1,6 +1,6 @@
 ﻿#include "level_manager.h"
 
-#include "Camera.h"
+#include "camera.h"
 #include "leveldata.h"
 #include "Singleton.hpp"
 #include "sprite_handler.hpp"

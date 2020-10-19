@@ -7,7 +7,6 @@
 #include <charlie_gameplay.hpp>
 #include <charlie_network.hpp>
 #include <charlie_networkinfo.hpp>
-
 #include "player.hpp"
 #include "sdl_renderer.hpp"
 #include "sdl_window.hpp"
@@ -15,9 +14,7 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 #include <SDL.h>
-
-
-#include "Camera.h"
+#include "camera.h"
 #include "input_handler.h"
 #include "sprite_handler.hpp"
 
@@ -25,7 +22,7 @@ namespace charlie {
 	struct SDLApplication {
 		SDLApplication();
 		virtual ~SDLApplication() = default;
-		
+
 		bool init();
 		void run();
 		void exit();
@@ -42,10 +39,12 @@ namespace charlie {
 		charlie::network::Service network_;
 		InputHandler input_handler_;
 		SpriteHandler sprite_handler_;
-		int SCREEN_WIDTH = 640;
-		int SCREEN_HEIGHT = 480;
+		int SCREEN_WIDTH;
+		int SCREEN_HEIGHT;
 		int LEVEL_WIDTH;
 		int LEVEL_HEIGHT;
+		int PLAYER_WIDTH;
+		int PLAYER_HEIGHT;
 	};
 } // !charlies
 

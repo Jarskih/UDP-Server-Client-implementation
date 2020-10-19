@@ -37,6 +37,7 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	Player player_;
 	DynamicArray <Entity> entities_;
 	LevelManager level_manager_;
+	Queue<network::NetworkMessagePlayerSpawnAck> spawn_message_queue_;
 
 	gameplay::Inputinator inputinator_;
 	Networkinfo networkinfo_;

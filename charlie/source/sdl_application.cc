@@ -5,10 +5,14 @@
 #include "Singleton.hpp"
 
 namespace charlie {
-	SDLApplication::SDLApplication(): cam_()
+	SDLApplication::SDLApplication() : cam_()
 	{
+		SCREEN_WIDTH = 640;
+		SCREEN_HEIGHT = 480;
 		LEVEL_HEIGHT = 0;
 		LEVEL_WIDTH = 0;
+		PLAYER_WIDTH = 150;
+		PLAYER_HEIGHT = 150;
 	}
 
 	bool SDLApplication::init()
@@ -46,7 +50,7 @@ namespace charlie {
 		Singleton<InputHandler>::Set(&input_handler_);
 
 		camera_.init(640, 480, 640.0f, 480.0f);
-		cam_ = {0,0,640, 480};
+		cam_ = { 0,0,640, 480 };
 
 		return on_init();
 	}
@@ -98,4 +102,5 @@ namespace charlie {
 	void SDLApplication::on_draw()
 	{
 	}
+
 } // !charlie

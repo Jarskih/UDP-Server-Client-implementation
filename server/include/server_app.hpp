@@ -53,6 +53,19 @@ struct ClientList {
 	DynamicArray<Client> clients_;
 };
 
+struct Message
+{
+	uint16 seq_;
+	uint32 id_;
+};
+
+struct Event
+{
+	uint32 id_;
+	uint32 send_to_;
+};
+
+
 struct ServerApp final : SDLApplication, network::IServiceListener, network::IConnectionListener {
 	ServerApp();
 
@@ -72,31 +85,23 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	virtual void on_receive(network::Connection* connection, network::NetworkStreamReader& reader);
 	virtual void on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer);
 
+	static void remove_from_array(DynamicArray<Event>& arr, uint32 id);
+	static bool contains(const DynamicArray<uint32>& event, uint32 id);
+
 	const Time tickrate_;
 	Time accumulator_;
 	uint32 tick_;
 	ClientList clients_;
 	DynamicArray<Player> players_;
-	DynamicArray<Player> playersToSpawn_;
 	LevelManager level_manager_;
 
 	Vector2 send_position_;
 	Random random_;
 
-	struct Message
-	{
-		uint16 seq_;
-		uint32 id_;
-	};
-	Message reliable_queue_;
+	DynamicArray<Message> reliable_queue_;
+	DynamicArray<Event> spawn_event_list;
+	DynamicArray<Event> destroy_event__list_;
 	uint32 index_;
-
-	struct EventList
-	{
-		uint32 id_{};
-		DynamicArray<uint32> event_;
-	};
-	EventList event_list_;
 };
 
 #endif // !SERVER_APP_HPP_INCLUDED

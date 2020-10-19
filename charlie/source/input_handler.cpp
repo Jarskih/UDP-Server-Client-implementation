@@ -89,6 +89,7 @@ namespace charlie
 			case SDL_EventType::SDL_MOUSEBUTTONUP: m_mouse.UpdateButton(event.button.button, false); break;
 			case SDL_EventType::SDL_MOUSEWHEEL: m_mouse.UpdateWheel(event.wheel.x, event.wheel.y); break;
 			case SDL_EventType::SDL_MOUSEMOTION: m_mouse.UpdateMotion(event.motion.x, event.motion.y); break;
+			default:;
 			}
 		}
 	}

@@ -114,7 +114,7 @@ namespace charlie {
 		{
 		}
 
-		PosSnapshot::PosSnapshot() : tick_(0)
+		PosSnapshot::PosSnapshot() : tick_(0), rotation(0), turret_rotation(0)
 		{
 		}
 
@@ -149,6 +149,19 @@ namespace charlie {
 			return Vector2::lerp(start.rotation, end.rotation, t);;
 		}
 
+		float Interpolator::interpolate_turret_rot() const
+		{
+			if (snapshots_.size() < 2)
+			{
+				return 0;
+			}
+			const auto start = snapshots_[snapshots_.size() - 2];
+			const auto end = snapshots_[snapshots_.size() - 1];
+			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
+
+			return Vector2::lerp(start.turret_rotation, end.turret_rotation, t);;
+		}
+
 		void Interpolator::add_position(PosSnapshot snapshot)
 		{
 			snapshots_.push_back(snapshot);
@@ -164,19 +177,20 @@ namespace charlie {
 			inputSnapshots_.push(snapshot);
 		}
 
-		Vector2 Inputinator::get_position(const uint32 tick, const Time tickrate, const Vector2 serverpos, const float speed)
+		Vector2 Inputinator::get_corrected_position(const uint32 tick, const Time tickrate, const Vector2 serverpos, const float speed) const
 		{
 			Vector2 startingPos = serverpos;
-			const auto inputSnapshots = inputSnapshots_;
+			auto inputSnapshots = inputSnapshots_;
 			for (int i = 0; i < static_cast<int>(inputSnapshots.size()); i++)
 			{
-				const auto input = inputSnapshots_.front();
+				const auto input = inputSnapshots.front();
 
-				if (inputSnapshots_.empty())
+				if (inputSnapshots.empty())
 				{
 					break;
 				}
-				inputSnapshots_.pop();
+
+				inputSnapshots.pop();
 
 				if (input.tick_ > tick)
 				{
@@ -211,11 +225,11 @@ namespace charlie {
 
 		Vector2 Inputinator::old_pos(uint32 tick)
 		{
-			const auto inputSnapshots = inputSnapshots_;
+			auto inputSnapshots = inputSnapshots_;
 			for (int i = 0; i < static_cast<int>(inputSnapshots.size()); i++)
 			{
-				const auto input = inputSnapshots_.front();
-				inputSnapshots_.pop();
+				const auto input = inputSnapshots.front();
+				inputSnapshots.pop();
 				if (input.tick_ < tick)
 				{
 					continue;

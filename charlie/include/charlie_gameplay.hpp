@@ -6,7 +6,6 @@
 #include <charlie.hpp>
 #include <string>
 
-
 #include "charlie_messages.hpp"
 
 namespace charlie {
@@ -255,7 +254,7 @@ namespace charlie {
 
 			virtual bool init(ComponentContext& components) = 0;
 			virtual void update(const Time& dt, ComponentContext& components, EventContext& events) = 0;
-			virtual void draw(Renderer& renderer, ComponentContext& componens, EventContext& events) = 0;
+			virtual void draw(Renderer& renderer, ComponentContext& components, EventContext& events) = 0;
 
 		protected:
 			bool active_;
@@ -308,6 +307,7 @@ namespace charlie {
 			Vector2 position;
 			Time servertime_;
 			float rotation;
+			float turret_rotation;
 		};
 
 		struct Interpolator {
@@ -315,6 +315,7 @@ namespace charlie {
 
 			Vector2 interpolate_pos() const;
 			float interpolate_rot() const;
+			float interpolate_turret_rot() const;
 			void add_position(PosSnapshot snapshot);
 			DynamicArray<PosSnapshot> snapshots_;
 			Time interpolateTime_;
@@ -327,7 +328,7 @@ namespace charlie {
 			Inputinator();
 
 			void add_snapshot(InputSnapshot snapshot);
-			Vector2 get_position(uint32 tick, const Time tickrate, Vector2 serverpos, float speed);
+			Vector2 get_corrected_position(uint32 tick, const Time tickrate, Vector2 serverpos, float speed) const;
 			Vector2 old_pos(uint32 uint32);
 
 			Queue<InputSnapshot> inputSnapshots_;

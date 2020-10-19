@@ -2,7 +2,7 @@
 
 namespace charlie
 {
-	SDLMouse::SDLMouse()
+	SDLMouse::SDLMouse() : m_currentFrame{}, m_lastFrame{}
 	{
 		for (int i = 0; i < m_buttons; i++)
 		{

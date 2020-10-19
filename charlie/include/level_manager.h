@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Camera.h"
+#include "camera.h"
 #include "leveldata.h"
 #include "sprite_handler.hpp"
 

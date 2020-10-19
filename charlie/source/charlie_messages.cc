@@ -31,15 +31,16 @@ namespace charlie {
 		}
 
 		NetworkMessageEntityState::NetworkMessageEntityState()
-			: type_(NETWORK_MESSAGE_ENTITY_STATE), id_(0)
+			: type_(NETWORK_MESSAGE_ENTITY_STATE), rotation_(0), id_(0), turret_rotation_(0)
 		{
 		}
 
-		NetworkMessageEntityState::NetworkMessageEntityState(const Transform& transform, uint32 id)
+		NetworkMessageEntityState::NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 id)
 			: type_(NETWORK_MESSAGE_ENTITY_STATE)
 			, position_(transform.position_)
 			, rotation_(transform.rotation_)
 			, id_(id)
+			, turret_rotation_(turret_rotation)
 		{
 		}
 
@@ -76,14 +77,15 @@ namespace charlie {
 		}
 
 		NetworkMessagePlayerState::NetworkMessagePlayerState()
-			: type_(NETWORK_MESSAGE_PLAYER_STATE)
+			: type_(NETWORK_MESSAGE_PLAYER_STATE), rotation_(0), turret_rotation_(0)
 		{
 		}
 
-		NetworkMessagePlayerState::NetworkMessagePlayerState(const Transform& transform)
+		NetworkMessagePlayerState::NetworkMessagePlayerState(const Transform& transform, float turret_rotation)
 			: type_(NETWORK_MESSAGE_PLAYER_STATE)
-			, position_(transform.position_)
 			, rotation_(transform.rotation_)
+			, position_(transform.position_)
+			, turret_rotation_(turret_rotation)
 		{
 		}
 
@@ -112,6 +114,24 @@ namespace charlie {
 		}
 
 		bool NetworkMessagePlayerSpawn::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
+
+		NetworkMessagePlayerSpawnAck::NetworkMessagePlayerSpawnAck() : type_(NETWORK_MESSAGE_PLAYER_SPAWN_ACK), id_(0)
+		{
+		}
+
+		NetworkMessagePlayerSpawnAck::NetworkMessagePlayerSpawnAck(const uint32 id) : type_(NETWORK_MESSAGE_PLAYER_SPAWN_ACK), id_(id)
+		{
+		}
+
+		bool NetworkMessagePlayerSpawnAck::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessagePlayerSpawnAck::write(NetworkStreamWriter& writer)
 		{
 			return serialize(writer);
 		}

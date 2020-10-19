@@ -20,6 +20,6 @@ namespace charlie
 		Transform transform_;
 		uint32 id_;
 		gameplay::Interpolator interpolator_;
-
+		float turret_rotation_;
 	};
 }

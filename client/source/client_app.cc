@@ -16,7 +16,6 @@ constexpr auto array_size(T(&)[N])
 
 ClientApp::ClientApp()
 	: tickrate_(1.0 / 60.0)
-	, level_manager_()
 	, tick_(0)
 	, server_tick_(0)
 {
@@ -24,7 +23,7 @@ ClientApp::ClientApp()
 
 bool ClientApp::on_init()
 {
-	network_.set_send_rate(Time(1.0 / 10.0));
+	network_.set_send_rate(Time(1.0 / 60.0));
 	if (!network_.initialize({})) {
 		return false;
 	}
@@ -35,8 +34,8 @@ bool ClientApp::on_init()
 
 	Vector2 pos = Vector2(200, 300);
 	player_.init(renderer_.get_renderer(), pos, 0);
-	player_.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
-	player_.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
+	player_.load_body_sprite("../assets/tank_body.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
+	player_.load_turret_sprite("../assets/tank_turret.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
 
 	auto data = Leveldata();
 	data.create_level("../assets/map.txt");
@@ -71,9 +70,11 @@ bool ClientApp::on_tick(const Time& dt)
 		player_.update(dt, LEVEL_HEIGHT, LEVEL_WIDTH);
 
 		{
+			const int delayInTicks = (int)((networkinfo_.rtt_avg_) / tickrate_.as_milliseconds());
+
 			gameplay::InputSnapshot snapshot;
 			snapshot.input_bits_ = player_.input_bits_;
-			snapshot.tick_ = server_tick_;
+			snapshot.tick_ = server_tick_ + delayInTicks;
 			snapshot.position_ = player_.transform_.position_;
 
 			inputinator_.add_snapshot(snapshot);
@@ -84,29 +85,30 @@ bool ClientApp::on_tick(const Time& dt)
 			entity.interpolator_.acc_ += dt;
 			entity.transform_.position_ = entity.interpolator_.interpolate_pos();
 			entity.transform_.rotation_ = entity.interpolator_.interpolate_rot();
+			//entity.turret_rotation_ = entity.interpolator_.interpolate_turret_rot();
 		}
 
-			    //Center the camera over the dot
-                cam_.x = (int)player_.transform_.position_.x_ + player_.body_sprite_->get_area().w / 2 - SCREEN_WIDTH / 2;
-                cam_.y = (int)player_.transform_.position_.y_ + player_.body_sprite_->get_area().h / 2 - SCREEN_HEIGHT / 2;
+		//Center the camera over the dot
+		cam_.x = (int)player_.transform_.position_.x_ + player_.body_sprite_->get_area().w / 2 - SCREEN_WIDTH / 2;
+		cam_.y = (int)player_.transform_.position_.y_ + player_.body_sprite_->get_area().h / 2 - SCREEN_HEIGHT / 2;
 
-                //Keep the camera in bounds
-                if( cam_.x < 0 )
-                { 
-                    cam_.x = 0;
-                }
-                if( cam_.y < 0 )
-                {
-                    cam_.y = 0;
-                }
-                if( cam_.x > LEVEL_WIDTH - cam_.w )
-                {
-                    cam_.x = LEVEL_WIDTH - cam_.w;
-                }
-                if( cam_.y > LEVEL_HEIGHT - cam_.h )
-                {
-                    cam_.y = LEVEL_HEIGHT - cam_.h;
-                }
+		//Keep the camera in bounds
+		if (cam_.x < 0)
+		{
+			cam_.x = 0;
+		}
+		if (cam_.y < 0)
+		{
+			cam_.y = 0;
+		}
+		if (cam_.x > LEVEL_WIDTH - cam_.w)
+		{
+			cam_.x = LEVEL_WIDTH - cam_.w;
+		}
+		if (cam_.y > LEVEL_HEIGHT - cam_.h)
+		{
+			cam_.y = LEVEL_HEIGHT - cam_.h;
+		}
 	}
 	return true;
 }
@@ -205,6 +207,7 @@ void ClientApp::on_receive(network::Connection* connection,
 					snapshot.servertime_ = server_time_;
 					snapshot.position = message.position_;
 					snapshot.rotation = message.rotation_;
+					snapshot.turret_rotation = message.turret_rotation_;
 
 					entity.interpolator_.add_position(snapshot);
 					break;
@@ -223,7 +226,7 @@ void ClientApp::on_receive(network::Connection* connection,
 			auto diff = message.position_ - recalculated;
 			if (abs(diff.x_) > 5.0f || abs(diff.y_) > 5.0f)
 			{
-				player_.transform_.position_ = inputinator_.get_position(server_tick_, tickrate_, message.position_, player_.speed_);
+				player_.transform_.position_ = inputinator_.get_corrected_position(server_tick_, tickrate_, message.position_, player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
 			if (abs(player_.transform_.rotation_ - message.rotation_) > 5)
@@ -243,10 +246,14 @@ void ClientApp::on_receive(network::Connection* connection,
 			{
 				Entity e = Entity();
 				e.init(renderer_.get_renderer(), message.position_, message.id_);
-				e.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
-				e.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
+				e.load_body_sprite("../assets/tank_body.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
+				e.load_turret_sprite("../assets/tank_turret.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
 				entities_.push_back(e);
-				printf("Player spawned %i \n", message.id_);
+				printf("Remote player spawned with id: %i \n", message.id_);
+
+				network::NetworkMessagePlayerSpawnAck msg;
+				msg.id_ = player_.id_;
+				spawn_message_queue_.push(msg);
 				break;
 			}
 
@@ -257,12 +264,16 @@ void ClientApp::on_receive(network::Connection* connection,
 					break;
 				}
 
+				network::NetworkMessagePlayerSpawnAck msg;
+				msg.id_ = player_.id_;
+				spawn_message_queue_.push(msg);
+
 				Entity e = Entity();
 				e.init(renderer_.get_renderer(), message.position_, message.id_);
-				e.load_body_sprite("../assets/tank_body.png", 0, 0, 50, 76);
-				e.load_turret_sprite("../assets/tank_turret.png", 0, 0, 30, 45);
+				e.load_body_sprite("../assets/tank_body.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
+				e.load_turret_sprite("../assets/tank_turret.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
 				entities_.push_back(e);
-				printf("Player spawned with id: %i \n", message.id_);
+				printf("Remote player spawned with id: %i \n", message.id_);
 			}
 		} break;
 		default:
@@ -281,6 +292,16 @@ void ClientApp::on_send(network::Connection* connection,
 	if (!command.write(writer)) {
 		assert(!"could not write network command!");
 	}
+
+	while (!spawn_message_queue_.empty())
+	{
+		auto msg = spawn_message_queue_.front();
+		if (!msg.write(writer)) {
+			assert(!"could not write network command!");
+		}
+		spawn_message_queue_.pop();
+	}
+
 	lastSend_ = Time::now();
 
 	networkinfo_.packet_sent(writer.length());
