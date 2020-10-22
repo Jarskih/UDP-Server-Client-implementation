@@ -254,7 +254,7 @@ namespace charlie {
 
 			virtual bool init(ComponentContext& components) = 0;
 			virtual void update(const Time& dt, ComponentContext& components, EventContext& events) = 0;
-			virtual void draw(Renderer& renderer, ComponentContext& components, EventContext& events) = 0;
+			//virtual void draw(Renderer& renderer, ComponentContext& components, EventContext& events) = 0;
 
 		protected:
 			bool active_;
@@ -269,7 +269,7 @@ namespace charlie {
 			void deactivate();
 
 			void update(const Time& dt);
-			void draw(Renderer& renderer);
+			//void draw(Renderer& renderer);
 
 			template <typename T, typename ...Ts>
 			void add_system(Ts ...ts)
@@ -298,6 +298,8 @@ namespace charlie {
 			uint32 tick_;
 			uint8 input_bits_;
 			Vector2 position_;
+			float rotation_;
+			float turret_rotation;
 		};
 
 		struct PosSnapshot
@@ -330,9 +332,27 @@ namespace charlie {
 			void add_snapshot(InputSnapshot snapshot);
 			Vector2 get_corrected_position(uint32 tick, const Time tickrate, Vector2 serverpos, float speed) const;
 			Vector2 old_pos(uint32 uint32);
+			void clear_old_inputs(uint32 tick);
+			InputSnapshot get_snapshot(uint32 index);
 
-			Queue<InputSnapshot> inputSnapshots_;
+			DynamicArray<InputSnapshot> inputSnapshots_;
 		};
+
+		struct Message
+		{
+			uint16 seq_;
+			uint32 id_;
+		};
+
+		struct ReliableMessageQueue
+		{
+			ReliableMessageQueue();
+			void add_message(uint32 tick, Message msg);
+			Message get_message(uint32 tick_);
+			int32 index_;
+			StaticArray<Message, 50> buffer_;
+		};
+		
 	} // !gameplay
 } // !charlie
 

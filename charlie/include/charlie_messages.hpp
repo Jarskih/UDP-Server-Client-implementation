@@ -76,7 +76,7 @@ namespace charlie {
 
 		struct NetworkMessageInputCommand {
 			NetworkMessageInputCommand();
-			explicit NetworkMessageInputCommand(uint8 bits);
+			explicit NetworkMessageInputCommand(uint8 bits, float rotation);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -87,11 +87,13 @@ namespace charlie {
 				bool result = true;
 				result &= stream.serialize(type_);
 				result &= stream.serialize(bits_);
+				result &= stream.serialize(rot_);
 				return result;
 			}
 
 			uint8 type_;
 			uint8 bits_;
+			float rot_;
 		};
 
 		struct NetworkMessagePlayerState {

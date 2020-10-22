@@ -45,6 +45,10 @@ bool ClientApp::on_init()
 	LEVEL_WIDTH = level_manager_.width_;
 	LEVEL_HEIGHT = level_manager_.height_;
 
+	text_font_.create("../assets/font/font.ttf", 20, SDL_Color({255,255,255,255}));
+	text_handler_.renderer_ = renderer_.get_renderer();
+	text_handler_.LoadFont(text_font_);
+
 	return true;
 }
 
@@ -76,6 +80,8 @@ bool ClientApp::on_tick(const Time& dt)
 			snapshot.input_bits_ = player_.input_bits_;
 			snapshot.tick_ = server_tick_ + delayInTicks;
 			snapshot.position_ = player_.transform_.position_;
+			snapshot.rotation_ = player_.transform_.rotation_;
+			snapshot.turret_rotation = player_.turret_rotation_;
 
 			inputinator_.add_snapshot(snapshot);
 		}
@@ -133,6 +139,8 @@ void ClientApp::on_draw()
 
 	//renderer_.clear({ 0.2f, 0.3f, 0.4f, 1.0f });
 	//renderer_.render_text({ 2, 2 }, Color::White, 1, "CLIENT");
+
+	networkinfo_.render(renderer_.get_renderer(), connection_, text_handler_);
 
 	//networkinfo_.render(renderer_, connection_);
 
@@ -222,14 +230,28 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			Vector2 recalculated = inputinator_.old_pos(server_tick_);
-			auto diff = message.position_ - recalculated;
-			if (abs(diff.x_) > 5.0f || abs(diff.y_) > 5.0f)
+			// Remove inputs before ack from server
+			inputinator_.clear_old_inputs(server_tick_);
+
+			// Find old position with ack and compare to server pos
+			gameplay::InputSnapshot input = inputinator_.get_snapshot(server_tick_);
+			auto diff = input.position_ - message.position_;
+				
+			// If 5px mistake correct calculate new predicted pos using server pos
+			float correct_dist = 5.0f;
+			if (abs(diff.x_) > correct_dist || abs(diff.y_) > correct_dist)
 			{
 				player_.transform_.position_ = inputinator_.get_corrected_position(server_tick_, tickrate_, message.position_, player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
-			if (abs(player_.transform_.rotation_ - message.rotation_) > 5)
+
+			if(abs(input.turret_rotation - message.turret_rotation_) > correct_dist)
+			{
+				player_.turret_rotation_ = message.turret_rotation_;
+			}
+
+
+			if (abs(input.rotation_ - message.rotation_) > correct_dist)
 			{
 				player_.transform_.set_rotation(message.rotation_);
 			}
@@ -288,7 +310,7 @@ void ClientApp::on_send(network::Connection* connection,
 	const uint16 sequence,
 	network::NetworkStreamWriter& writer)
 {
-	network::NetworkMessageInputCommand command(player_.input_bits_);
+	network::NetworkMessageInputCommand command(player_.input_bits_, player_.turret_rotation_);
 	if (!command.write(writer)) {
 		assert(!"could not write network command!");
 	}

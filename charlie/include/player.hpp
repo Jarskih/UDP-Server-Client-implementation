@@ -10,7 +10,7 @@ namespace charlie
 	struct Player {
 		Player();
 		void init(SDL_Renderer* renderer, Vector2& pos, uint32 id);
-		void update(Time deltaTime, int LEVEL_HEIGHT, int LEVEL_WIDTH);
+		void update(Time deltaTime, int level_height, int level_width);
 		void render(SDL_Rect cameraPos);
 		void load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
 		void load_turret_sprite(const char* turret, int srcX, int srcY, int srcW, int srcH);
@@ -26,7 +26,7 @@ namespace charlie
 		SDL_Point point;
 
 		Transform transform_;
-		double turret_rotation_;
+		float turret_rotation_;
 		uint8 input_bits_;
 		uint32 id_;
 		float speed_;

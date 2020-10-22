@@ -99,6 +99,7 @@ namespace charlie {
 			events_.clear_all();
 		}
 
+		/*
 		void Stage::draw(Renderer& renderer)
 		{
 			for (auto& system : systems_) {
@@ -109,8 +110,9 @@ namespace charlie {
 				system->draw(renderer, components_, events_);
 			}
 		}
-
-		InputSnapshot::InputSnapshot() : tick_(0), input_bits_(0)
+		*/
+		
+		InputSnapshot::InputSnapshot() : tick_(0), input_bits_(0), rotation_(0), turret_rotation(0)
 		{
 		}
 
@@ -168,29 +170,19 @@ namespace charlie {
 			acc_ = Time(0.0);
 		}
 
-		Inputinator::Inputinator()
-		{
-		}
+		Inputinator::Inputinator() = default;
 
 		void Inputinator::add_snapshot(InputSnapshot snapshot)
 		{
-			inputSnapshots_.push(snapshot);
+			inputSnapshots_.push_back(snapshot);
 		}
 
 		Vector2 Inputinator::get_corrected_position(const uint32 tick, const Time tickrate, const Vector2 serverpos, const float speed) const
 		{
 			Vector2 startingPos = serverpos;
-			auto inputSnapshots = inputSnapshots_;
-			for (int i = 0; i < static_cast<int>(inputSnapshots.size()); i++)
+			for (int i = 0; i < static_cast<int>(inputSnapshots_.size()); i++)
 			{
-				const auto input = inputSnapshots.front();
-
-				if (inputSnapshots.empty())
-				{
-					break;
-				}
-
-				inputSnapshots.pop();
+				const auto input = inputSnapshots_[i];
 
 				if (input.tick_ > tick)
 				{
@@ -225,11 +217,9 @@ namespace charlie {
 
 		Vector2 Inputinator::old_pos(uint32 tick)
 		{
-			auto inputSnapshots = inputSnapshots_;
-			for (int i = 0; i < static_cast<int>(inputSnapshots.size()); i++)
+			for (int i = 0; i < static_cast<int>(inputSnapshots_.size()); i++)
 			{
-				const auto input = inputSnapshots.front();
-				inputSnapshots.pop();
+				const auto input = inputSnapshots_[i];
 				if (input.tick_ < tick)
 				{
 					continue;
@@ -240,6 +230,46 @@ namespace charlie {
 				}
 			}
 			return Vector2(0, 0);
+		}
+
+		void Inputinator::clear_old_inputs(uint32 tick)
+		{
+			DynamicArray<InputSnapshot> new_array;
+			for (auto& input : inputSnapshots_)
+			{
+				if(input.tick_ >= tick)
+				{
+					new_array.push_back(input);
+				}
+			}
+			inputSnapshots_ = new_array;
+		}
+
+		InputSnapshot Inputinator::get_snapshot(uint32 index)
+		{
+			for (auto& snapshot : inputSnapshots_)
+			{
+				if(snapshot.tick_ == index)
+				{
+					return snapshot;
+				}
+			}
+			return InputSnapshot{};
+		}
+
+		ReliableMessageQueue::ReliableMessageQueue(): index_(-1), buffer_()
+		{
+		}
+
+		void ReliableMessageQueue::add_message(uint32 tick, Message msg)
+		{
+			buffer_[tick % 50] = msg;
+			index_++;
+		}
+		
+		Message ReliableMessageQueue::get_message(uint32 tick)
+		{
+			return buffer_[tick % 50];
 		}
 	} // !gameplay
 } // !charlie

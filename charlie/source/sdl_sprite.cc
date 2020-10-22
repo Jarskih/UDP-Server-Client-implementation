@@ -12,6 +12,22 @@ namespace charlie
 		area_.h = p_h;
 	}
 
+	void SDLSprite::destroy()
+	{
+		if(texture_ != nullptr)	{
+			SDL_DestroyTexture(texture_);
+		}
+		texture_ = nullptr;
+	}
+
+	SDLSprite::~SDLSprite()
+	{
+		if(texture_ != nullptr)	{
+			SDL_DestroyTexture(texture_);
+		}
+		texture_ = nullptr;
+	}
+
 	SDL_Texture* SDLSprite::get_texture()
 	{
 		return texture_;

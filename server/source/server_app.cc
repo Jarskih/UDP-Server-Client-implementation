@@ -51,6 +51,16 @@ bool ServerApp::on_tick(const Time& dt)
 		accumulator_ -= tickrate_;
 		tick_++;
 
+
+		while (!input_queue_.empty())
+		{
+			const InputCommand cmd = input_queue_.front();
+			input_queue_.pop();
+			
+			players_[cmd.id_].input_bits_ = cmd.input_bits_;
+			players_[cmd.id_].turret_rotation_ = cmd.rot_;
+		}
+
 		for (auto& player : players_)
 		{
 			float direction = 0;
@@ -60,8 +70,6 @@ bool ServerApp::on_tick(const Time& dt)
 			const bool player_move_down = player.get_input_bits() & (1 << int32(gameplay::Action::Down));
 			const bool player_move_left = player.get_input_bits() & (1 << int32(gameplay::Action::Left));
 			const bool player_move_right = player.get_input_bits() & (1 << int32(gameplay::Action::Right));
-
-			player.input_bits_ = 0;
 
 			if (player_move_up) {
 				direction -= 1.0f;
@@ -248,19 +256,26 @@ void ServerApp::on_receive(network::Connection* connection,
 
 		for (auto& player : players_) {
 			if (player.id_ == id) {
-				player.input_bits_ = command.bits_;
+				InputCommand cmd{};
+				cmd.id_ = id;
+				cmd.input_bits_ = command.bits_;
+				cmd.rot_ = command.rot_;
+				input_queue_.push(cmd);
 				break;
 			}
 		}
 	}
 
-	for (auto message : reliable_queue_)
-	{
-		if (connection->acknowledge_ == message.seq_)
+	while (reader.position() < reader.length()) {
+		if (reader.peek() != network::NETWORK_MESSAGE_PLAYER_SPAWN_ACK) {
+			break;
+		}
+
+		auto message = reliable_queue_.get_message(connection->acknowledge_);
+		if(message.seq_ != 0)
 		{
 			printf("Spawn command %i acknowledged on sequence %i \n", message.id_, message.seq_);
 			remove_from_array(spawn_event_list, message.id_);
-			break;
 		}
 	}
 }
@@ -289,10 +304,10 @@ void ServerApp::on_send(network::Connection* connection,
 				}
 				if (p.id_ == event.id_)
 				{
-					Message spawnMessage = Message();
+					gameplay::Message spawnMessage{};
 					spawnMessage.id_ = event.id_; // player to spawn
 					spawnMessage.seq_ = sequence;
-					reliable_queue_.push_back(spawnMessage);
+					reliable_queue_.add_message(tick_, spawnMessage);
 
 					network::NetworkMessagePlayerSpawn message(p.transform_.position_, p.id_);
 					if (!message.write(writer)) {
@@ -318,14 +333,14 @@ void ServerApp::on_send(network::Connection* connection,
 		{
 			if (player.id_ == id)
 			{
-				network::NetworkMessagePlayerState message(player.transform_, (float)player.turret_rotation_);
+				network::NetworkMessagePlayerState message(player.transform_, player.turret_rotation_);
 				if (!message.write(writer)) {
 					assert(!"failed to write message!");
 				}
 				continue;
 			}
 
-			network::NetworkMessageEntityState message(player.transform_, (float)player.turret_rotation_, player.id_);
+			network::NetworkMessageEntityState message(player.transform_, player.turret_rotation_, player.id_);
 			if (!message.write(writer)) {
 				assert(!"failed to write message!");
 			}

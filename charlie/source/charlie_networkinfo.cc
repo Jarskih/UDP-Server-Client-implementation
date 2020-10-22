@@ -1,21 +1,24 @@
 ﻿#include "charlie_networkinfo.hpp"
 
 #include "charlie_network.hpp"
+#include "sdl_application.hpp"
 
 namespace charlie {
 	Networkinfo::Networkinfo():
-		rtt_min_(100.0)
-		, rtt_total_(0)
-		, rtt_avg_(0)
-		, packets_sent_(0)
-		, packets_recv_(0)
-		, packets_sent_avg_(0)
-		, packets_recv_avg_(0)
-		, bytes_recv_(0)
-		, bytes_sent_(0)
-		, kibibytes_recv_avg_(0)
-		, kibibytes_sent_avg_(0)
-		, input_misprediction_(0)
+	text_(nullptr)
+	, rect_()
+	, rtt_min_(100.0)
+	, rtt_total_(0)
+	, rtt_avg_(0)
+	, packets_sent_(0)
+	, packets_recv_(0)
+	, packets_sent_avg_(0)
+	, packets_recv_avg_(0)
+	, bytes_recv_(0)
+	, bytes_sent_(0)
+	, kibibytes_recv_avg_(0)
+	, kibibytes_sent_avg_(0)
+	, input_misprediction_(0)
 	{
 	}
 
@@ -55,51 +58,45 @@ namespace charlie {
 		bytes_sent_ = 0;
 	}
 
-	void Networkinfo::render(Renderer renderer, const network::Connection connection)
+	void Networkinfo::render(SDL_Renderer* renderer, const network::Connection connection, const TextHandler &text_handler)
 	{
-		
-		char buffer[30] = "";
-		sprintf_s(buffer, "latency: %ld ms", (long)connection.latency().as_milliseconds());
-		renderer.render_text({ 100, 2 }, Color::White, 1, buffer);
+		render_text(renderer, connection, text_handler, "latency: %ld ms", Color::white, 0, 0);
+		render_text(renderer, connection, text_handler, "input corr: %i", Color::white, 150, 0);
+		render_text(renderer, connection, text_handler, "rtt: %ld ms", Color::white, 300, 0);
+		render_text(renderer, connection, text_handler, "max: %ld ms", Color::white, 450, 0);
+		render_text(renderer, connection, text_handler, "min: %ld ms", Color::white, 0, 20);
+		render_text(renderer, connection, text_handler, "avg: %ld ms", Color::white, 150, 20);
+		render_text(renderer, connection, text_handler, "in: %f KiB", Color::white, 0, 40);
+		render_text(renderer, connection, text_handler, "out: %f KiB", Color::white, 150, 40);
+		render_text(renderer, connection, text_handler, "p in: %i", Color::white, 0, 60);
+		render_text(renderer, connection, text_handler, "p out: %i", Color::white, 150, 60);
+	}
 
-		sprintf_s(buffer, "input corr: %i", input_misprediction_);
-		renderer.render_text({ 300, 2 }, Color::White, 1, buffer);
-
-		sprintf_s(buffer, "rtt: %ld ms", (long)connection.round_trip_time().as_milliseconds());
-		renderer.render_text({2, 12}, Color::Yellow, 1, buffer);
-
-		sprintf_s(buffer, "max: %ld ms", (long)rtt_max_.as_milliseconds());
-		renderer.render_text({100, 12}, Color::Yellow, 1, buffer);
-
-		sprintf_s(buffer, "min: %ld ms", (long)rtt_min_.as_milliseconds());
-		renderer.render_text({200, 12}, Color::Yellow, 1, buffer);	
-
-		sprintf_s(buffer, "avg: %ld ms", (long)rtt_avg_);
-		renderer.render_text({300, 12}, Color::Yellow, 1, buffer);
-
-		sprintf_s(buffer, "in: %f KiB", (float)kibibytes_recv_avg_);
-		renderer.render_text({2, 24}, Color::Magenta, 1, buffer);
-
-		sprintf_s(buffer, "out: %f KiB", (float)kibibytes_sent_avg_);
-		renderer.render_text({200, 24}, Color::Magenta, 1, buffer);
-
-		sprintf_s(buffer, "in: %i", packets_recv_);
-		renderer.render_text({350, 24}, Color::Magenta, 1, buffer);
-		
-		sprintf_s(buffer, "out: %i", packets_sent_);
-		renderer.render_text({450, 24}, Color::Magenta, 1, buffer);
-
+	void Networkinfo::render_text(
+		SDL_Renderer* renderer,
+		const network::Connection connection,
+		const TextHandler &text_handler,
+		const char* text,
+		SDL_Color color, int x, int y)
+	{
+		const auto length = strlen(text);
+		char buffer[20] = "";
+		rect_ = {x, y, (int)length*10, 15};
+		sprintf_s(buffer, text, (long)connection.latency().as_milliseconds());
+		SDLSprite* sprite = text_handler.CreateText(buffer, color, rect_.x, rect_.y, rect_.w, rect_.h);
+		SDL_RenderCopy(renderer, sprite->get_texture(), nullptr, &rect_);
+		sprite->destroy();
 	}
 
 	void Networkinfo::packet_received(int32 size)
 	{
 		packets_recv_++;
-		bytes_recv_ += size;
+		bytes_recv_ += (float)size;
 	}
 
 	void Networkinfo::packet_sent(int32 size)
 	{
 		packets_sent_++;
-		bytes_sent_ += size;
+		bytes_sent_ += (float)size;
 	}
 }

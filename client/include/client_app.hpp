@@ -10,6 +10,7 @@
 #include "entity.h"
 #include "level_manager.h"
 #include "player.hpp"
+#include "sdl_text_handler.h"
 #include "sprite_handler.hpp"
 
 using namespace charlie;
@@ -28,17 +29,13 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	virtual void on_receive(network::Connection* connection, network::NetworkStreamReader& reader);
 	virtual void on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer);
 
+	// Networking
 	network::Connection connection_;
 	const Time tickrate_;
 	Time accumulator_;
 	Time lastSend_;
 	Time lastReceive_;
-
-	Player player_;
-	DynamicArray <Entity> entities_;
-	LevelManager level_manager_;
 	Queue<network::NetworkMessagePlayerSpawnAck> spawn_message_queue_;
-
 	gameplay::Inputinator inputinator_;
 	Networkinfo networkinfo_;
 	Vector2 oldPos_;
@@ -46,6 +43,13 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	uint32 tick_;
 	uint32 server_tick_;
 	Time server_time_;
+
+	// Gameplay
+	Player player_;
+	DynamicArray <Entity> entities_;
+	LevelManager level_manager_;
+	TextHandler text_handler_;
+	SDLFont text_font_;
 };
 
 #endif // !CLIENT_APP_HPP_INCLUDED

@@ -19,6 +19,12 @@
 #include "sprite_handler.hpp"
 
 namespace charlie {
+	namespace Color
+	{
+		const static SDL_Color white = {255, 255, 255, 255};
+		const static SDL_Color Black = {0, 0, 0, 255};
+	}
+	
 	struct SDLApplication {
 		SDLApplication();
 		virtual ~SDLApplication() = default;

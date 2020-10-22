@@ -81,19 +81,19 @@ namespace charlie
 
 		const auto delta_y = body_window_rect_.y + point.y - mouse_y;
 		const auto delta_x = body_window_rect_.x + point.x - mouse_x;
-		turret_rotation_ = -90 + atan2(delta_y, delta_x) * (180 / M_PI);
+		turret_rotation_ = static_cast<float>(-90 + atan2(delta_y, delta_x) * (180 / M_PI));
 		turret_rotation_ >= 0 ? turret_rotation_ : 360 + turret_rotation_;
 	}
 
 	void Player::render(SDL_Rect cam)
 	{
-		body_window_rect_.x = int(transform_.position_.x_) - cam.x;
-		body_window_rect_.y = int(transform_.position_.y_) - cam.y;
-		turret_window_rect_.x = int(transform_.position_.x_) - cam.x;
-		turret_window_rect_.y = int(transform_.position_.y_) - cam.y;
+		body_window_rect_.x = static_cast<int>(transform_.position_.x_) - cam.x;
+		body_window_rect_.y = static_cast<int>(transform_.position_.y_) - cam.y;
+		turret_window_rect_.x = static_cast<int>(transform_.position_.x_) - cam.x;
+		turret_window_rect_.y = static_cast<int>(transform_.position_.y_) - cam.y;
 
-		point.x = (int)transform_.origin_.x_;
-		point.y = (int)transform_.origin_.y_;
+		point.x = static_cast<int>(transform_.origin_.x_);
+		point.y = static_cast<int>(transform_.origin_.y_);
 
 		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, transform_.rotation_, &point, SDL_FLIP_NONE);
 		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, turret_rotation_, &point, SDL_FLIP_NONE);

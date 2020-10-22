@@ -31,26 +31,6 @@ namespace charlie {
 	template <typename T, typename E>
 	using Map = std::map<T, E>;
 
-	struct Color {
-		static const Color Black;
-		static const Color White;
-		static const Color Red;
-		static const Color Green;
-		static const Color Blue;
-		static const Color Yellow;
-		static const Color Magenta;
-		static const Color Aqua;
-		static const Color Lime;
-
-		Color();
-		Color(const float r, const float g, const float b, const float a = 1.0f);
-
-		float r_;
-		float g_;
-		float b_;
-		float a_;
-	};
-
 	struct Point {
 		Point();
 		Point(const int32 x, const int32 y);
@@ -368,43 +348,6 @@ namespace charlie {
 		Point position_;
 	};
 
-	struct Window {
-		Window();
-
-		bool open(const Settings& settings);
-		void close();
-		void resize(const int32 width, const int32 height);
-
-		bool update();
-		void present();
-
-		uint64 window_;
-		uint64 device_;
-		uint64 context_;
-		int32 width_;
-		int32 height_;
-		Mouse mouse_;
-		Keyboard keyboard_;
-	};
-
-	struct Texture {
-		enum class Filter {
-			Nearest,
-			Linear,
-		};
-
-		Texture();
-
-		bool is_valid() const;
-		bool create(const char* filename, const Filter filter = Filter::Nearest);
-		bool create(const int32 width, const int32 height, const void* data, const Filter filter = Filter::Nearest);
-		void destroy();
-
-		uint32 id_;
-		int32 width_;
-		int32 height_;
-	};
-
 	struct Transform {
 		Transform();
 		explicit Transform(const Vector2& position);
@@ -419,51 +362,6 @@ namespace charlie {
 		Vector2 position_;
 		Vector2 scale_;
 		float rotation_;
-	};
-
-	struct Material {
-		enum class Blend {
-			None,
-			Alpha,
-		};
-
-		Material();
-
-		void set_blend_mode(const Blend mode);
-		void set_color(const Color& color);
-		void set_texture(const Texture& texture);
-
-		Blend blend_;
-		Color color_;
-		const Texture* texture_;
-	};
-
-	struct Sprite {
-		Sprite();
-		Sprite(const Vector2& size,
-			const Rectangle& source);
-
-		void set_size(const Vector2& size);
-		void set_source(const Rectangle& source);
-
-		Vector2 size_;
-		Rectangle source_;
-	};
-
-	struct Renderer {
-		Renderer();
-
-		bool initialize(const Window& window);
-		void shutdown();
-
-		void clear(const Color& color);
-		void projection(const int32 width, const int32 height);
-		void render_text(const Point& point, const Color& color, const int32 scale, const char* text);
-		void render_text_va(const Point& point, const Color& color, const int32 scale, const char* format, ...);
-		void render_line(const Point& start, const Point& end, const uint32 color);
-		void render_rectangle(const Rectangle& rectangle, const Color& color);
-		void render_rectangle_fill(const Rectangle& rectangle, const Color& color);
-		void render_sprite(const Sprite& sprite, const Material& material, const Transform& transform);
 	};
 } // !charlie
 

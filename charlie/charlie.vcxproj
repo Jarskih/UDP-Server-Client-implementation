@@ -98,6 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\Hud.cpp" />
     <ClCompile Include="source\Camera.cpp" />
     <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="source\leveldata.cpp" />
@@ -112,7 +113,6 @@
     <ClCompile Include="source\sdl_keyboard.cc" />
     <ClCompile Include="source\sdl_mouse.cc" />
     <ClCompile Include="source\charlie_networkinfo.cc" />
-    <ClCompile Include="source\charlie_application.cc" />
     <ClCompile Include="source\charlie_gameplay.cc" />
     <ClCompile Include="source\charlie_messages.cc" />
     <ClCompile Include="source\charlie_system.cc" />
@@ -129,12 +129,12 @@
   <ItemGroup>
     <ClInclude Include="include\Camera.h" />
     <ClInclude Include="include\charlie.hpp" />
-    <ClInclude Include="include\charlie_application.hpp" />
     <ClInclude Include="include\charlie_gameplay.hpp" />
     <ClInclude Include="include\charlie_messages.hpp" />
     <ClInclude Include="include\charlie_network.hpp" />
     <ClInclude Include="include\charlie_networkinfo.hpp" />
     <ClInclude Include="include\entity.h" />
+    <ClInclude Include="include\Hud.h" />
     <ClInclude Include="include\leveldata.h" />
     <ClInclude Include="include\level_manager.h" />
     <ClInclude Include="include\sdl_collider.h" />

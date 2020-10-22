@@ -57,12 +57,14 @@ namespace charlie {
 		NetworkMessageInputCommand::NetworkMessageInputCommand()
 			: type_(NETWORK_MESSAGE_INPUT_COMMAND)
 			, bits_(0)
+			, rot_(0)
 		{
 		}
 
-		NetworkMessageInputCommand::NetworkMessageInputCommand(uint8 bits)
+		NetworkMessageInputCommand::NetworkMessageInputCommand(uint8 bits, float rotation)
 			: type_(NETWORK_MESSAGE_INPUT_COMMAND)
 			, bits_(bits)
+			, rot_(rotation)
 		{
 		}
 

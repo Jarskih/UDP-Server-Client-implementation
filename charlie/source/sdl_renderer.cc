@@ -27,9 +27,9 @@ namespace charlie
 		return renderer_;
 	}
 
-	void SDLRenderer::clear(const Color& color) const
+	void SDLRenderer::clear(const SDL_Color color) const
 	{
-		SDL_SetRenderDrawColor(renderer_, (uint8)color.r_, (uint8)color.g_, (uint8)color.b_, (uint8)color.a_);
+		SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
 		SDL_RenderClear(renderer_);
 	}
 

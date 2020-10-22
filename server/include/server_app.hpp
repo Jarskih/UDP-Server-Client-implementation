@@ -53,16 +53,17 @@ struct ClientList {
 	DynamicArray<Client> clients_;
 };
 
-struct Message
-{
-	uint16 seq_;
-	uint32 id_;
-};
-
 struct Event
 {
 	uint32 id_;
 	uint32 send_to_;
+};
+
+struct InputCommand
+{
+	uint32 id_;
+	uint8 input_bits_;
+	float rot_;
 };
 
 
@@ -98,9 +99,10 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	Vector2 send_position_;
 	Random random_;
 
-	DynamicArray<Message> reliable_queue_;
+	gameplay::ReliableMessageQueue reliable_queue_;
 	DynamicArray<Event> spawn_event_list;
 	DynamicArray<Event> destroy_event__list_;
+	Queue<InputCommand> input_queue_;
 	uint32 index_;
 };
 

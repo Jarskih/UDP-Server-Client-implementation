@@ -1,8 +1,14 @@
 ﻿#pragma once
+#include <SDL_render.h>
+
 #include "charlie.hpp"
+#include "sdl_font.h"
+#include "sdl_text_handler.h"
 
 namespace charlie
 {
+	class SDLSprite;
+
 	namespace network {
 		struct Connection;
 	}
@@ -12,9 +18,15 @@ namespace charlie
 		Networkinfo();
 
 		void update(Time dt, network::Connection connection);
-		void render(Renderer renderer, network::Connection connection);
+		void render(SDL_Renderer* renderer, const network::Connection connection, const TextHandler& text_handler);
+		void render_text(SDL_Renderer* renderer, network::Connection connection, const TextHandler& text_handler,
+		                 const char* text, SDL_Color color, int x, int y);
 		void packet_received(int32 size);
 		void packet_sent(int32 size);
+		
+		SDLSprite* text_;
+		SDL_Rect rect_;
+		
 		Time rtt_;
 		Time rtt_max_;
 		Time rtt_min_;
