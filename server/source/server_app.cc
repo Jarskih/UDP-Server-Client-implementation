@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <cmath>
 
+#include "config.h"
+
 ServerApp::ServerApp()
 	: tickrate_(1.0 / 60.0)
 	, tick_(0)
@@ -28,8 +30,8 @@ bool ServerApp::on_init()
 	level_manager_ = LevelManager();
 	level_manager_.load_assets(data);
 
-	LEVEL_WIDTH = level_manager_.width_;
-	LEVEL_HEIGHT = level_manager_.height_;
+	level_width_ = level_manager_.width_;
+	level_heigth_ = level_manager_.height_;
 
 	return true;
 }
@@ -56,9 +58,17 @@ bool ServerApp::on_tick(const Time& dt)
 		{
 			const InputCommand cmd = input_queue_.front();
 			input_queue_.pop();
-			
-			players_[cmd.id_].input_bits_ = cmd.input_bits_;
-			players_[cmd.id_].turret_rotation_ = cmd.rot_;
+
+			for (auto& player : players_)
+			{
+				if(player.id_ == cmd.id_)
+				{
+					player.input_bits_ = cmd.input_bits_;
+					player.turret_rotation_ = cmd.rot_;
+					player.fire_ = cmd.fire_;
+					break;
+				}	
+			}
 		}
 
 		for (auto& player : players_)
@@ -95,19 +105,19 @@ bool ServerApp::on_tick(const Time& dt)
 			}
 
 
-			if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w > LEVEL_WIDTH))
+			if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w > level_width_))
 			{
 				player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 			}
 
-			if ((player.transform_.position_.y_ < 0) || (player.transform_.position_.y_ + (float)player.body_sprite_->get_area().h > LEVEL_HEIGHT))
+			if ((player.transform_.position_.y_ < 0) || (player.transform_.position_.y_ + (float)player.body_sprite_->get_area().h > level_heigth_))
 			{
 				player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 			}
 
 			{
-				cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - SCREEN_WIDTH / 2;
-				cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - SCREEN_HEIGHT / 2;
+				cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - config::SCREEN_WIDTH / 2;
+				cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - config::SCREEN_HEIGHT / 2;
 
 				if (cam_.x < 0)
 				{
@@ -117,16 +127,33 @@ bool ServerApp::on_tick(const Time& dt)
 				{
 					cam_.y = 0;
 				}
-				if (cam_.x > LEVEL_WIDTH - cam_.w)
+				if (cam_.x > level_width_ - cam_.w)
 				{
-					cam_.x = LEVEL_WIDTH - cam_.w;
+					cam_.x = level_width_ - cam_.w;
 				}
-				if (cam_.y > LEVEL_HEIGHT - cam_.h)
+				if (cam_.y > level_heigth_ - cam_.h)
 				{
-					cam_.y = LEVEL_HEIGHT - cam_.h;
+					cam_.y = level_heigth_ - cam_.h;
 				}
 			}
+
+			player.fire_acc_ += dt;
+			if(player.fire_ && player.can_shoot())
+			{
+				spawn_projectile(player.get_shoot_pos(), player.turret_rotation_, player.id_);
+				player.fire();
+			}
 		}
+	}
+
+	for (auto& projectile : projectiles_)
+	{
+		projectile.update(dt);
+	}
+
+	for (auto& id : players_to_remove_)
+	{
+		remove_player(id);
 	}
 
 	return true;
@@ -145,6 +172,11 @@ void ServerApp::on_draw()
 	{
 		player.render(cam_);
 	}
+
+	for (auto& projectile : projectiles_)
+	{
+		projectile.render(cam_);
+	}
 }
 
 void ServerApp::on_timeout(network::Connection* connection)
@@ -152,55 +184,48 @@ void ServerApp::on_timeout(network::Connection* connection)
 	connection->set_listener(nullptr);
 	const uint32 id = clients_.find_client((uint64)connection);
 
-	auto it = players_.begin();
-	while (it != players_.end())
-	{
-		if ((*it).id_ == id)
-		{
-			players_.erase(it);
-			break;
-		}
-		++it;
-	}
+	players_to_remove_.push_back(id);
+		
 	clients_.remove_client((uint64)connection);
+	printf("Player %i disconnected. Players %i \n", id, (int)clients_.clients_.size());
 }
 
 void ServerApp::on_connect(network::Connection* connection)
 {
 	connection->set_listener(this);
 
-	auto id = clients_.add_client((uint64)connection);
+	const auto id = clients_.add_client((uint64)connection);
 	// event : "player_connected"
 	Player player;
 	player.id_ = id;
 
 	Vector2 pos = Vector2(20.0f + random_() % 200, 200.0f + random_() % 100);
 	player.init(renderer_.get_renderer(), pos, index_);
-	player.load_body_sprite("../assets/tank_body.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
-	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
+	player.load_body_sprite("../assets/tank_body.png", 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+	player.load_turret_sprite("../assets/tank_turret.png", 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 
-	// inform all existing players of new player
-	for (Player p : players_)
+	for (const Player& p : players_)
 	{
+		{
+		// inform all existing players of new player
 		Event spawn_event;
 		spawn_event.id_ = player.id_; // player to spawn
 		spawn_event.send_to_ = p.id_; // player to receive the event
 		spawn_event_list.push_back(spawn_event);
-	}
-
-	// inform joining player of others
-	for (Player p : players_)
-	{
+		}
+		{
+		// inform joining player of others
 		Event spawn_event;
 		spawn_event.id_ = p.id_;
 		spawn_event.send_to_ = player.id_;
 		spawn_event_list.push_back(spawn_event);
+		}
 	}
-
+	
 	players_.push_back(player);
 	index_ += 1;
 
-	printf("player joined. players: %i\n", (int)players_.size());
+	printf("player joined. players: %i\n", (int)clients_.clients_.size());
 }
 
 void ServerApp::on_disconnect(network::Connection* connection)
@@ -208,30 +233,21 @@ void ServerApp::on_disconnect(network::Connection* connection)
 	connection->set_listener(nullptr);
 
 	const uint32 id = clients_.find_client((uint64)connection);
+	
+	players_to_remove_.push_back(id);
 
-	auto it = players_.begin();
-	while (it != players_.end())
-	{
-		if ((*it).id_ == id)
-		{
-			players_.erase(it);
-			break;
-		}
-		++it;
-	}
-
-	// inform joining player of others
+	// inform of others that player disconnected
 	for (Player p : players_)
 	{
 		Event destroy_event_;
 		destroy_event_.id_ = id;
 		destroy_event_.send_to_ = p.id_;
-		destroy_event__list_.push_back(destroy_event_);
+		destroy_event_list_.push_back(destroy_event_);
 	}
 
 	clients_.remove_client((uint64)connection);
 
-	printf("player disconnected. players: %i\n", (int)players_.size());
+	printf("player disconnected. players: %i\n", (int)clients_.clients_.size());
 }
 
 void ServerApp::on_acknowledge(network::Connection* connection,
@@ -260,6 +276,11 @@ void ServerApp::on_receive(network::Connection* connection,
 				cmd.id_ = id;
 				cmd.input_bits_ = command.bits_;
 				cmd.rot_ = command.rot_;
+				cmd.fire_ = command.fire_;
+				if(cmd.fire_)
+				{
+					printf("player fire command received \n");
+				}
 				input_queue_.push(cmd);
 				break;
 			}
@@ -271,10 +292,15 @@ void ServerApp::on_receive(network::Connection* connection,
 			break;
 		}
 
+		network::NetworkMessagePlayerSpawnAck msg;
+		if (!msg.read(reader)) {
+			assert(!"could not read command!");
+		}
+
 		auto message = reliable_queue_.get_message(connection->acknowledge_);
 		if(message.seq_ != 0)
 		{
-			printf("Spawn command %i acknowledged on sequence %i \n", message.id_, message.seq_);
+			printf("Spawn command %i acknowledged on sequence %i \n", msg.id_, message.seq_);
 			remove_from_array(spawn_event_list, message.id_);
 		}
 	}
@@ -314,7 +340,7 @@ void ServerApp::on_send(network::Connection* connection,
 						assert(!"failed to write message!");
 					}
 
-					printf("Server sent request to: %i to spawn %i on sequence %i\n", id, event.id_, sequence);
+					//printf("Server sent request to: %i to spawn %i on sequence %i\n", id, event.id_, sequence);
 					break;
 				}
 			}
@@ -322,9 +348,10 @@ void ServerApp::on_send(network::Connection* connection,
 	}
 
 	{
-		for (auto destroy_event : destroy_event__list_)
+		for (auto destroy_event : destroy_event_list_)
 		{
 			// TODO Create destroy message
+			
 		}
 	}
 
@@ -346,6 +373,29 @@ void ServerApp::on_send(network::Connection* connection,
 			}
 		}
 	}
+}
+
+void ServerApp::remove_player(uint32 id)
+{
+	auto it = players_.begin();
+	while (it != players_.end())
+	{
+		if ((*it).id_ == id)
+		{
+			players_.erase(it);
+			break;
+		}
+		++it;
+	}
+}
+
+void ServerApp::spawn_projectile(Vector2 pos, float rotation, uint32 id)
+{
+	Projectile e(pos, rotation, id);
+	e.renderer_ = renderer_.get_renderer();
+	e.load_sprite("../assets/Light_Shell.png", 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
+	projectiles_.push_back(e);
+	printf("Spawned projectile \n");
 }
 
 bool ServerApp::contains(const DynamicArray<uint32>& arr, uint32 id)

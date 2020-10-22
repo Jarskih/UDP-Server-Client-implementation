@@ -40,17 +40,12 @@ namespace charlie {
 
 		SDLWindow window_;
 		SDLRenderer renderer_;
-		Camera camera_;
 		SDL_Rect cam_;
-		charlie::network::Service network_;
+		network::Service network_;
 		InputHandler input_handler_;
 		SpriteHandler sprite_handler_;
-		int SCREEN_WIDTH;
-		int SCREEN_HEIGHT;
-		int LEVEL_WIDTH;
-		int LEVEL_HEIGHT;
-		int PLAYER_WIDTH;
-		int PLAYER_HEIGHT;
+		int level_width_;
+		int level_heigth_;
 	};
 } // !charlies
 

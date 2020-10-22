@@ -875,6 +875,12 @@ namespace charlie {
 		rotation_ = rotation;
 	}
 
+	void Transform::set_rotation(const Vector2& dir)
+	{
+		rotation_ = static_cast<float>(-90 + atan2(dir.x_, dir.y_) * (180 / M_PI));
+		rotation_ >= 0 ? rotation_ : 360 + rotation_;
+	}
+
 	Vector2 Transform::forward() const
 	{
 		const float rad = (rotation_ * (float)M_PI) / 180.0f;

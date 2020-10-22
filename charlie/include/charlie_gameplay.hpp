@@ -300,6 +300,7 @@ namespace charlie {
 			Vector2 position_;
 			float rotation_;
 			float turret_rotation;
+			bool fire_;
 		};
 
 		struct PosSnapshot
@@ -314,8 +315,7 @@ namespace charlie {
 
 		struct Interpolator {
 			Interpolator();
-
-			Vector2 interpolate_pos() const;
+			Vector2 interpolate_pos(float rtt) const;
 			float interpolate_rot() const;
 			float interpolate_turret_rot() const;
 			void add_position(PosSnapshot snapshot);

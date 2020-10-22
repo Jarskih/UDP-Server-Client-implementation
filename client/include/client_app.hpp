@@ -10,8 +10,8 @@
 #include "entity.h"
 #include "level_manager.h"
 #include "player.hpp"
+#include "projectile.h"
 #include "sdl_text_handler.h"
-#include "sprite_handler.hpp"
 
 using namespace charlie;
 
@@ -28,6 +28,9 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	virtual void on_acknowledge(network::Connection* connection, const uint16 sequence);
 	virtual void on_receive(network::Connection* connection, network::NetworkStreamReader& reader);
 	virtual void on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer);
+	void spawn_entity(network::NetworkMessagePlayerSpawn message);
+	void spawn_projectile(network::NetworkMessageProjectileSpawn message);
+	void spawn_local_projectile(Vector2 pos, float rotation);
 
 	// Networking
 	network::Connection connection_;
@@ -47,6 +50,7 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	// Gameplay
 	Player player_;
 	DynamicArray <Entity> entities_;
+	DynamicArray<Projectile> projectiles_;
 	LevelManager level_manager_;
 	TextHandler text_handler_;
 	SDLFont text_font_;

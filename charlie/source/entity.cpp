@@ -50,8 +50,7 @@ namespace charlie
 
 		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, transform_.rotation_, point, SDL_FLIP_NONE);
 		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, turret_rotation_, point, SDL_FLIP_NONE);
-		SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
+		SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
 		SDL_RenderDrawRect(renderer_, &body_window_rect_);
-		SDL_RenderDrawRect(renderer_, &turret_window_rect_);
 	}
 }

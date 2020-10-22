@@ -1,8 +1,8 @@
 #include "player.hpp"
 
-
 #include "camera.h"
 #include "charlie_gameplay.hpp"
+#include "config.h"
 #include "input_handler.h"
 #include "sdl_application.hpp"
 #include "Singleton.hpp"
@@ -12,18 +12,20 @@ namespace charlie
 {
 	Player::Player()
 		: renderer_(nullptr)
-		, body_sprite_(nullptr)
-		, body_window_rect_()
-		, turret_sprite_(nullptr)
-		, turret_window_rect_()
-		, point()
-		, turret_rotation_(0)
-		, input_bits_(0)
-		, id_(0)
-		, speed_(100.0f)
-		, tank_turn_speed_(50.0f)
-		, turret_turn_speed_(1)
+		  , body_sprite_(nullptr)
+		  , body_window_rect_()
+		  , turret_sprite_(nullptr)
+		  , turret_window_rect_()
+		  , point()
+		  , turret_rotation_(0)
+		  , input_bits_(0)
+		  , id_(0)
+		  , speed_(config::PLAYER_SPEED)
+		  , tank_turn_speed_(config::PLAYER_TURN_SPEED)
+		  , turret_turn_speed_(1)
+		  , fire_(false)
 	{
+		fire_delay_ = Time(config::FIRE_DELAY);
 	}
 
 	void Player::init(SDL_Renderer* renderer, Vector2& pos, uint32 id)
@@ -38,6 +40,7 @@ namespace charlie
 		float direction = 0;
 		float rotation = 0;
 		input_bits_ = 0;
+		fire_ = false;
 
 		if (Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_W)) {
 			input_bits_ |= (1 << int32(gameplay::Action::Up));
@@ -83,6 +86,12 @@ namespace charlie
 		const auto delta_x = body_window_rect_.x + point.x - mouse_x;
 		turret_rotation_ = static_cast<float>(-90 + atan2(delta_y, delta_x) * (180 / M_PI));
 		turret_rotation_ >= 0 ? turret_rotation_ : 360 + turret_rotation_;
+
+		fire_acc_ += deltaTime;
+		if(Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_SPACE) || Singleton<InputHandler>::Get()->IsMouseButtonDown(1))
+		{
+			fire_ = true;
+		}
 	}
 
 	void Player::render(SDL_Rect cam)
@@ -95,8 +104,8 @@ namespace charlie
 		point.x = static_cast<int>(transform_.origin_.x_);
 		point.y = static_cast<int>(transform_.origin_.y_);
 
-		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, transform_.rotation_, &point, SDL_FLIP_NONE);
-		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, turret_rotation_, &point, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, (double)transform_.rotation_, &point, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, (double)turret_rotation_, &point, SDL_FLIP_NONE);
 
 		//SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
 		//SDL_RenderDrawRect(renderer_, &body_window_rect_);
@@ -122,15 +131,34 @@ namespace charlie
 		turret_window_rect_ = { srcX, srcY, turret_sprite_->get_area().w, turret_sprite_->get_area().h };
 	}
 
+	Vector2 Player::get_shoot_pos()
+	{
+		Vector2 pos;
+		pos.x_ = transform_.position_.x_ + transform_.origin_.x_ - config::PROJECTILE_WIDTH/2;
+		pos.y_ = transform_.position_.y_ + transform_.origin_.y_ - config::PROJECTILE_WIDTH/2;
+		return pos;
+	}
+
 	void Player::destroy()
 	{
-		renderer_ = nullptr;
 		body_sprite_ = nullptr;
+		renderer_ = nullptr;
 		turret_sprite_ = nullptr;
 	}
 
 	uint8 Player::get_input_bits() const
 	{
 		return input_bits_;
+	}
+
+	bool Player::can_shoot()
+	{
+		return fire_acc_ > fire_delay_;
+	}
+
+	void Player::fire()
+	{
+		fire_acc_ = Time(0.0);
+		// TODO effects sounds
 	}
 }

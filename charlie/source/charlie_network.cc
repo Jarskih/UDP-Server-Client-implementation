@@ -332,7 +332,7 @@ namespace charlie {
 			return true;
 		}
 
-		bool NetworkStreamWriter::serialize(const  int8& value)
+		bool NetworkStreamWriter::serialize(const int8& value)
 		{
 			if (!can_write(*this, value)) { return false; }
 			at_[0] = value;
@@ -431,6 +431,15 @@ namespace charlie {
 			if (!can_write_bytes(*this, length)) { return false; }
 			memcpy(at_, values, length);
 			at_ += length;
+			update_base_stream_length(*this);
+			return true;
+		}
+
+		bool NetworkStreamWriter::serialize(const bool& value)
+		{
+			if(!can_write_bytes(*this, value)) { return false;}
+			at_[0] = value;
+			at_ += sizeof(value);
 			update_base_stream_length(*this);
 			return true;
 		}
@@ -606,6 +615,14 @@ namespace charlie {
 			if (!can_read_bytes(*this, length)) { return false; }
 			memcpy(values, at_, length);
 			at_ += length;
+			return true;
+		}
+
+		bool NetworkStreamReader::serialize(bool& value)
+		{
+			if(!can_read_bytes(*this, value)) { return false; }
+			value = at_[0];
+			at_ += sizeof(value);
 			return true;
 		}
 

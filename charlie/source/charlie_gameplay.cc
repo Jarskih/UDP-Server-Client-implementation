@@ -124,7 +124,7 @@ namespace charlie {
 		{
 		}
 
-		Vector2 Interpolator::interpolate_pos() const
+		Vector2 Interpolator::interpolate_pos(const float rtt) const
 		{
 			if (snapshots_.size() < 2)
 			{
@@ -132,7 +132,7 @@ namespace charlie {
 			}
 			const auto start = snapshots_[snapshots_.size() - 2];
 			const auto end = snapshots_[snapshots_.size() - 1];
-			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
+			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds() + rtt/2;
 
 			const Vector2 newPos = Vector2::lerp(start.position, end.position, t);
 			return newPos;
@@ -167,7 +167,6 @@ namespace charlie {
 		void Interpolator::add_position(PosSnapshot snapshot)
 		{
 			snapshots_.push_back(snapshot);
-			acc_ = Time(0.0);
 		}
 
 		Inputinator::Inputinator() = default;

@@ -76,7 +76,7 @@ namespace charlie {
 
 		struct NetworkMessageInputCommand {
 			NetworkMessageInputCommand();
-			explicit NetworkMessageInputCommand(uint8 bits, float rotation);
+			explicit NetworkMessageInputCommand(uint8 bits, float rotation, bool fire);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -88,12 +88,14 @@ namespace charlie {
 				result &= stream.serialize(type_);
 				result &= stream.serialize(bits_);
 				result &= stream.serialize(rot_);
+				result &= stream.serialize(fire_);
 				return result;
 			}
 
 			uint8 type_;
 			uint8 bits_;
 			float rot_;
+			bool fire_;
 		};
 
 		struct NetworkMessagePlayerState {
@@ -162,6 +164,31 @@ namespace charlie {
 
 			uint8 type_;
 			uint32 id_;
+		};
+
+		struct NetworkMessageProjectileSpawn
+		{
+			NetworkMessageProjectileSpawn();
+			explicit NetworkMessageProjectileSpawn(const uint32 id, Transform& transform);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(id_);
+				result &= stream.serialize(pos_.x_);
+				result &= stream.serialize(pos_.y_);
+				result &= stream.serialize(rotation_);
+				return result;
+			}
+
+			uint8 type_;
+			uint32 id_;
+			Vector2 pos_;
+			float rotation_;
 		};
 	} // !network
 } // !charlie

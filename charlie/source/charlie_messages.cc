@@ -56,15 +56,17 @@ namespace charlie {
 
 		NetworkMessageInputCommand::NetworkMessageInputCommand()
 			: type_(NETWORK_MESSAGE_INPUT_COMMAND)
-			, bits_(0)
-			, rot_(0)
+			  , bits_(0)
+			  , rot_(0)
+			  , fire_(false)
 		{
 		}
 
-		NetworkMessageInputCommand::NetworkMessageInputCommand(uint8 bits, float rotation)
+		NetworkMessageInputCommand::NetworkMessageInputCommand(uint8 bits, float rotation, bool fire)
 			: type_(NETWORK_MESSAGE_INPUT_COMMAND)
-			, bits_(bits)
-			, rot_(rotation)
+			  , bits_(bits)
+			  , rot_(rotation)
+			  , fire_(fire)
 		{
 		}
 
@@ -134,6 +136,31 @@ namespace charlie {
 		}
 
 		bool NetworkMessagePlayerSpawnAck::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
+
+		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn()
+		: type_(0)
+		, id_(0)
+		, rotation_(0)
+		{
+		}
+
+		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const uint32 id, Transform& transform)
+		: type_(0)
+		, id_(id)
+		, rotation_(transform.rotation_)
+		{
+			pos_ = transform.position_;
+		}
+
+		bool NetworkMessageProjectileSpawn::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessageProjectileSpawn::write(NetworkStreamWriter& writer)
 		{
 			return serialize(writer);
 		}

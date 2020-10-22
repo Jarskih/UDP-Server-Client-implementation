@@ -81,8 +81,8 @@ namespace charlie {
 	{
 		const auto length = strlen(text);
 		char buffer[20] = "";
-		rect_ = {x, y, (int)length*10, 15};
-		sprintf_s(buffer, text, (long)connection.latency().as_milliseconds());
+		rect_ = {x, y, static_cast<int>(length)*10, 15};
+		sprintf_s(buffer, text, static_cast<long>(connection.latency().as_milliseconds()));
 		SDLSprite* sprite = text_handler.CreateText(buffer, color, rect_.x, rect_.y, rect_.w, rect_.h);
 		SDL_RenderCopy(renderer, sprite->get_texture(), nullptr, &rect_);
 		sprite->destroy();
@@ -91,12 +91,12 @@ namespace charlie {
 	void Networkinfo::packet_received(int32 size)
 	{
 		packets_recv_++;
-		bytes_recv_ += (float)size;
+		bytes_recv_ += static_cast<float>(size);
 	}
 
 	void Networkinfo::packet_sent(int32 size)
 	{
 		packets_sent_++;
-		bytes_sent_ += (float)size;
+		bytes_sent_ += static_cast<float>(size);
 	}
 }

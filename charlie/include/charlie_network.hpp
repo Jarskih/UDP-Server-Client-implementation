@@ -79,6 +79,7 @@ namespace charlie {
 			bool serialize(const int64& value);
 			bool serialize(const uint64 length, const uint8* values);
 			bool serialize(const uint64 length, const char* values);
+			bool serialize(const bool& value);
 
 			NetworkStream& stream_;
 			uint8* at_;
@@ -104,6 +105,7 @@ namespace charlie {
 			bool serialize(int64& value);
 			bool serialize(const uint64 length, uint8* values);
 			bool serialize(const uint64 length, char* values);
+			bool serialize(bool& value);
 
 			const NetworkStream& stream_;
 			const uint8* at_;
