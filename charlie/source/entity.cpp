@@ -53,4 +53,11 @@ namespace charlie
 		SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
 		SDL_RenderDrawRect(renderer_, &body_window_rect_);
 	}
+
+	void Entity::destroy()
+	{
+		renderer_ = nullptr;
+		body_sprite_ = nullptr;
+		turret_sprite_ = nullptr;
+	}
 }

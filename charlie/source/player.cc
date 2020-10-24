@@ -33,6 +33,7 @@ namespace charlie
 		renderer_ = renderer;
 		transform_.position_ = pos;
 		id_ = id;
+		collider_ = RectangleCollider((int)pos.x_,(int)pos.y_,config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	}
 
 	void Player::update(Time deltaTime, int levelHeight, int levelWidth)
@@ -92,6 +93,8 @@ namespace charlie
 		{
 			fire_ = true;
 		}
+
+	    collider_.SetPosition((int)transform_.position_.x_, (int)transform_.position_.y_);
 	}
 
 	void Player::render(SDL_Rect cam)
@@ -107,6 +110,15 @@ namespace charlie
 		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, (double)transform_.rotation_, &point, SDL_FLIP_NONE);
 		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, (double)turret_rotation_, &point, SDL_FLIP_NONE);
 
+		SDL_Rect collider_rect_ = {
+			collider_.GetBounds().x - cam.x,
+			collider_.GetBounds().y - cam.y,
+			collider_.GetBounds().w,
+			collider_.GetBounds().h
+		};
+
+		SDL_RenderDrawRect(renderer_, &collider_rect_);
+		
 		//SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
 		//SDL_RenderDrawRect(renderer_, &body_window_rect_);
 		//SDL_RenderDrawRect(renderer_, &turret_window_rect_);
@@ -141,6 +153,7 @@ namespace charlie
 
 	void Player::destroy()
 	{
+		renderer_ = nullptr;
 		body_sprite_ = nullptr;
 		renderer_ = nullptr;
 		turret_sprite_ = nullptr;
@@ -160,5 +173,9 @@ namespace charlie
 	{
 		fire_acc_ = Time(0.0);
 		// TODO effects sounds
+	}
+
+	void Player::on_collision()
+	{
 	}
 }

@@ -10,6 +10,7 @@
 
 namespace charlie {
 	namespace gameplay {
+		
 		enum class Action {
 			Up,
 			Down,
@@ -293,6 +294,14 @@ namespace charlie {
 			DynamicArray<System*> systems_;
 		};
 
+		struct InputCommand
+		{
+			uint32 id_;
+			uint8 input_bits_;
+			float rot_;
+			bool fire_;
+		};
+
 		struct InputSnapshot {
 			InputSnapshot();
 			uint32 tick_;
@@ -347,7 +356,7 @@ namespace charlie {
 		struct ReliableMessageQueue
 		{
 			ReliableMessageQueue();
-			void add_message(uint32 tick, Message msg);
+			void add_message(uint32 tick, Message& msg);
 			Message get_message(uint32 tick_);
 			int32 index_;
 			StaticArray<Message, 50> buffer_;

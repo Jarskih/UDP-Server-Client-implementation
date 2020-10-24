@@ -5,10 +5,10 @@
 namespace charlie
 {
 
-	bool CollisionHandler::IsColliding(RectangleCollider* p_lhs, RectangleCollider* p_rhs)
+	bool CollisionHandler::IsColliding(RectangleCollider& p_lhs, RectangleCollider& p_rhs)
 	{
-		SDL_Rect left = p_lhs->GetBounds();
-		const SDL_Rect right = p_rhs->GetBounds();
+		SDL_Rect left = p_lhs.GetBounds();
+		const SDL_Rect right = p_rhs.GetBounds();
 		if (left.x > right.x + right.w ||
 			left.x + left.w < right.x ||
 			left.y > right.y + right.h ||
@@ -19,11 +19,11 @@ namespace charlie
 		return true;
 	}
 
-	bool CollisionHandler::IsColliding(Collider* p_lhs, Collider* p_rhs)
+	bool CollisionHandler::IsColliding(Collider& p_lhs, Collider& p_rhs) const
 	{
-		if (p_lhs->GetType() == COLLIDERTYPE::RECTANGLE && p_rhs->GetType() == COLLIDERTYPE::RECTANGLE)
+		if (p_lhs.GetType() == COLLIDERTYPE::RECTANGLE && p_rhs.GetType() == COLLIDERTYPE::RECTANGLE)
 		{
-			return IsColliding(dynamic_cast<RectangleCollider*>(p_lhs), dynamic_cast<RectangleCollider*>(p_rhs));
+			return IsColliding(dynamic_cast<RectangleCollider&>(p_lhs), dynamic_cast<RectangleCollider&>(p_rhs));
 		}
 		return false;
 	}

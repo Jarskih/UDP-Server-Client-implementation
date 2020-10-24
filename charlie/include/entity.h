@@ -10,6 +10,7 @@ namespace charlie
 		void load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
 		void load_turret_sprite(const char* turret, int srcX, int srcY, int srcW, int srcH);
 		void render(SDL_Rect cam);
+		void destroy();
 		// SDL
 		SDL_Renderer* renderer_;
 		SDLSprite* body_sprite_;

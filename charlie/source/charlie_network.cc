@@ -11,6 +11,8 @@
 #include <cstdio>
 #include <cstdarg>
 
+#include "config.h"
+
 namespace charlie {
 	namespace network {
 		static Service* g_service = nullptr;
@@ -145,12 +147,7 @@ namespace charlie {
 				port_);
 			return string;
 		}
-
-		IPAddress IPAddress::get_broadcast(const uint16 port)
-		{
-			return IPAddress(192,168,1,255, port);
-		}
-
+		
 		// static 
 		bool UDPSocket::get_address(const UDPSocket& socket, IPAddress& address)
 		{
@@ -904,11 +901,6 @@ namespace charlie {
 			g_service->send_stream(this, stream);
 		}
 
-		bool Connection::is_broadcast() const
-		{
-			return address_ == IPAddress::get_broadcast(address_.port_);
-		}
-
 		ConnectionPool::ConnectionPool(const int32 capacity)
 			: capacity_(capacity)
 			, connection_count_(0)
@@ -1180,9 +1172,9 @@ namespace charlie {
 				if (connection->is_endpoint(address)) {
 					return connection;
 				}
+
 				// Update broadcast address to received one
-				if(connection->is_broadcast())
-				{
+				if(connection->address_ == network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT)) {
 					connection->set_address(address);
 					return connection;
 				}

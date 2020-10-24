@@ -103,12 +103,12 @@ namespace charlie {
 			return serialize(writer);
 		}
 
-		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn() : type_(NETWORK_MESSAGE_PLAYER_SPAWN), id_(0)
+		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn() : type_(NETWORK_MESSAGE_PLAYER_SPAWN), message_id_(0)
 		{
 		}
 
 		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn(const Vector2& position, const uint32 id) :
-			type_(NETWORK_MESSAGE_PLAYER_SPAWN), position_(position), id_(id)
+			type_(NETWORK_MESSAGE_PLAYER_SPAWN), position_(position), message_id_(id)
 		{
 		}
 
@@ -122,37 +122,39 @@ namespace charlie {
 			return serialize(writer);
 		}
 
-		NetworkMessagePlayerSpawnAck::NetworkMessagePlayerSpawnAck() : type_(NETWORK_MESSAGE_PLAYER_SPAWN_ACK), id_(0)
+		NetworkMessageAck::NetworkMessageAck() : type_(NETWORK_MESSAGE_ACK), message_id_(0)
 		{
 		}
 
-		NetworkMessagePlayerSpawnAck::NetworkMessagePlayerSpawnAck(const uint32 id) : type_(NETWORK_MESSAGE_PLAYER_SPAWN_ACK), id_(id)
+		NetworkMessageAck::NetworkMessageAck(const uint32 id) : type_(NETWORK_MESSAGE_ACK), message_id_(id)
 		{
 		}
 
-		bool NetworkMessagePlayerSpawnAck::read(NetworkStreamReader& reader)
+		bool NetworkMessageAck::read(NetworkStreamReader& reader)
 		{
 			return serialize(reader);
 		}
 
-		bool NetworkMessagePlayerSpawnAck::write(NetworkStreamWriter& writer)
+		bool NetworkMessageAck::write(NetworkStreamWriter& writer)
 		{
 			return serialize(writer);
 		}
 
 		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn()
-		: type_(0)
-		, id_(0)
-		, rotation_(0)
+			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
+			  , message_id_(0)
+			  , owner_(0)
+			  , rotation_(0)
 		{
 		}
 
-		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const uint32 id, Transform& transform)
-		: type_(0)
-		, id_(id)
-		, rotation_(transform.rotation_)
+		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const uint32 id, const uint32 owner, const Vector2& position, float rotation)
+			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
+			  , message_id_(id)
+			  , owner_(owner)
+			  , pos_(position)
+			  , rotation_(rotation)
 		{
-			pos_ = transform.position_;
 		}
 
 		bool NetworkMessageProjectileSpawn::read(NetworkStreamReader& reader)
@@ -161,6 +163,46 @@ namespace charlie {
 		}
 
 		bool NetworkMessageProjectileSpawn::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
+
+		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected()
+		: type_(NETWORK_MESSAGE_DISCONNECTED)
+		, message_id_(0)
+		{
+		}
+
+		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected(const uint32 id)
+		: type_(NETWORK_MESSAGE_DISCONNECTED)
+		, message_id_(id)
+		{
+		}
+
+		bool NetworkMessagePlayerDisconnected::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessagePlayerDisconnected::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
+
+		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(): type_(NETWORK_MESSAGE_PROJECTILE_DESTROYED), message_id_(0)
+		{
+		}
+
+		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(const uint32 id): type_(NETWORK_MESSAGE_PROJECTILE_DESTROYED), message_id_(id)
+		{
+		}
+
+		bool NetworkMessageProjectileDestroy::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessageProjectileDestroy::write(NetworkStreamWriter& writer)
 		{
 			return serialize(writer);
 		}

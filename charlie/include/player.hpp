@@ -1,4 +1,5 @@
 #pragma once
+#include "sdl_collider.h"
 #include "sdl_sprite.hpp"
 #include "sdl_window.hpp"
 
@@ -19,6 +20,7 @@ namespace charlie
 		uint8 get_input_bits() const;
 		bool can_shoot();
 		void fire();
+		void on_collision();
 
 		// SDL
 		SDL_Renderer* renderer_;
@@ -29,6 +31,7 @@ namespace charlie
 		SDL_Point point;
 
 		Transform transform_;
+		RectangleCollider collider_;
 		float turret_rotation_;
 		uint8 input_bits_;
 		uint32 id_;
@@ -39,5 +42,6 @@ namespace charlie
 		bool fire_;
 		Time fire_acc_;
 		Time fire_delay_;
+
 	};
 }

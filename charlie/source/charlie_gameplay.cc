@@ -112,7 +112,7 @@ namespace charlie {
 		}
 		*/
 		
-		InputSnapshot::InputSnapshot() : tick_(0), input_bits_(0), rotation_(0), turret_rotation(0)
+		InputSnapshot::InputSnapshot() : tick_(0), input_bits_(0), rotation_(0), turret_rotation(0), fire_(false)
 		{
 		}
 
@@ -260,7 +260,7 @@ namespace charlie {
 		{
 		}
 
-		void ReliableMessageQueue::add_message(uint32 tick, Message msg)
+		void ReliableMessageQueue::add_message(uint32 tick, Message& msg)
 		{
 			buffer_[tick % 50] = msg;
 			index_++;

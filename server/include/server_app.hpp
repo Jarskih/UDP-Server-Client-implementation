@@ -6,9 +6,12 @@
 #include <sdl_application.hpp>
 
 
+
+#include "collision_handler.h"
 #include "config.h"
 #include "level_manager.h"
 #include "projectile.h"
+#include "reliable_events.h"
 
 using namespace charlie;
 
@@ -56,21 +59,6 @@ struct ClientList {
 	DynamicArray<Client> clients_;
 };
 
-struct Event
-{
-	uint32 id_;
-	uint32 send_to_;
-};
-
-struct InputCommand
-{
-	uint32 id_;
-	uint8 input_bits_;
-	float rot_;
-	bool fire_;
-};
-
-
 struct ServerApp final : SDLApplication, network::IServiceListener, network::IConnectionListener {
 	ServerApp();
 
@@ -91,8 +79,16 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	virtual void on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer);
 
 	// note: gameplay
+	void read_input_queue();
+	void update_players(const Time& dt);
+	void check_collisions();
 	void remove_player(uint32 id);
 	void spawn_projectile(Vector2 pos, float rotation, uint32 id);
+	void remove_projectile(uint32 id);
+	void create_spawn_event(const uint32 owner, const Player& p, EventType event);
+	void create_destroy_event(uint32 id, EventType event);
+	static void write_message(const Event& reliable_event, network::NetworkStreamWriter& writer);
+
 	static void remove_from_array(DynamicArray<Event>& arr, uint32 id);
 	static bool contains(const DynamicArray<uint32>& event, uint32 id);
 
@@ -104,16 +100,18 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	gameplay::ReliableMessageQueue reliable_queue_;
 	DynamicArray<Event> spawn_event_list;
 	DynamicArray<Event> destroy_event_list_;
-	Queue<InputCommand> input_queue_;
+	DynamicArray<Event> reliable_events_;
+	Queue<gameplay::InputCommand> input_queue_;
 
 	// note: gameplay
 	uint32 index_; // index keeping track of joined players
+	uint32 projectile_index_;
 	DynamicArray<Player> players_;
 	DynamicArray<uint32> players_to_remove_;
 	DynamicArray<Projectile> projectiles_;
+	DynamicArray<uint32> projectiles_to_remove_;
 	LevelManager level_manager_;
 	Random random_;
-
 };
 
 #endif // !SERVER_APP_HPP_INCLUDED

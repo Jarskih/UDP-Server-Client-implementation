@@ -3,9 +3,6 @@
 #include "client_app.hpp"
 #include <charlie_messages.hpp>
 #include <cstdio>
-
-
-
 #include "config.h"
 #include "entity.h"
 #include "level_manager.h"
@@ -19,8 +16,9 @@ constexpr auto array_size(T(&)[N])
 
 ClientApp::ClientApp()
 	: tickrate_(1.0 / 60.0)
-	, tick_(0)
-	, server_tick_(0)
+	  , tick_(0)
+	  , server_tick_(0)
+	  , local_projectile_index_(0)
 {
 }
 
@@ -32,23 +30,22 @@ bool ClientApp::on_init()
 	}
 
 	connection_.set_listener(this);
-
-	connection_.connect(network::IPAddress::get_broadcast(54345));
+	connection_.connect(network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT));
 
 	Vector2 pos = Vector2(200, 300);
 	player_.init(renderer_.get_renderer(), pos, 0);
-	player_.load_body_sprite("../assets/tank_body.png", 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
-	player_.load_turret_sprite("../assets/tank_turret.png", 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+	player_.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+	player_.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 
 	auto data = Leveldata();
-	data.create_level("../assets/map.txt");
+	data.create_level(config::LEVEL1);
 	level_manager_ = LevelManager();
 	level_manager_.load_assets(data);
 
 	level_width_ = level_manager_.width_;
 	level_heigth_ = level_manager_.height_;
 
-	text_font_.create("../assets/font/font.ttf", 20, SDL_Color({255,255,255,255}));
+	text_font_.create(config::FONT_PATH, 20, SDL_Color({255,255,255,255}));
 	text_handler_.renderer_ = renderer_.get_renderer();
 	text_handler_.LoadFont(text_font_);
 	
@@ -77,7 +74,7 @@ bool ClientApp::on_tick(const Time& dt)
 
 		if(player_.fire_ && player_.can_shoot())
 		{
-			spawn_local_projectile(player_.get_shoot_pos(), player_.turret_rotation_);
+			//spawn_local_projectile(player_.get_shoot_pos(), player_.turret_rotation_);
 			player_.fire();
 		}
 		
@@ -108,6 +105,11 @@ bool ClientApp::on_tick(const Time& dt)
 			projectile.update(dt);
 		}
 
+		for (auto& projectile : local_projectiles_)
+		{
+			projectile.update(dt);
+		}
+
 		cam_.x = (int)player_.transform_.position_.x_ + player_.body_sprite_->get_area().w / 2 - config::SCREEN_WIDTH / 2;
 		cam_.y = (int)player_.transform_.position_.y_ + player_.body_sprite_->get_area().h / 2 - config::SCREEN_HEIGHT / 2;
 
@@ -127,6 +129,16 @@ bool ClientApp::on_tick(const Time& dt)
 		{
 			cam_.y = level_heigth_ - cam_.h;
 		}
+		
+		for(auto& id : entities_to_remove_)
+		{
+			remove_entity(id);
+		}
+
+		for(auto& id : projectiles_to_remove_)
+		{
+			remove_projectile(id);
+		}
 	}
 	return true;
 }
@@ -141,6 +153,11 @@ void ClientApp::on_draw()
 	}
 
 	for(auto& projectile : projectiles_) 
+	{
+		projectile.render(cam_);
+	}
+	
+	for(auto& projectile : local_projectiles_) 
 	{
 		projectile.render(cam_);
 	}
@@ -169,9 +186,8 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			const Time current = Time(message.server_time_);
 			server_tick_ = message.server_tick_;
-			server_time_ = current;
+			server_time_ = Time(message.server_time_);
 			lastReceive_ = Time::now();
 		} break;
 
@@ -244,7 +260,7 @@ void ClientApp::on_receive(network::Connection* connection,
 
 			for (auto& entity : entities_)
 			{
-				if (entity.id_ == message.id_)
+				if (entity.id_ == message.message_id_)
 				{
 					break;
 				}
@@ -256,12 +272,49 @@ void ClientApp::on_receive(network::Connection* connection,
 				spawn_entity(message);
 			}
 
-			network::NetworkMessagePlayerSpawnAck msg;
-			msg.id_ = player_.id_;
+			network::NetworkMessageAck msg;
+			msg.message_id_ = message.message_id_;
+			spawn_message_queue_.push(msg);
+		} break;
+		case network::NETWORK_MESSAGE_DISCONNECTED:
+		{
+			network::NetworkMessagePlayerDisconnected message;
+			if (!message.read(reader)) {
+				assert(!"could not read message!");
+			}
+			entities_to_remove_.push_back(message.message_id_);
+
+			network::NetworkMessageAck msg;
+			msg.message_id_ = message.message_id_;
+			spawn_message_queue_.push(msg);
+		} break;
+		case network::NETWORK_MESSAGE_PROJECTILE_SPAWN:
+		{
+			network::NetworkMessageProjectileSpawn message;
+			if (!message.read(reader)) {
+				assert(!"could not read message!");
+			}
+			spawn_projectile(message);
+
+			network::NetworkMessageAck msg;
+			msg.message_id_ = message.message_id_;
+			spawn_message_queue_.push(msg);
+		} break;
+		case network::NETWORK_MESSAGE_PROJECTILE_DESTROYED:
+		{
+			network::NetworkMessageProjectileSpawn message;
+			if (!message.read(reader)) {
+				assert(!"could not read message!");
+			}
+			destroy_projectile(message);
+				
+			network::NetworkMessageAck msg;
+			msg.message_id_ = message.message_id_;
 			spawn_message_queue_.push(msg);
 		} break;
 		default:
 		{
+			printf("Unknown message %i", (int)reader.peek());
 			assert(!"unknown message type received from server!");
 		} break;
 		}
@@ -279,7 +332,7 @@ void ClientApp::on_send(network::Connection* connection,
 
 	while (!spawn_message_queue_.empty())
 	{
-		network::NetworkMessagePlayerSpawnAck msg = spawn_message_queue_.front();
+		network::NetworkMessageAck msg = spawn_message_queue_.front();
 		if (!msg.write(writer)) {
 			assert(!"could not write network command!");
 		}
@@ -295,32 +348,78 @@ void ClientApp::on_send(network::Connection* connection,
 void ClientApp::spawn_entity(network::NetworkMessagePlayerSpawn message)
 {
 	Entity e{};
-	e.init(renderer_.get_renderer(), message.position_, message.id_);
-	e.load_body_sprite("../assets/tank_body.png", 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
-	e.load_turret_sprite("../assets/tank_turret.png", 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+	e.init(renderer_.get_renderer(), message.position_, message.message_id_);
+	e.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+	e.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	entities_.push_back(e);
-	printf("Remote player spawned with id: %i \n", message.id_);
+	printf("Remote player spawned with id: %i \n", message.message_id_);
+}
+
+void ClientApp::remove_entity(uint32 id)
+{
+	auto it = entities_.begin();
+	while (it != entities_.end())
+	{
+		if ((*it).id_ == id)
+		{
+			(*it).destroy();
+			entities_.erase(it);
+			break;
+		}
+		++it;
+	}
+}
+
+void ClientApp::remove_projectile(uint32 id)
+{
+	auto it = projectiles_.begin();
+	while (it != projectiles_.end())
+	{
+		if ((*it).id_ == id)
+		{
+			(*it).destroy();
+			projectiles_.erase(it);
+			break;
+		}
+		++it;
+	}
 }
 
 void ClientApp::spawn_projectile(network::NetworkMessageProjectileSpawn message)
 {
-	if(message.id_ == player_.id_) // is owned by local player?
+	//if(message.owner_ == player_.message_id_) // is owned by local player?
+	//{
+	//	printf("Got projectile spawn for owning player");
+	//	return;
+	//}
+
+	for (auto& projectile : projectiles_)
 	{
-		printf("Got projectile spawn for owning player");
-		return;
+		if(message.message_id_ == projectile.id_)
+		{
+			// projectile exists already
+			return;
+		}
 	}
-	Projectile e(message.pos_, message.rotation_, message.id_);
+	
+	Projectile e(message.pos_, message.rotation_, message.message_id_, message.owner_);
 	e.renderer_ = renderer_.get_renderer();
-	e.load_sprite("../assets/Light_Shell.png", 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
+	e.load_sprite(config::TANK_SHELL, 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
 	projectiles_.push_back(e);
-	printf("Remote projectile spawned with owner: %i \n", message.id_);
+	printf("Remote projectile %i spawned with owner: %i \n", message.message_id_, message.owner_);
+}
+
+void ClientApp::destroy_projectile(const network::NetworkMessageProjectileSpawn& message)
+{
+	projectiles_to_remove_.push_back(message.message_id_);
 }
 
 void ClientApp::spawn_local_projectile(Vector2 pos, float rotation)
 {
-	Projectile e(pos, rotation, player_.id_);
+	Projectile e(pos, rotation, local_projectile_index_, player_.id_);
 	e.renderer_ = renderer_.get_renderer();
-	e.load_sprite("../assets/Light_Shell.png", 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
-	projectiles_.push_back(e);
-	printf("Spawned projectile \n");
+	e.load_sprite(config::TANK_SHELL, 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
+	local_projectiles_.push_back(e);
+	local_projectile_index_ += 1;
+	// printf("Spawned projectile \n");
 }
