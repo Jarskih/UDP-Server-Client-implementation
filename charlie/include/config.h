@@ -18,11 +18,14 @@ namespace charlie
 		static const int  PROJECTILE_WIDTH = 25;
 		static const int  PROJECTILE_HEIGHT = 25;
 		static const double  FIRE_DELAY = 2.0;
-		static const float PROJECTILE_SPEED = 300;
+		static const float PROJECTILE_SPEED = 600.0f;
+		static const Time PROJECTILE_LIFETIME = Time(5.0);
 		static const char* TANK_BODY_SPRITE = "../assets/tank_body.png";
 		static const char* TANK_TURRET_SPRITE = "../assets/tank_turret.png";
 		static const char* TANK_SHELL = "../assets/Light_Shell.png";
 		static const char* LEVEL1 = "../assets/map.txt";
 		static const char* FONT_PATH = "../assets/font/font.ttf";
+		static const int LEVEL_OBJECT_WIDTH = 50;
+		static const int LEVEL_OBJECT_HEIGHT = 50;
 	};
 }

@@ -32,7 +32,7 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	void remove_entity(uint32 id);
 	void remove_projectile(uint32 id);
 	void spawn_projectile(network::NetworkMessageProjectileSpawn message);
-	void destroy_projectile(const network::NetworkMessageProjectileSpawn& message);
+	void destroy_projectile(const network::NetworkMessageProjectileDestroy& message);
 	void spawn_local_projectile(Vector2 pos, float rotation);
 	void create_ack_message(uint32 message_id);
 

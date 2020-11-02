@@ -134,19 +134,19 @@ namespace charlie
 			{
 				PlayerDestroyed e(event_id_, entity_id, player.id_);
 				events_.push_back(e);
-				printf("created player destroy event \n");
+				printf("RELIABLE MESSAGE: Created player destroy event \n");
 			} break;
 			case EventType::DESTROY_PROJECTILE:
 			{
 				ProjectileDestroyed e(event_id_, entity_id, player.id_);
 				events_.push_back(e);
-				printf("created projectile destroy event \n");
+				printf("RELIABLE MESSAGE: Created projectile destroy event \n");
 			} break;
 			default:
 				break;
 			}
 		}
-		printf("reliable events in queue %i \n", (int)events_.size());
+		printf("RELIABLE MESSAGE: reliable events in queue %i \n", (int)events_.size());
 		event_id_ += 1;
 	}
 

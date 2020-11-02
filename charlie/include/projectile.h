@@ -13,11 +13,12 @@ namespace charlie
 	{
 		Projectile();
 		explicit Projectile(Vector2 pos, Vector2 dir, uint32 id, uint32 owner);
-		explicit Projectile(Vector2 pos, float rot, uint32 id,  uint32 owner);
-		
+		explicit Projectile(Vector2 pos, float rot, uint32 id, uint32 owner);
+
 		void update(Time deltaTime);
 		void render(SDL_Rect cameraPos);
 		void load_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
+		bool is_dead() const;
 		void destroy();
 		void on_collision();
 
@@ -33,5 +34,7 @@ namespace charlie
 		uint32 owner_;
 		float speed_;
 		Vector2 direction_;
+		Time lifetime_;
+		Time time_alive_;
 	};
 }

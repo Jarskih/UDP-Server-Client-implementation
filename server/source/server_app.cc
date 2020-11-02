@@ -69,6 +69,15 @@ bool ServerApp::on_tick(const Time& dt)
 			remove_player(id);
 		}
 
+		for (auto& projectile : projectiles_)
+		{
+			if (projectile.is_dead())
+			{
+				reliable_events_.create_destroy_event(projectile.id_, EventType::DESTROY_PROJECTILE, players_);
+				projectiles_to_remove_.push_back(projectile.id_);
+			}
+		}
+
 		for (auto& id : projectiles_to_remove_)
 		{
 			remove_projectile(id);
@@ -285,7 +294,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::DESTROY_PLAYER):
 	{
-		network::NetworkMessagePlayerDisconnected message(reliable_event.creator_, reliable_event.event_id_);
+		network::NetworkMessagePlayerDisconnected message(reliable_event.entity_id_, reliable_event.event_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -294,7 +303,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::DESTROY_PROJECTILE):
 	{
-		network::NetworkMessageProjectileDestroy message(reliable_event.creator_, reliable_event.event_id_);
+		network::NetworkMessageProjectileDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -332,6 +341,8 @@ void ServerApp::update_players(const Time& dt)
 {
 	for (auto& player : players_)
 	{
+		player.old_pos_ = player.transform_.position_;
+
 		float direction = 0;
 		float rotation = 0;
 
@@ -363,7 +374,6 @@ void ServerApp::update_players(const Time& dt)
 			player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 		}
 
-
 		if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w > level_width_))
 		{
 			player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
@@ -373,6 +383,8 @@ void ServerApp::update_players(const Time& dt)
 		{
 			player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 		}
+
+		player.collider_.SetPosition(player.get_collider_pos());
 
 		{
 			cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - config::SCREEN_WIDTH / 2;
@@ -408,22 +420,46 @@ void ServerApp::update_players(const Time& dt)
 
 void ServerApp::check_collisions()
 {
-	for (auto i = 0; i < (int)players_.size(); i++)
+	for (auto p1 = 0; p1 < (int)players_.size(); p1++)
 	{
-		for (int j = 0; j < (int)projectiles_.size(); j++)
+		for (int projectile = 0; projectile < (int)projectiles_.size(); projectile++)
 		{
 			// Cant collide with own projectiles
-			if (projectiles_[j].owner_ == players_[i].id_)
+			if (projectiles_[projectile].owner_ == players_[p1].id_)
 			{
 				continue;
 			}
 
-			if (CollisionHandler::IsColliding(players_[i].collider_, projectiles_[j].collider_))
+			if (CollisionHandler::IsColliding(players_[p1].collider_, projectiles_[projectile].collider_))
 			{
-				players_[i].on_collision();
-				projectiles_[j].on_collision();
-				reliable_events_.create_destroy_event(projectiles_[j].id_, EventType::DESTROY_PROJECTILE, players_);
-				projectiles_to_remove_.push_back(projectiles_[j].id_);
+				players_[p1].on_collision(projectiles_[projectile]);
+				projectiles_[projectile].on_collision();
+				reliable_events_.create_destroy_event(projectiles_[projectile].id_, EventType::DESTROY_PROJECTILE, players_);
+				projectiles_to_remove_.push_back(projectiles_[projectile].id_);
+				//printf("COLLISION: Projectile collided with player \n");
+			}
+		}
+
+		for (int p2 = 0; p2 < (int)players_.size(); p2++)
+		{
+			if (p2 == p1)
+			{
+				continue;
+			}
+			if (CollisionHandler::IsColliding(players_[p2].collider_, players_[p1].collider_))
+			{
+				players_[p1].on_collision(players_[p2]);
+				players_[p2].on_collision(players_[p1]);
+				//printf("COLLISION: Player collided with player \n");
+			}
+		}
+
+		for (int collider = 0; collider < (int)level_manager_.colliders_.size(); collider++)
+		{
+			if (CollisionHandler::IsColliding(players_[p1].collider_, level_manager_.colliders_[collider].collider_))
+			{
+				players_[p1].on_collision(level_manager_.colliders_[collider]);
+				// printf("COLLISION: Player collided with terrain \n");
 			}
 		}
 	}

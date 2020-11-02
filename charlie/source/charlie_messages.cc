@@ -86,6 +86,8 @@ namespace charlie {
 		NetworkMessagePlayerState::NetworkMessagePlayerState()
 			: type_(NETWORK_MESSAGE_PLAYER_STATE)
 			, rotation_(0)
+			, y_(0)
+			, x_(0)
 			, turret_rotation_(0)
 		{
 		}
@@ -93,7 +95,8 @@ namespace charlie {
 		NetworkMessagePlayerState::NetworkMessagePlayerState(const Transform& transform, float turret_rotation)
 			: type_(NETWORK_MESSAGE_PLAYER_STATE)
 			, rotation_(transform.rotation_)
-			, position_(transform.position_)
+			, y_((uint16)transform.position_.y_)
+			, x_((uint16)transform.position_.x_)
 			, turret_rotation_(turret_rotation)
 		{
 		}

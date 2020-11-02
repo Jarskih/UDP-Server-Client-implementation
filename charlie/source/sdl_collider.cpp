@@ -1,5 +1,7 @@
 ﻿#include "sdl_collider.h"
 
+#include "charlie.hpp"
+
 namespace charlie
 {
 	void Collider::SetSize(int width, int height)
@@ -13,12 +15,18 @@ namespace charlie
 		m_bounds.x = p_x; m_bounds.y = p_y;
 	}
 
+	void Collider::SetPosition(Vector2 pos)
+	{
+		m_bounds.x = (int)pos.x_;
+		m_bounds.y = (int)pos.y_;
+	}
+
 	SDL_Rect Collider::GetBounds()
 	{
 		return m_bounds;
 	}
 
-	Collider::Collider(): m_bounds(), m_type()
+	Collider::Collider() : m_bounds(), m_type()
 	{
 	}
 

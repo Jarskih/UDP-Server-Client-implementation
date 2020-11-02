@@ -5,6 +5,8 @@
 
 namespace charlie
 {
+	struct LevelObject;
+	struct Projectile;
 	struct Camera;
 	struct Vector2;
 
@@ -20,7 +22,11 @@ namespace charlie
 		uint8 get_input_bits() const;
 		bool can_shoot() const;
 		void fire();
-		static void on_collision();
+		void on_collision(const LevelObject lvl_object);
+		void on_collision(const Player& other);
+		void on_collision(const Projectile& other);
+		void reset_old_pos();
+		Vector2 get_collider_pos();
 
 		// SDL
 		SDL_Renderer* renderer_;
@@ -42,6 +48,8 @@ namespace charlie
 		bool fire_;
 		Time fire_acc_;
 		Time fire_delay_;
-
+		Vector2 old_pos_;
+		int collider_offset_x_;
+		int collider_offset_y_;
 	};
 }

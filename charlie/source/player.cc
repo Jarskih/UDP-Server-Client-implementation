@@ -4,6 +4,8 @@
 #include "charlie_gameplay.hpp"
 #include "config.h"
 #include "input_handler.h"
+#include "level_manager.h"
+#include "projectile.h"
 #include "sdl_application.hpp"
 #include "Singleton.hpp"
 #include "sprite_handler.hpp"
@@ -24,6 +26,8 @@ namespace charlie
 		, tank_turn_speed_(config::PLAYER_TURN_SPEED)
 		, turret_turn_speed_(1)
 		, fire_(false)
+		, collider_offset_x_(0)
+		, collider_offset_y_(0)
 	{
 		fire_delay_ = Time(config::FIRE_DELAY);
 	}
@@ -32,8 +36,11 @@ namespace charlie
 	{
 		renderer_ = renderer;
 		transform_.position_ = pos;
+		old_pos_ = pos;
 		id_ = id;
-		collider_ = RectangleCollider((int)pos.x_, (int)pos.y_, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+		collider_offset_x_ = config::PLAYER_WIDTH / 3;
+		collider_offset_y_ = config::PLAYER_HEIGHT / 3;
+		collider_ = RectangleCollider((int)pos.x_, (int)pos.y_, collider_offset_x_, collider_offset_y_);
 	}
 
 	void Player::update(Time deltaTime, int levelHeight, int levelWidth)
@@ -66,16 +73,17 @@ namespace charlie
 			transform_.set_rotation(rot);
 		}
 
+		old_pos_ = transform_.position_;
 		if (abs(direction) > 0.0f) {
 			transform_.position_ += transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
 
-		if ((transform_.position_.x_ < 0) || transform_.position_.x_ + (float)body_sprite_->get_area().w > levelHeight)
+		if ((transform_.position_.x_ < 0) || (int)(transform_.position_.x_ + (float)body_sprite_->get_area().w) > (float)levelHeight)
 		{
 			transform_.position_ -= transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
 
-		if ((transform_.position_.y_ < 0) || transform_.position_.y_ + (float)body_sprite_->get_area().h > levelWidth)
+		if ((transform_.position_.y_ < 0) || (int)(transform_.position_.y_ + (float)body_sprite_->get_area().h) > levelWidth)
 		{
 			transform_.position_ -= transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
@@ -94,7 +102,7 @@ namespace charlie
 			fire_ = true;
 		}
 
-		collider_.SetPosition((int)transform_.position_.x_, (int)transform_.position_.y_);
+		collider_.SetPosition(get_collider_pos());
 	}
 
 	void Player::render(SDL_Rect cam)
@@ -117,17 +125,8 @@ namespace charlie
 			collider_.GetBounds().h
 		};
 
+		SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
 		SDL_RenderDrawRect(renderer_, &collider_rect_);
-
-		//SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
-		//SDL_RenderDrawRect(renderer_, &body_window_rect_);
-		//SDL_RenderDrawRect(renderer_, &turret_window_rect_);
-
-		//int x = Singleton<InputHandler>::Get()->GetMousePositionX();
-		//int y = Singleton<InputHandler>::Get()->GetMousePositionY();
-
-		//SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
-		//SDL_RenderDrawLine(renderer_, (int)body_window_rect_.x + point.x, (int)body_window_rect_.y + point.y, x, y);
 	}
 
 	void Player::load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH)
@@ -146,8 +145,8 @@ namespace charlie
 	Vector2 Player::get_shoot_pos() const
 	{
 		Vector2 pos;
-		pos.x_ = transform_.position_.x_ + transform_.origin_.x_ - config::PROJECTILE_WIDTH / 2;
-		pos.y_ = transform_.position_.y_ + transform_.origin_.y_ - config::PROJECTILE_WIDTH / 2;
+		pos.x_ = transform_.position_.x_ + transform_.origin_.x_ - config::PROJECTILE_WIDTH / 2.0f;
+		pos.y_ = transform_.position_.y_ + transform_.origin_.y_ - config::PROJECTILE_WIDTH / 2.0f;
 		return pos;
 	}
 
@@ -175,7 +174,31 @@ namespace charlie
 		// TODO effects sounds
 	}
 
-	void Player::on_collision()
+	void Player::on_collision(const LevelObject lvl_object)
 	{
+		reset_old_pos();
+	}
+
+	void Player::on_collision(const Player& other)
+	{
+		reset_old_pos();
+	}
+
+	void Player::on_collision(const Projectile& other)
+	{
+		// TODO die
+	}
+
+	void Player::reset_old_pos()
+	{
+		transform_.position_ = old_pos_;
+		collider_.SetPosition(get_collider_pos());
+		body_window_rect_.x = (int)transform_.position_.x_;
+		body_window_rect_.y = (int)transform_.position_.y_;
+	}
+
+	Vector2 Player::get_collider_pos()
+	{
+		return Vector2(transform_.position_.x_ + collider_offset_x_, transform_.position_.y_ + collider_offset_y_);
 	}
 }

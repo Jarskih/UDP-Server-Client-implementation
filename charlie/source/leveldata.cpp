@@ -1,6 +1,8 @@
 ﻿#include "leveldata.h"
 #include <fstream>
 
+#include "level_manager.h"
+
 namespace charlie
 {
 	Leveldata::Leveldata() : sizeX_(0), sizeY_(0)
@@ -37,19 +39,25 @@ namespace charlie
 					printf("Error loading map: Unexpected end of file!\n");
 					break;
 				}
-				if(id < 0)
+				if (id < 0)
 				{
 					printf("Wrong id for x: %i y: %i", x, y);
 					return;
 				}
 				tiles_[y * sizeX_ + x] = id;
-				
+
 			}
 		}
 	}
 
 	int Leveldata::get_tile_type(int x, int y)
 	{
-		return tiles_[y * sizeX_ + x];
+		int type = tiles_[y * sizeX_ + x];
+
+		if (type != LevelObjectType::COLLIDER && type != LevelObjectType::FREE)
+		{
+			printf("Wrong tile type: %i \n", type);
+		}
+		return type;
 	}
 }

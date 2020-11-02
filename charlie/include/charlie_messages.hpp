@@ -113,8 +113,8 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
-				result &= stream.serialize(position_.x_);
-				result &= stream.serialize(position_.y_);
+				result &= stream.serialize(y_);
+				result &= stream.serialize(x_);
 				result &= stream.serialize(rotation_);
 				result &= stream.serialize(turret_rotation_);
 				return result;
@@ -122,7 +122,8 @@ namespace charlie {
 
 			uint8 type_;
 			float rotation_;
-			Vector2 position_;
+			uint16 y_;
+			uint16 x_;
 			float turret_rotation_;
 		};
 

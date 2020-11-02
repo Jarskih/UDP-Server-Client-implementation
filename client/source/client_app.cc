@@ -228,18 +228,18 @@ void ClientApp::on_receive(network::Connection* connection,
 			// Find old position with ack and compare to server pos
 			gameplay::InputSnapshot input = inputinator_.get_snapshot(server_tick_);
 
-			auto diff = input.position_ - message.position_;
+			auto diff = Vector2(input.position_.x_ - message.x_, input.position_.y_ - message.y_);
 
 			if (inputinator_.inputSnapshots_.empty())
 			{
-				diff = player_.transform_.position_ - message.position_;
+				diff = player_.transform_.position_ - Vector2(message.x_, message.y_);
 			}
 
 			// If 5px mistake correct calculate new predicted pos using server pos
 			const float correct_dist = 5.0f;
 			if (diff.length() > correct_dist)
 			{
-				player_.transform_.position_ = inputinator_.get_corrected_position(server_tick_, tickrate_, message.position_, player_.speed_);
+				player_.transform_.position_ = inputinator_.get_corrected_position(server_tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
 
@@ -303,7 +303,7 @@ void ClientApp::on_receive(network::Connection* connection,
 
 		case network::NETWORK_MESSAGE_PROJECTILE_DESTROYED:
 		{
-			network::NetworkMessageProjectileSpawn message;
+			network::NetworkMessageProjectileDestroy message;
 			if (!message.read(reader)) {
 				assert(!"could not read message!");
 			}
@@ -340,7 +340,7 @@ void ClientApp::on_send(network::Connection* connection,
 			assert(!"could not write network command!");
 		}
 		message_queue_.pop();
-		printf("RELIABLE MESSAGE: Sent spawn ack to server with id %i \n", msg.message_id_);
+		printf("RELIABLE MESSAGE: Sent ack to server with id %i \n", msg.message_id_);
 	}
 
 	lastSend_ = Time::now();
@@ -371,6 +371,7 @@ void ClientApp::remove_entity(uint32 id)
 		}
 		++it;
 	}
+	printf("RELIABLE MESSAGE: Remote player removed with id: %i \n", id);
 }
 
 void ClientApp::remove_projectile(uint32 id)
@@ -386,6 +387,7 @@ void ClientApp::remove_projectile(uint32 id)
 		}
 		++it;
 	}
+	printf("RELIABLE MESSAGE: Projectile removed with id: %i \n", id);
 }
 
 void ClientApp::spawn_projectile(network::NetworkMessageProjectileSpawn message)
@@ -397,7 +399,7 @@ void ClientApp::spawn_projectile(network::NetworkMessageProjectileSpawn message)
 	printf("RELIABLE MESSAGE: Remote projectile %i spawned with owner: %i \n", message.entity_id_, message.shot_by_);
 }
 
-void ClientApp::destroy_projectile(const network::NetworkMessageProjectileSpawn& message)
+void ClientApp::destroy_projectile(const network::NetworkMessageProjectileDestroy& message)
 {
 	projectiles_to_remove_.push_back(message.message_id_);
 }
