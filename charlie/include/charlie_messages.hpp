@@ -172,7 +172,7 @@ namespace charlie {
 		struct NetworkMessageProjectileSpawn
 		{
 			NetworkMessageProjectileSpawn();
-			explicit NetworkMessageProjectileSpawn(uint32 id, uint32 owner, const Vector2& position, float rotation);
+			explicit NetworkMessageProjectileSpawn(uint32 id, uint32 entity_id, uint32 shot_by, const Vector2& position, float rotation);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -181,6 +181,8 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
+				result &= stream.serialize(entity_id_);
+				result &= stream.serialize(shot_by_);
 				result &= stream.serialize(message_id_);
 				result &= stream.serialize(pos_.x_);
 				result &= stream.serialize(pos_.y_);
@@ -189,8 +191,9 @@ namespace charlie {
 			}
 
 			uint8 type_;
+			uint32 entity_id_;
+			uint32 shot_by_;
 			uint32 message_id_;
-			uint32 owner_;
 			Vector2 pos_;
 			float rotation_;
 		};
@@ -198,7 +201,7 @@ namespace charlie {
 		struct NetworkMessagePlayerDisconnected
 		{
 			NetworkMessagePlayerDisconnected();
-			explicit NetworkMessagePlayerDisconnected(const uint32 id);
+			explicit NetworkMessagePlayerDisconnected(uint32 id, uint32 message_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -207,18 +210,20 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
+				result &= stream.serialize(entity_id_);
 				result &= stream.serialize(message_id_);
 				return result;
 			}
 
 			uint8 type_;
+			uint32 entity_id_;
 			uint32 message_id_;
 		};
 
 		struct NetworkMessageProjectileDestroy
 		{
 			NetworkMessageProjectileDestroy();
-			explicit NetworkMessageProjectileDestroy(const uint32 id);
+			explicit NetworkMessageProjectileDestroy(uint32 id, uint32 message_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -227,11 +232,13 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
+				result &= stream.serialize(entity_id_);
 				result &= stream.serialize(message_id_);
 				return result;
 			}
 
 			uint8 type_;
+			uint32 entity_id_;
 			uint32 message_id_;
 		};
 	} // !network

@@ -103,7 +103,7 @@ void ServerApp::on_timeout(network::Connection* connection)
 	reliable_events_.create_destroy_event(id, EventType::DESTROY_PLAYER, players_);
 
 	clients_.remove_client((uint64)connection);
-	printf("Player %i disconnected. Players %i \n", id, (int)clients_.clients_.size());
+	printf("NETWORK: Player %i disconnected. Players %i \n", id, (int)clients_.clients_.size());
 }
 
 void ServerApp::on_connect(network::Connection* connection)
@@ -122,14 +122,14 @@ void ServerApp::on_connect(network::Connection* connection)
 
 	for (const Player& p : players_)
 	{
-		reliable_events_.create_spawn_event(player.id_, p, EventType::SPAWN_PLAYER, players_, projectile_index_);
-		reliable_events_.create_spawn_event(p.id_, player, EventType::SPAWN_PLAYER, players_, projectile_index_);
+		reliable_events_.create_spawn_event(player.id_, p, EventType::SPAWN_PLAYER, players_);
+		reliable_events_.create_spawn_event(p.id_, player, EventType::SPAWN_PLAYER, players_);
 	}
 
 	players_.push_back(player);
 	index_ += 1;
 
-	printf("player joined. players: %i\n", (int)clients_.clients_.size());
+	printf("NETWORK: Player joined. players: %i\n", (int)clients_.clients_.size());
 }
 
 void ServerApp::on_disconnect(network::Connection* connection)
@@ -144,7 +144,7 @@ void ServerApp::on_disconnect(network::Connection* connection)
 
 	clients_.remove_client((uint64)connection);
 
-	printf("player disconnected. players: %i\n", (int)clients_.clients_.size());
+	printf("NETWORK: Player disconnected. players: %i\n", (int)clients_.clients_.size());
 }
 
 void ServerApp::on_acknowledge(network::Connection* connection,
@@ -186,11 +186,7 @@ void ServerApp::on_receive(network::Connection* connection,
 				assert(!"could not read command!");
 			}
 
-			const auto message = reliable_queue_.get_message(connection->acknowledge_);
-			if (message.seq_ != 0)
-			{
-				remove_from_array(spawn_event_list, message.id_);
-			}
+			reliable_queue_.mark_received(msg.message_id_);
 		} break;
 
 		default:
@@ -217,19 +213,29 @@ void ServerApp::on_send(network::Connection* connection,
 
 	// Send reliable messages
 	{
+		// Remove confirmed messages
+		for (auto& msg : reliable_queue_.buffer_)
+		{
+			if (msg.received_)
+			{
+				remove_from_array(reliable_events_.events_, msg.id_);
+			}
+		}
+
+		// Create message from event
 		for (Event reliable_event : reliable_events_.events_)
 		{
 			if (id == reliable_event.send_to_)
 			{
-				gameplay::Message msg;
-				msg.id_ = reliable_event.id_;
+				gameplay::Message msg{};
+				msg.id_ = reliable_event.event_id_;
 				msg.seq_ = sequence;
+				msg.received_ = false;
 
 				// Keep track of sent reliable messages
-				reliable_queue_.add_message(tick_, msg);
-
+				reliable_queue_.add_message(msg);
 				write_message(reliable_event, writer);
-				printf("Sent reliable message to %i \n", id);
+				printf("RELIABLE MESSAGE: Sent message with id %i \n", (int)reliable_event.event_id_);
 			}
 		}
 	}
@@ -254,6 +260,53 @@ void ServerApp::on_send(network::Connection* connection,
 		}
 	}
 }
+
+void ServerApp::write_message(const Event& reliable_event, network::NetworkStreamWriter& writer)
+{
+	switch (reliable_event.type_)
+	{
+	case(EventType::SPAWN_PLAYER):
+	{
+		network::NetworkMessagePlayerSpawn message(reliable_event.pos_, reliable_event.event_id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::SPAWN_PROJECTILE):
+	{
+		network::NetworkMessageProjectileSpawn message(reliable_event.event_id_, reliable_event.entity_id_, reliable_event.creator_, reliable_event.pos_, reliable_event.rot_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::DESTROY_PLAYER):
+	{
+		network::NetworkMessagePlayerDisconnected message(reliable_event.creator_, reliable_event.event_id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::DESTROY_PROJECTILE):
+	{
+		network::NetworkMessageProjectileDestroy message(reliable_event.creator_, reliable_event.event_id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	default:
+		assert(!"Unknown event type");
+		break;
+	}
+}
+
 
 void ServerApp::read_input_queue()
 {
@@ -348,17 +401,23 @@ void ServerApp::update_players(const Time& dt)
 		{
 			spawn_projectile(player.get_shoot_pos(), player.turret_rotation_, player.id_);
 			player.fire();
-			reliable_events_.create_spawn_event(projectile_index_, player, EventType::SPAWN_PROJECTILE, players_, projectile_index_);
+			reliable_events_.create_spawn_event(projectile_index_, player, EventType::SPAWN_PROJECTILE, players_);
 		}
 	}
 }
 
 void ServerApp::check_collisions()
 {
-	for (int i = 0; i < (int)players_.size(); i++)
+	for (auto i = 0; i < (int)players_.size(); i++)
 	{
 		for (int j = 0; j < (int)projectiles_.size(); j++)
 		{
+			// Cant collide with own projectiles
+			if (projectiles_[j].owner_ == players_[i].id_)
+			{
+				continue;
+			}
+
 			if (CollisionHandler::IsColliding(players_[i].collider_, projectiles_[j].collider_))
 			{
 				players_[i].on_collision();
@@ -392,7 +451,6 @@ void ServerApp::spawn_projectile(const Vector2 pos, const float rotation, const 
 	e.load_sprite(config::TANK_SHELL, 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
 	projectiles_.push_back(e);
 	projectile_index_ += 1;
-	// printf("Spawned projectile \n");
 }
 
 void ServerApp::remove_projectile(uint32 id)
@@ -410,52 +468,6 @@ void ServerApp::remove_projectile(uint32 id)
 	}
 }
 
-void ServerApp::write_message(const Event& reliable_event, network::NetworkStreamWriter& writer)
-{
-	switch (reliable_event.type_)
-	{
-	case(EventType::SPAWN_PLAYER):
-	{
-		network::NetworkMessagePlayerSpawn message(reliable_event.pos_, reliable_event.id_);
-		if (!message.write(writer))
-		{
-			assert(!"failed to write message!");
-		}
-	} break;
-
-	case(EventType::SPAWN_PROJECTILE):
-	{
-		network::NetworkMessageProjectileSpawn message(reliable_event.id_, reliable_event.owner_, reliable_event.pos_, reliable_event.rot_);
-		if (!message.write(writer))
-		{
-			assert(!"failed to write message!");
-		}
-	} break;
-
-	case(EventType::DESTROY_PLAYER):
-	{
-		network::NetworkMessagePlayerDisconnected message(reliable_event.id_);
-		if (!message.write(writer))
-		{
-			assert(!"failed to write message!");
-		}
-	} break;
-
-	case(EventType::DESTROY_PROJECTILE):
-	{
-		network::NetworkMessageProjectileDestroy message(reliable_event.id_);
-		if (!message.write(writer))
-		{
-			assert(!"failed to write message!");
-		}
-	} break;
-
-	default:
-		assert(!"Unknown event type");
-		break;
-	}
-}
-
 bool ServerApp::contains(const DynamicArray<uint32>& arr, const uint32 id)
 {
 	return std::find(arr.begin(), arr.end(), id) != arr.end();
@@ -466,7 +478,7 @@ void ServerApp::remove_from_array(DynamicArray<Event>& arr, uint32 id)
 	auto it = arr.begin();
 	while (it != arr.end())
 	{
-		if ((*it).id_ == id)
+		if ((*it).event_id_ == id)
 		{
 			arr.erase(it);
 			break;

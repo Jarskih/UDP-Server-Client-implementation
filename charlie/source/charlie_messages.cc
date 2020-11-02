@@ -155,16 +155,18 @@ namespace charlie {
 
 		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn()
 			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
+			, entity_id_(0)
+			, shot_by_(0)
 			, message_id_(0)
-			, owner_(0)
 			, rotation_(0)
 		{
 		}
 
-		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const uint32 id, const uint32 owner, const Vector2& position, float rotation)
+		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const uint32 id, const uint32 entity_id, const uint32 shot_by, const Vector2& position, float rotation)
 			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
+			, entity_id_(entity_id)
+			, shot_by_(shot_by)
 			, message_id_(id)
-			, owner_(owner)
 			, pos_(position)
 			, rotation_(rotation)
 		{
@@ -182,13 +184,15 @@ namespace charlie {
 
 		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected()
 			: type_(NETWORK_MESSAGE_DISCONNECTED)
+			, entity_id_(0)
 			, message_id_(0)
 		{
 		}
 
-		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected(const uint32 id)
+		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected(const uint32 id, const uint32 message_id)
 			: type_(NETWORK_MESSAGE_DISCONNECTED)
-			, message_id_(id)
+			, entity_id_(id)
+			, message_id_(message_id)
 		{
 		}
 
@@ -204,13 +208,15 @@ namespace charlie {
 
 		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy()
 			: type_(NETWORK_MESSAGE_PROJECTILE_DESTROYED)
+			, entity_id_(0)
 			, message_id_(0)
 		{
 		}
 
-		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(const uint32 id)
+		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(const uint32 id, const uint32 message_id)
 			: type_(NETWORK_MESSAGE_PROJECTILE_DESTROYED)
-			, message_id_(id)
+			, entity_id_(id)
+			, message_id_(message_id)
 		{
 		}
 

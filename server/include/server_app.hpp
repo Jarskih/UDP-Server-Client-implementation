@@ -33,6 +33,8 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	virtual void on_receive(network::Connection* connection, network::NetworkStreamReader& reader);
 	virtual void on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer);
 
+	static void write_message(const Event& reliable_event, network::NetworkStreamWriter& writer);
+
 	// note: gameplay
 	void read_input_queue();
 	void update_players(const Time& dt);
@@ -40,10 +42,9 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	void remove_player(uint32 id);
 	void spawn_projectile(Vector2 pos, float rotation, uint32 id);
 	void remove_projectile(uint32 id);
-	static void write_message(const Event& reliable_event, network::NetworkStreamWriter& writer);
 
 	static void remove_from_array(DynamicArray<Event>& arr, uint32 id);
-	static bool contains(const DynamicArray<uint32>& event, uint32 id);
+	static bool contains(const DynamicArray<uint32>& arr, uint32 id);
 
 	// note: Network
 	const Time tickrate_;

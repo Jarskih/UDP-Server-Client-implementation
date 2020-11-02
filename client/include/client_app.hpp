@@ -34,6 +34,10 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	void spawn_projectile(network::NetworkMessageProjectileSpawn message);
 	void destroy_projectile(const network::NetworkMessageProjectileSpawn& message);
 	void spawn_local_projectile(Vector2 pos, float rotation);
+	void create_ack_message(uint32 message_id);
+
+	static bool contains(const std::vector<Entity>& vector, uint32 message_id);
+	static bool contains(const DynamicArray<Projectile>& vector, uint32 id);
 
 	// Networking
 	network::Connection connection_;

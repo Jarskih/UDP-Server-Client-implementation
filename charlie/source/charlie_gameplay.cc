@@ -184,13 +184,13 @@ namespace charlie {
 
 		void Inputinator::add_snapshot(InputSnapshot snapshot)
 		{
-			buffer_[snapshot.tick_ % buffersize_] = snapshot;
+			buffer_[snapshot.tick_ % bufferSize_] = snapshot;
 		}
 
 		Vector2 Inputinator::get_corrected_position(const uint32 tick, const Time tickrate, const Vector2 serverpos, const float speed) const
 		{
 			Vector2 startingPos = serverpos;
-			for (int i = 0; i < buffersize_; i++)
+			for (int i = 0; i < bufferSize_; i++)
 			{
 				const auto input = buffer_[i];
 
@@ -227,7 +227,7 @@ namespace charlie {
 
 		Vector2 Inputinator::old_pos(uint32 tick)
 		{
-			return inputSnapshots_[tick % buffersize_].position_;
+			return inputSnapshots_[tick % bufferSize_].position_;
 		}
 
 		void Inputinator::clear_old_inputs(uint32 tick)
@@ -265,22 +265,35 @@ namespace charlie {
 		*/
 		InputSnapshot Inputinator::get_snapshot(uint32 index)
 		{
-			return buffer_[index % buffersize_];
+			return buffer_[index % bufferSize_];
 		}
 
-		ReliableMessageQueue::ReliableMessageQueue() : index_(-1), buffer_()
+		ReliableMessageQueue::ReliableMessageQueue() : buffer_{}, index_(0)
 		{
 		}
 
-		void ReliableMessageQueue::add_message(uint32 tick, Message& msg)
+		void ReliableMessageQueue::add_message(Message& msg)
 		{
-			buffer_[tick % 50] = msg;
-			index_++;
+			buffer_[index_ % bufferSize_] = msg;
+			index_ += 1;
 		}
 
 		Message ReliableMessageQueue::get_message(uint32 tick)
 		{
-			return buffer_[tick % 50];
+			return buffer_[tick % bufferSize_];
+		}
+
+		void ReliableMessageQueue::mark_received(const uint32 id)
+		{
+			for (auto& msg : buffer_)
+			{
+				if (msg.id_ == id)
+				{
+					msg.received_ = true;
+					printf("RELIABLE MESSAGE: Received message with id %i \n", (int)msg.id_);
+					break;
+				}
+			}
 		}
 	} // !gameplay
 } // !charlie

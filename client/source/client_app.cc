@@ -264,23 +264,12 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			for (auto& entity : entities_)
-			{
-				if (entity.id_ == message.message_id_)
-				{
-					break;
-				}
-				spawn_entity(message);
-			}
-
-			if (entities_.empty())
+			if (!contains(entities_, message.message_id_))
 			{
 				spawn_entity(message);
 			}
 
-			network::NetworkMessageAck msg;
-			msg.message_id_ = message.message_id_;
-			message_queue_.push(msg);
+			create_ack_message(message.message_id_);
 		} break;
 
 		case network::NETWORK_MESSAGE_DISCONNECTED:
@@ -289,11 +278,13 @@ void ClientApp::on_receive(network::Connection* connection,
 			if (!message.read(reader)) {
 				assert(!"could not read message!");
 			}
-			entities_to_remove_.push_back(message.message_id_);
 
-			network::NetworkMessageAck msg;
-			msg.message_id_ = message.message_id_;
-			message_queue_.push(msg);
+			if (contains(entities_, message.entity_id_))
+			{
+				entities_to_remove_.push_back(message.entity_id_);
+			}
+
+			create_ack_message(message.message_id_);
 		} break;
 		case network::NETWORK_MESSAGE_PROJECTILE_SPAWN:
 		{
@@ -301,11 +292,13 @@ void ClientApp::on_receive(network::Connection* connection,
 			if (!message.read(reader)) {
 				assert(!"could not read message!");
 			}
-			spawn_projectile(message);
 
-			network::NetworkMessageAck msg;
-			msg.message_id_ = message.message_id_;
-			message_queue_.push(msg);
+			if (!contains(projectiles_, message.entity_id_))
+			{
+				spawn_projectile(message);
+			}
+
+			create_ack_message(message.message_id_);
 		} break;
 
 		case network::NETWORK_MESSAGE_PROJECTILE_DESTROYED:
@@ -314,16 +307,17 @@ void ClientApp::on_receive(network::Connection* connection,
 			if (!message.read(reader)) {
 				assert(!"could not read message!");
 			}
-			destroy_projectile(message);
 
-			network::NetworkMessageAck msg;
-			msg.message_id_ = message.message_id_;
-			message_queue_.push(msg);
+			if (contains(projectiles_, message.message_id_))
+			{
+				destroy_projectile(message);
+			}
+
+			create_ack_message(message.message_id_);
 		} break;
 
 		default:
 		{
-			printf("Unknown message %i", (int)reader.peek());
 			assert(!"unknown message type received from server!");
 		} break;
 		}
@@ -346,7 +340,7 @@ void ClientApp::on_send(network::Connection* connection,
 			assert(!"could not write network command!");
 		}
 		message_queue_.pop();
-		//printf("Sent spawn ack to server \n");
+		printf("RELIABLE MESSAGE: Sent spawn ack to server with id %i \n", msg.message_id_);
 	}
 
 	lastSend_ = Time::now();
@@ -361,7 +355,7 @@ void ClientApp::spawn_entity(network::NetworkMessagePlayerSpawn message)
 	e.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	e.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	entities_.push_back(e);
-	printf("Remote player spawned with id: %i \n", message.message_id_);
+	printf("RELIABLE MESSAGE: Remote player spawned with message id: %i \n", message.message_id_);
 }
 
 void ClientApp::remove_entity(uint32 id)
@@ -396,26 +390,11 @@ void ClientApp::remove_projectile(uint32 id)
 
 void ClientApp::spawn_projectile(network::NetworkMessageProjectileSpawn message)
 {
-	//if(message.owner_ == player_.message_id_) // is owned by local player?
-	//{
-	//	printf("Got projectile spawn for owning player");
-	//	return;
-	//}
-
-	for (auto& projectile : projectiles_)
-	{
-		if (message.message_id_ == projectile.id_)
-		{
-			// projectile exists already
-			return;
-		}
-	}
-
-	Projectile e(message.pos_, message.rotation_, message.message_id_, message.owner_);
+	Projectile e(message.pos_, message.rotation_, message.entity_id_, message.shot_by_);
 	e.renderer_ = renderer_.get_renderer();
 	e.load_sprite(config::TANK_SHELL, 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
 	projectiles_.push_back(e);
-	printf("Remote projectile %i spawned with owner: %i \n", message.message_id_, message.owner_);
+	printf("RELIABLE MESSAGE: Remote projectile %i spawned with owner: %i \n", message.entity_id_, message.shot_by_);
 }
 
 void ClientApp::destroy_projectile(const network::NetworkMessageProjectileSpawn& message)
@@ -431,4 +410,36 @@ void ClientApp::spawn_local_projectile(Vector2 pos, float rotation)
 	local_projectiles_.push_back(e);
 	local_projectile_index_ += 1;
 	// printf("Spawned projectile \n");
+}
+
+bool ClientApp::contains(const DynamicArray<Entity>& vector, uint32 id)
+{
+	for (const auto& element : vector)
+	{
+		if (element.id_ == id)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ClientApp::contains(const DynamicArray<Projectile>& vector, uint32 id)
+{
+	for (const auto& element : vector)
+	{
+		if (element.id_ == id)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void ClientApp::create_ack_message(uint32 message_id)
+{
+	network::NetworkMessageAck msg;
+	msg.message_id_ = message_id;
+	message_queue_.push(msg);
+	printf("RELIABLE MESSAGE: Message confirmation sent with id %i \n", msg.message_id_);
 }

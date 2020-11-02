@@ -6,6 +6,7 @@ namespace charlie
 {
 	enum class EventType
 	{
+		INVALID,
 		SPAWN_PLAYER,
 		SPAWN_PROJECTILE,
 		DESTROY_PLAYER,
@@ -15,43 +16,47 @@ namespace charlie
 
 	struct Event
 	{
-		Event(uint32 id, EventType type, uint32 send_to);
-		Event(uint32 id, EventType type, uint32 send_to, Vector2 position);
-		Event(uint32 id, EventType type, uint32 send_to, uint32 owner_, Vector2 position, float rotation);
-		uint32 id_{};
+		Event(uint32 id, uint32 entity_id, EventType type, uint32 send_to);
+		Event(uint32 id, uint32 entity_id, EventType type, uint32 send_to, Vector2 position);
+		Event(uint32 id, uint32 entity_id, EventType type, uint32 creator, uint32 send_to, Vector2 position, float rotation);
+		uint32 event_id_;
 		EventType type_;
-		uint32 send_to_{};
+		uint32 entity_id_;
+		uint32 creator_;
+		uint32 send_to_;
 		Vector2 pos_;
 		float rot_;
-		uint32 owner_;
 	};
 
 	struct PlayerSpawned : Event
 	{
-		PlayerSpawned(uint32 id, uint32 send_to, Vector2 pos);
+		PlayerSpawned(uint32 id, uint32 creator, uint32 send_to, Vector2 pos);
 	};
 
 	struct ProjectileSpawned : Event
 	{
-		ProjectileSpawned(uint32 id, uint32 send_to, uint32 owner, Vector2 position, float rotation);
+		ProjectileSpawned(uint32 event_id, uint32 entity_id, uint32 creator, uint32 send_to, Vector2 position, float rotation);
 	};
 
 	struct ProjectileDestroyed : Event
 	{
-		ProjectileDestroyed(uint32 id, uint32 send_to);
+		ProjectileDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to);
 	};
 
 	struct PlayerDestroyed : Event
 	{
-		PlayerDestroyed(uint32 id, uint32 send_to);
+		PlayerDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to);
 	};
 
 	struct ReliableEvents
 	{
-		void create_spawn_event(uint32 owner, const Player& p, EventType event, const DynamicArray<Player>& players,
-			uint32& projectile_index);
-		void create_destroy_event(uint32 id, EventType event, const DynamicArray<Player>& players);
+		ReliableEvents();
+		void create_spawn_event(uint32 entity_id, const Player& p, EventType event, const DynamicArray<Player>& players);
+		void create_destroy_event(uint32 entity_id, EventType event, const DynamicArray<Player>& players);
+		void clear();
+		Event get_event(uint32 id);
 		DynamicArray<Event> events_;
+		uint32 event_id_;
 	};
 
 }

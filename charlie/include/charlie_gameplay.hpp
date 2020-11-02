@@ -345,23 +345,26 @@ namespace charlie {
 			InputSnapshot get_snapshot(uint32 index);
 
 			DynamicArray<InputSnapshot> inputSnapshots_;
-			static const int buffersize_ = 60;
-			InputSnapshot buffer_[buffersize_];
+			static const int bufferSize_ = 60;
+			InputSnapshot buffer_[bufferSize_];
 		};
 
 		struct Message
 		{
 			uint16 seq_;
 			uint32 id_;
+			bool received_;
 		};
 
 		struct ReliableMessageQueue
 		{
 			ReliableMessageQueue();
-			void add_message(uint32 tick, Message& msg);
-			Message get_message(uint32 tick_);
-			int32 index_;
-			StaticArray<Message, 50> buffer_;
+			void add_message(Message& msg);
+			Message get_message(uint32 tick);
+			void mark_received(uint32 id);
+			static const int bufferSize_ = 60;
+			Message buffer_[bufferSize_];
+			uint32 index_;
 		};
 
 	} // !gameplay
