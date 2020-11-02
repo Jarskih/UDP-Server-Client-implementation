@@ -6,7 +6,6 @@
 namespace charlie
 {
 	struct Time;
-	struct Camera;
 	struct Vector2;
 
 	struct Projectile

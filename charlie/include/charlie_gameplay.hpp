@@ -328,25 +328,22 @@ namespace charlie {
 			float interpolate_rot() const;
 			float interpolate_turret_rot() const;
 			void add_position(PosSnapshot snapshot);
+			void clear_old_snapshots();
 			DynamicArray<PosSnapshot> snapshots_;
 			Time interpolateTime_;
 			Time acc_;
-			uint32 buffersize_;
 		};
 
 		struct Inputinator
 		{
 			Inputinator();
-
 			void add_snapshot(InputSnapshot snapshot);
 			Vector2 get_corrected_position(uint32 tick, const Time tickrate, Vector2 serverpos, float speed) const;
-			Vector2 old_pos(uint32 uint32);
+			Vector2 old_pos(uint32 uint32) const;
 			void clear_old_inputs(uint32 tick);
 			InputSnapshot get_snapshot(uint32 index);
-
-			DynamicArray<InputSnapshot> inputSnapshots_;
-			static const int bufferSize_ = 60;
-			InputSnapshot buffer_[bufferSize_];
+			static const int buffer_size_ = 60;
+			InputSnapshot buffer_[buffer_size_];
 		};
 
 		struct Message
@@ -362,8 +359,8 @@ namespace charlie {
 			void add_message(Message& msg);
 			Message get_message(uint32 tick);
 			void mark_received(uint32 id);
-			static const int bufferSize_ = 60;
-			Message buffer_[bufferSize_];
+			static const int buffer_size_ = 60;
+			Message buffer_[buffer_size_];
 			uint32 index_;
 		};
 

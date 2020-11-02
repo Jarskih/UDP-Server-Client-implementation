@@ -4,10 +4,7 @@
 #define SERVER_APP_HPP_INCLUDED
 
 #include <sdl_application.hpp>
-
 #include "ClientList.h"
-#include "collision_handler.h"
-#include "config.h"
 #include "level_manager.h"
 #include "projectile.h"
 #include "reliable_events.h"
@@ -58,6 +55,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	Queue<gameplay::InputCommand> input_queue_;
 
 	// note: gameplay
+	Camera cam_;
 	uint32 index_; // index keeping track of joined players
 	uint32 projectile_index_;
 	DynamicArray<Player> players_;

@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#ifndef CONFIG_HPP_INCLUDED
+#define CONFIG_HPP_INCLUDED
+
 namespace charlie
 {
 	namespace config
@@ -29,3 +32,4 @@ namespace charlie
 		static const int LEVEL_OBJECT_HEIGHT = 50;
 	};
 }
+#endif

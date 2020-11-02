@@ -4,9 +4,6 @@
 #define CLIENT_APP_HPP_INCLUDED
 
 #include <sdl_application.hpp>
-
-
-
 #include "entity.h"
 #include "level_manager.h"
 #include "player.hpp"
@@ -32,8 +29,6 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	void remove_entity(uint32 id);
 	void remove_projectile(uint32 id);
 	void spawn_projectile(network::NetworkMessageProjectileSpawn message);
-	void destroy_projectile(const network::NetworkMessageProjectileDestroy& message);
-	void spawn_local_projectile(Vector2 pos, float rotation);
 	void create_ack_message(uint32 message_id);
 
 	static bool contains(const std::vector<Entity>& vector, uint32 message_id);
@@ -55,6 +50,7 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	Time server_time_;
 
 	// Gameplay
+	Camera cam_;
 	Player player_;
 	DynamicArray <Entity> entities_;
 	DynamicArray<uint32> entities_to_remove_;

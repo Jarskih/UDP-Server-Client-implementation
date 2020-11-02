@@ -1,6 +1,5 @@
 ﻿#include "level_manager.h"
 
-#include "camera.h"
 #include "config.h"
 #include "leveldata.h"
 #include "Singleton.hpp"

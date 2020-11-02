@@ -100,7 +100,6 @@
   <ItemGroup>
     <ClCompile Include="source\reliable_events.cpp" />
     <ClCompile Include="source\projectile.cpp" />
-    <ClCompile Include="source\Camera.cpp" />
     <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="source\leveldata.cpp" />
     <ClCompile Include="source\level_manager.cpp" />
@@ -128,7 +127,6 @@
     <ClCompile Include="source\winmain.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Camera.h" />
     <ClInclude Include="include\charlie.hpp" />
     <ClInclude Include="include\charlie_gameplay.hpp" />
     <ClInclude Include="include\charlie_messages.hpp" />

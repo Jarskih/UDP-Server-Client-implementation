@@ -4,7 +4,7 @@
 #include <charlie_messages.hpp>
 #include <cstdio>
 #include <cmath>
-
+#include "collision_handler.h"
 #include "config.h"
 #include "reliable_events.h"
 
@@ -94,12 +94,12 @@ void ServerApp::on_draw()
 
 	for (auto& player : players_)
 	{
-		player.render(cam_);
+		player.render(cam_.rect_);
 	}
 
 	for (auto& projectile : projectiles_)
 	{
-		projectile.render(cam_);
+		projectile.render(cam_.rect_);
 	}
 }
 
@@ -195,7 +195,7 @@ void ServerApp::on_receive(network::Connection* connection,
 				assert(!"could not read command!");
 			}
 
-			reliable_queue_.mark_received(msg.message_id_);
+			reliable_queue_.mark_received(msg.event_id_);
 		} break;
 
 		default:
@@ -276,7 +276,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 	{
 	case(EventType::SPAWN_PLAYER):
 	{
-		network::NetworkMessagePlayerSpawn message(reliable_event.pos_, reliable_event.event_id_);
+		network::NetworkMessagePlayerSpawn message(reliable_event.event_id_, reliable_event.entity_id_, reliable_event.pos_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -374,39 +374,19 @@ void ServerApp::update_players(const Time& dt)
 			player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 		}
 
-		if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w > level_width_))
+		if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w) > level_width_)
 		{
 			player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 		}
 
-		if ((player.transform_.position_.y_ < 0) || (player.transform_.position_.y_ + (float)player.body_sprite_->get_area().h > level_heigth_))
+		if ((player.transform_.position_.y_ < 0) || (player.transform_.position_.y_ + (float)player.body_sprite_->get_area().h) > level_heigth_)
 		{
 			player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
 		}
 
 		player.collider_.SetPosition(player.get_collider_pos());
 
-		{
-			cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - config::SCREEN_WIDTH / 2;
-			cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - config::SCREEN_HEIGHT / 2;
-
-			if (cam_.x < 0)
-			{
-				cam_.x = 0;
-			}
-			if (cam_.y < 0)
-			{
-				cam_.y = 0;
-			}
-			if (cam_.x > level_width_ - cam_.w)
-			{
-				cam_.x = level_width_ - cam_.w;
-			}
-			if (cam_.y > level_heigth_ - cam_.h)
-			{
-				cam_.y = level_heigth_ - cam_.h;
-			}
-		}
+		cam_.lookAt(player);
 
 		player.fire_acc_ += dt;
 		if (player.fire_ && player.can_shoot())
@@ -460,6 +440,20 @@ void ServerApp::check_collisions()
 			{
 				players_[p1].on_collision(level_manager_.colliders_[collider]);
 				// printf("COLLISION: Player collided with terrain \n");
+			}
+		}
+	}
+
+	for (auto& p : projectiles_)
+	{
+		for (auto& obj : level_manager_.colliders_)
+		{
+			if (CollisionHandler::IsColliding(obj.collider_, p.collider_))
+			{
+				p.on_collision();
+				printf("COLLISION: Projectile collided with terrain \n");
+				reliable_events_.create_destroy_event(p.id_, EventType::DESTROY_PROJECTILE, players_);
+				projectiles_to_remove_.push_back(p.id_);
 			}
 		}
 	}

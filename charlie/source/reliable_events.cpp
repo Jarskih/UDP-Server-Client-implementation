@@ -134,13 +134,13 @@ namespace charlie
 			{
 				PlayerDestroyed e(event_id_, entity_id, player.id_);
 				events_.push_back(e);
-				printf("RELIABLE MESSAGE: Created player destroy event \n");
+				printf("RELIABLE MESSAGE: Created player destroy event for player: %i\n", entity_id);
 			} break;
 			case EventType::DESTROY_PROJECTILE:
 			{
 				ProjectileDestroyed e(event_id_, entity_id, player.id_);
 				events_.push_back(e);
-				printf("RELIABLE MESSAGE: Created projectile destroy event \n");
+				printf("RELIABLE MESSAGE: Created projectile destroy event for projectile: %i \n", entity_id);
 			} break;
 			default:
 				break;

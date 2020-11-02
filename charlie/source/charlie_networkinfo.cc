@@ -85,11 +85,11 @@ namespace charlie {
 			render_text(renderer, connection, text_handler, string, Color::white, 375, 20);
 		}
 		{
-			const std::string string = "in: " + std::to_string((int)bytes_recv_) + " KiB";
+			const std::string string = "in: " + std::to_string(kibibytes_recv_avg_) + " KiB";
 			render_text(renderer, connection, text_handler, string, Color::white, 0, 40);
 		}
 		{
-			const std::string string = "out: " + std::to_string((int)bytes_sent_) + " KiB";
+			const std::string string = "out: " + std::to_string(kibibytes_sent_avg_) + " KiB";
 			render_text(renderer, connection, text_handler, string, Color::white, 200, 40);
 		}
 		{

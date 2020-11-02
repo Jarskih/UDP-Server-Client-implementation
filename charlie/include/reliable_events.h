@@ -30,7 +30,7 @@ namespace charlie
 
 	struct PlayerSpawned : Event
 	{
-		PlayerSpawned(uint32 id, uint32 creator, uint32 send_to, Vector2 pos);
+		PlayerSpawned(uint32 id, uint32 entity_id, uint32 send_to, Vector2 pos);
 	};
 
 	struct ProjectileSpawned : Event

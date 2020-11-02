@@ -7,24 +7,34 @@
 #include <charlie_gameplay.hpp>
 #include <charlie_network.hpp>
 #include <charlie_networkinfo.hpp>
-#include "player.hpp"
 #include "sdl_renderer.hpp"
 #include "sdl_window.hpp"
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 #include <SDL.h>
-#include "camera.h"
 #include "input_handler.h"
 #include "sprite_handler.hpp"
 
 namespace charlie {
+	struct Player;
+
 	namespace Color
 	{
-		const static SDL_Color white = {255, 255, 255, 255};
-		const static SDL_Color Black = {0, 0, 0, 255};
+		const static SDL_Color white = { 255, 255, 255, 255 };
+		const static SDL_Color Black = { 0, 0, 0, 255 };
 	}
-	
+
+	struct Camera
+	{
+		Camera();
+		void init(int level_width, int level_height, SDL_Rect rect);
+		SDL_Rect rect_;
+		int level_width_;
+		int level_heigth_;
+		void lookAt(Player& player);
+	};
+
 	struct SDLApplication {
 		SDLApplication();
 		virtual ~SDLApplication() = default;
@@ -40,7 +50,7 @@ namespace charlie {
 
 		SDLWindow window_;
 		SDLRenderer renderer_;
-		SDL_Rect cam_;
+		//SDL_Rect cam_;
 		network::Service network_;
 		InputHandler input_handler_;
 		SpriteHandler sprite_handler_;

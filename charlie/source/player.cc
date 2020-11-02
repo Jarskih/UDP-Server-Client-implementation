@@ -1,6 +1,5 @@
 #include "player.hpp"
 
-#include "camera.h"
 #include "charlie_gameplay.hpp"
 #include "config.h"
 #include "input_handler.h"

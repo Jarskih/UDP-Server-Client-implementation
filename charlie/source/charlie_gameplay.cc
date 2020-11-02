@@ -120,7 +120,7 @@ namespace charlie {
 		{
 		}
 
-		Interpolator::Interpolator() : interpolateTime_(Time(0.2)), acc_(Time(0.0)), buffersize_(60)
+		Interpolator::Interpolator() : interpolateTime_(Time(0.2)), acc_(Time(0.0))
 		{
 		}
 
@@ -148,7 +148,7 @@ namespace charlie {
 			const auto end = snapshots_[snapshots_.size() - 1];
 			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
 
-			return Vector2::lerp(start.rotation, end.rotation, t);;
+			return Vector2::lerp(start.rotation, end.rotation, t);
 		}
 
 		float Interpolator::interpolate_turret_rot() const
@@ -169,28 +169,25 @@ namespace charlie {
 			snapshots_.push_back(snapshot);
 		}
 
+		void Interpolator::clear_old_snapshots()
+		{
+			while (snapshots_.size() > 20)
+			{
+				snapshots_.erase(snapshots_.begin());
+			}
+		}
+
 		Inputinator::Inputinator() : buffer_{} {}
 
-		/*
 		void Inputinator::add_snapshot(InputSnapshot snapshot)
 		{
-			if (snapshot.tick_ == 0)
-			{
-				printf("missing tick from snapshot \n");
-			}
-			inputSnapshots_.push_back(snapshot);
-		}
-		*/
-
-		void Inputinator::add_snapshot(InputSnapshot snapshot)
-		{
-			buffer_[snapshot.tick_ % bufferSize_] = snapshot;
+			buffer_[snapshot.tick_ % buffer_size_] = snapshot;
 		}
 
 		Vector2 Inputinator::get_corrected_position(const uint32 tick, const Time tickrate, const Vector2 serverpos, const float speed) const
 		{
 			Vector2 startingPos = serverpos;
-			for (int i = 0; i < bufferSize_; i++)
+			for (int i = 0; i < buffer_size_; i++)
 			{
 				const auto input = buffer_[i];
 
@@ -225,47 +222,14 @@ namespace charlie {
 			return startingPos;
 		}
 
-		Vector2 Inputinator::old_pos(uint32 tick)
+		Vector2 Inputinator::old_pos(uint32 tick) const
 		{
-			return inputSnapshots_[tick % bufferSize_].position_;
+			return buffer_[tick % buffer_size_].position_;
 		}
 
-		void Inputinator::clear_old_inputs(uint32 tick)
+		InputSnapshot Inputinator::get_snapshot(uint32 tick)
 		{
-			return;
-			/*
-			DynamicArray<InputSnapshot> new_array;
-			for (auto& input : inputSnapshots_)
-			{
-				if (input.tick_ >= tick)
-				{
-					new_array.push_back(input);
-				}
-			}
-			for (auto& input : new_array)
-			{
-				inputSnapshots_.push_back(input);
-			}
-			*/
-		}
-
-		/*
-		InputSnapshot Inputinator::get_snapshot(uint32 index)
-		{
-			for (auto& snapshot : inputSnapshots_)
-			{
-				if (snapshot.tick_ == index)
-				{
-					return snapshot;
-				}
-			}
-			printf("no snapshot found \n");
-			return InputSnapshot{};
-		}
-		*/
-		InputSnapshot Inputinator::get_snapshot(uint32 index)
-		{
-			return buffer_[index % bufferSize_];
+			return buffer_[tick % buffer_size_];
 		}
 
 		ReliableMessageQueue::ReliableMessageQueue() : buffer_{}, index_(0)
@@ -274,13 +238,13 @@ namespace charlie {
 
 		void ReliableMessageQueue::add_message(Message& msg)
 		{
-			buffer_[index_ % bufferSize_] = msg;
+			buffer_[index_ % buffer_size_] = msg;
 			index_ += 1;
 		}
 
 		Message ReliableMessageQueue::get_message(uint32 tick)
 		{
-			return buffer_[tick % bufferSize_];
+			return buffer_[tick % buffer_size_];
 		}
 
 		void ReliableMessageQueue::mark_received(const uint32 id)

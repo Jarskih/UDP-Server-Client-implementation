@@ -2,12 +2,46 @@
 
 #include "sdl_application.hpp"
 
+#include "config.h"
+#include "player.hpp"
 #include "Singleton.hpp"
 
 namespace charlie {
-	SDLApplication::SDLApplication() : cam_()
+	Camera::Camera() : rect_(), level_width_(0), level_heigth_(0)
 	{
+	}
 
+	void Camera::init(int level_width, int level_height, SDL_Rect rect) {
+		level_width_ = level_width;
+		level_heigth_ = level_height;
+		rect_ = rect;
+	}
+
+	void Camera::lookAt(Player& player)
+	{
+		rect_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - config::SCREEN_WIDTH / 2;
+		rect_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - config::SCREEN_HEIGHT / 2;
+
+		if (rect_.x < 0)
+		{
+			rect_.x = 0;
+		}
+		if (rect_.y < 0)
+		{
+			rect_.y = 0;
+		}
+		if (rect_.x > level_width_ - rect_.w)
+		{
+			rect_.x = level_width_ - rect_.w;
+		}
+		if (rect_.y > level_heigth_ - rect_.h)
+		{
+			rect_.y = level_heigth_ - rect_.h;
+		}
+	}
+
+	SDLApplication::SDLApplication() : level_width_(0), level_heigth_(0)
+	{
 	}
 
 	bool SDLApplication::init()
@@ -43,8 +77,6 @@ namespace charlie {
 		sprite_handler_.set_renderer(renderer_.get_renderer());
 		Singleton<SpriteHandler>::Set(&sprite_handler_);
 		Singleton<InputHandler>::Set(&input_handler_);
-
-		cam_ = { 0,0,640, 480 };
 
 		return on_init();
 	}

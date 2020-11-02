@@ -33,7 +33,7 @@ namespace charlie {
 		NetworkMessageEntityState::NetworkMessageEntityState()
 			: type_(NETWORK_MESSAGE_ENTITY_STATE)
 			, rotation_(0)
-			, id_(0)
+			, entity_id_(0)
 			, turret_rotation_(0)
 		{
 		}
@@ -42,7 +42,7 @@ namespace charlie {
 			: type_(NETWORK_MESSAGE_ENTITY_STATE)
 			, position_(transform.position_)
 			, rotation_(transform.rotation_)
-			, id_(id)
+			, entity_id_(id)
 			, turret_rotation_(turret_rotation)
 		{
 		}
@@ -113,14 +113,16 @@ namespace charlie {
 
 		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn()
 			: type_(NETWORK_MESSAGE_PLAYER_SPAWN)
-			, message_id_(0)
+			, entity_id_(0)
+			, event_id_(0)
 		{
 		}
 
-		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn(const Vector2& position, const uint32 id)
+		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn(uint32 event_id, uint32 entity_id, const Vector2& position)
 			: type_(NETWORK_MESSAGE_PLAYER_SPAWN)
 			, position_(position)
-			, message_id_(id)
+			, entity_id_(entity_id)
+			, event_id_(event_id)
 		{
 		}
 
@@ -136,13 +138,13 @@ namespace charlie {
 
 		NetworkMessageAck::NetworkMessageAck()
 			: type_(NETWORK_MESSAGE_ACK)
-			, message_id_(0)
+			, event_id_(0)
 		{
 		}
 
 		NetworkMessageAck::NetworkMessageAck(const uint32 id)
 			: type_(NETWORK_MESSAGE_ACK)
-			, message_id_(id)
+			, event_id_(id)
 		{
 		}
 
@@ -160,7 +162,7 @@ namespace charlie {
 			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
 			, entity_id_(0)
 			, shot_by_(0)
-			, message_id_(0)
+			, event_id_(0)
 			, rotation_(0)
 		{
 		}
@@ -169,7 +171,7 @@ namespace charlie {
 			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
 			, entity_id_(entity_id)
 			, shot_by_(shot_by)
-			, message_id_(id)
+			, event_id_(id)
 			, pos_(position)
 			, rotation_(rotation)
 		{
@@ -192,9 +194,9 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected(const uint32 id, const uint32 message_id)
+		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected(const uint32 entity_id, const uint32 message_id)
 			: type_(NETWORK_MESSAGE_DISCONNECTED)
-			, entity_id_(id)
+			, entity_id_(entity_id)
 			, message_id_(message_id)
 		{
 		}
@@ -212,14 +214,14 @@ namespace charlie {
 		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy()
 			: type_(NETWORK_MESSAGE_PROJECTILE_DESTROYED)
 			, entity_id_(0)
-			, message_id_(0)
+			, event_id_(0)
 		{
 		}
 
-		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(const uint32 id, const uint32 message_id)
+		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(const uint32 entity_id, const uint32 event_id)
 			: type_(NETWORK_MESSAGE_PROJECTILE_DESTROYED)
-			, entity_id_(id)
-			, message_id_(message_id)
+			, entity_id_(entity_id)
+			, event_id_(event_id)
 		{
 		}
 
