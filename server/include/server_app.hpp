@@ -5,8 +5,7 @@
 
 #include <sdl_application.hpp>
 
-
-
+#include "ClientList.h"
 #include "collision_handler.h"
 #include "config.h"
 #include "level_manager.h"
@@ -14,50 +13,6 @@
 #include "reliable_events.h"
 
 using namespace charlie;
-
-struct ClientList {
-	ClientList()
-		: next_(0)
-	{
-	}
-
-	int32 add_client(const uint64 connection)
-	{
-		const int32 id = next_++;
-		clients_.push_back({ id, connection });
-		return id;
-	}
-
-	int32 find_client(const uint64 connection)
-	{
-		for (auto& client : clients_) {
-			if (client.connection_ == connection) {
-				return client.id_;
-			}
-		}
-		return -1;
-	}
-
-	void remove_client(const uint64 connection)
-	{
-		auto it = clients_.begin();
-		while (it != clients_.end()) {
-			if ((*it).connection_ == connection) {
-				clients_.erase(it);
-				break;
-			}
-			++it;
-		}
-	}
-
-	struct Client {
-		int32  id_{ -1 };
-		uint64 connection_{};
-	};
-
-	int32 next_;
-	DynamicArray<Client> clients_;
-};
 
 struct ServerApp final : SDLApplication, network::IServiceListener, network::IConnectionListener {
 	ServerApp();
@@ -85,8 +40,6 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	void remove_player(uint32 id);
 	void spawn_projectile(Vector2 pos, float rotation, uint32 id);
 	void remove_projectile(uint32 id);
-	void create_spawn_event(const uint32 owner, const Player& p, EventType event);
-	void create_destroy_event(uint32 id, EventType event);
 	static void write_message(const Event& reliable_event, network::NetworkStreamWriter& writer);
 
 	static void remove_from_array(DynamicArray<Event>& arr, uint32 id);
@@ -100,7 +53,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	gameplay::ReliableMessageQueue reliable_queue_;
 	DynamicArray<Event> spawn_event_list;
 	DynamicArray<Event> destroy_event_list_;
-	DynamicArray<Event> reliable_events_;
+	ReliableEvents reliable_events_;
 	Queue<gameplay::InputCommand> input_queue_;
 
 	// note: gameplay

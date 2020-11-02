@@ -10,7 +10,7 @@
 
 namespace charlie {
 	namespace gameplay {
-		
+
 		enum class Action {
 			Up,
 			Down,
@@ -345,6 +345,8 @@ namespace charlie {
 			InputSnapshot get_snapshot(uint32 index);
 
 			DynamicArray<InputSnapshot> inputSnapshots_;
+			static const int buffersize_ = 60;
+			InputSnapshot buffer_[buffersize_];
 		};
 
 		struct Message
@@ -361,7 +363,7 @@ namespace charlie {
 			int32 index_;
 			StaticArray<Message, 50> buffer_;
 		};
-		
+
 	} // !gameplay
 } // !charlie
 

@@ -41,7 +41,7 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	Time accumulator_;
 	Time lastSend_;
 	Time lastReceive_;
-	Queue<network::NetworkMessageAck> spawn_message_queue_;
+	Queue<network::NetworkMessageAck> message_queue_;
 	gameplay::Inputinator inputinator_;
 	Networkinfo networkinfo_;
 	Vector2 oldPos_;

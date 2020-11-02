@@ -101,10 +101,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="include\ClientList.cpp" />
     <ClCompile Include="source\main.cc" />
     <ClCompile Include="source\server_app.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\ClientList.h" />
     <ClInclude Include="include\server_app.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

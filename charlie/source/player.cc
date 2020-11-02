@@ -12,18 +12,18 @@ namespace charlie
 {
 	Player::Player()
 		: renderer_(nullptr)
-		  , body_sprite_(nullptr)
-		  , body_window_rect_()
-		  , turret_sprite_(nullptr)
-		  , turret_window_rect_()
-		  , point()
-		  , turret_rotation_(0)
-		  , input_bits_(0)
-		  , id_(0)
-		  , speed_(config::PLAYER_SPEED)
-		  , tank_turn_speed_(config::PLAYER_TURN_SPEED)
-		  , turret_turn_speed_(1)
-		  , fire_(false)
+		, body_sprite_(nullptr)
+		, body_window_rect_()
+		, turret_sprite_(nullptr)
+		, turret_window_rect_()
+		, point()
+		, turret_rotation_(0)
+		, input_bits_(0)
+		, id_(0)
+		, speed_(config::PLAYER_SPEED)
+		, tank_turn_speed_(config::PLAYER_TURN_SPEED)
+		, turret_turn_speed_(1)
+		, fire_(false)
 	{
 		fire_delay_ = Time(config::FIRE_DELAY);
 	}
@@ -33,7 +33,7 @@ namespace charlie
 		renderer_ = renderer;
 		transform_.position_ = pos;
 		id_ = id;
-		collider_ = RectangleCollider((int)pos.x_,(int)pos.y_,config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+		collider_ = RectangleCollider((int)pos.x_, (int)pos.y_, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	}
 
 	void Player::update(Time deltaTime, int levelHeight, int levelWidth)
@@ -89,12 +89,12 @@ namespace charlie
 		turret_rotation_ >= 0 ? turret_rotation_ : 360 + turret_rotation_;
 
 		fire_acc_ += deltaTime;
-		if(Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_SPACE) || Singleton<InputHandler>::Get()->IsMouseButtonDown(1))
+		if (Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_SPACE) || Singleton<InputHandler>::Get()->IsMouseButtonDown(1))
 		{
 			fire_ = true;
 		}
 
-	    collider_.SetPosition((int)transform_.position_.x_, (int)transform_.position_.y_);
+		collider_.SetPosition((int)transform_.position_.x_, (int)transform_.position_.y_);
 	}
 
 	void Player::render(SDL_Rect cam)
@@ -118,7 +118,7 @@ namespace charlie
 		};
 
 		SDL_RenderDrawRect(renderer_, &collider_rect_);
-		
+
 		//SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
 		//SDL_RenderDrawRect(renderer_, &body_window_rect_);
 		//SDL_RenderDrawRect(renderer_, &turret_window_rect_);
@@ -143,11 +143,11 @@ namespace charlie
 		turret_window_rect_ = { srcX, srcY, turret_sprite_->get_area().w, turret_sprite_->get_area().h };
 	}
 
-	Vector2 Player::get_shoot_pos()
+	Vector2 Player::get_shoot_pos() const
 	{
 		Vector2 pos;
-		pos.x_ = transform_.position_.x_ + transform_.origin_.x_ - config::PROJECTILE_WIDTH/2;
-		pos.y_ = transform_.position_.y_ + transform_.origin_.y_ - config::PROJECTILE_WIDTH/2;
+		pos.x_ = transform_.position_.x_ + transform_.origin_.x_ - config::PROJECTILE_WIDTH / 2;
+		pos.y_ = transform_.position_.y_ + transform_.origin_.y_ - config::PROJECTILE_WIDTH / 2;
 		return pos;
 	}
 
@@ -164,7 +164,7 @@ namespace charlie
 		return input_bits_;
 	}
 
-	bool Player::can_shoot()
+	bool Player::can_shoot() const
 	{
 		return fire_acc_ > fire_delay_;
 	}

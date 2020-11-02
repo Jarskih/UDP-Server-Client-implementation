@@ -16,9 +16,9 @@ constexpr auto array_size(T(&)[N])
 
 ClientApp::ClientApp()
 	: tickrate_(1.0 / 60.0)
-	  , tick_(0)
-	  , server_tick_(0)
-	  , local_projectile_index_(0)
+	, tick_(0)
+	, server_tick_(0)
+	, local_projectile_index_(0)
 {
 }
 
@@ -45,10 +45,10 @@ bool ClientApp::on_init()
 	level_width_ = level_manager_.width_;
 	level_heigth_ = level_manager_.height_;
 
-	text_font_.create(config::FONT_PATH, 20, SDL_Color({255,255,255,255}));
+	text_font_.create(config::FONT_PATH, 20, SDL_Color({ 255,255,255,255 }));
 	text_handler_.renderer_ = renderer_.get_renderer();
 	text_handler_.LoadFont(text_font_);
-	
+
 	return true;
 }
 
@@ -72,14 +72,15 @@ bool ClientApp::on_tick(const Time& dt)
 
 		player_.update(dt, level_heigth_, level_width_);
 
-		if(player_.fire_ && player_.can_shoot())
+		if (player_.fire_ && player_.can_shoot())
 		{
+			// TODO decide if should use local projectiles
 			//spawn_local_projectile(player_.get_shoot_pos(), player_.turret_rotation_);
 			player_.fire();
 		}
-		
+
 		{
-			const int delayInTicks = (int)(networkinfo_.rtt_avg_ / tickrate_.as_milliseconds());
+			const uint32 delayInTicks = (uint32)(networkinfo_.rtt_avg_ / tickrate_.as_milliseconds());
 
 			gameplay::InputSnapshot snapshot;
 			snapshot.input_bits_ = player_.input_bits_;
@@ -129,13 +130,13 @@ bool ClientApp::on_tick(const Time& dt)
 		{
 			cam_.y = level_heigth_ - cam_.h;
 		}
-		
-		for(auto& id : entities_to_remove_)
+
+		for (auto& id : entities_to_remove_)
 		{
 			remove_entity(id);
 		}
 
-		for(auto& id : projectiles_to_remove_)
+		for (auto& id : projectiles_to_remove_)
 		{
 			remove_projectile(id);
 		}
@@ -152,12 +153,12 @@ void ClientApp::on_draw()
 		entity.render(cam_);
 	}
 
-	for(auto& projectile : projectiles_) 
+	for (auto& projectile : projectiles_)
 	{
 		projectile.render(cam_);
 	}
-	
-	for(auto& projectile : local_projectiles_) 
+
+	for (auto& projectile : local_projectiles_)
 	{
 		projectile.render(cam_);
 	}
@@ -208,7 +209,7 @@ void ClientApp::on_receive(network::Connection* connection,
 
 			for (auto& e : entities_)
 			{
-				if(e.id_ == id)
+				if (e.id_ == id)
 				{
 					e.interpolator_.acc_ = Time(0.0);
 					e.interpolator_.add_position(snapshot);
@@ -224,22 +225,27 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 
-			// Remove inputs before ack from server
-			inputinator_.clear_old_inputs(server_tick_);
-
 			// Find old position with ack and compare to server pos
 			gameplay::InputSnapshot input = inputinator_.get_snapshot(server_tick_);
-			const auto diff = input.position_ - message.position_;
-				
+
+			auto diff = input.position_ - message.position_;
+
+			if (inputinator_.inputSnapshots_.empty())
+			{
+				diff = player_.transform_.position_ - message.position_;
+			}
+
 			// If 5px mistake correct calculate new predicted pos using server pos
 			const float correct_dist = 5.0f;
-			if (abs(diff.x_) > correct_dist || abs(diff.y_) > correct_dist)
+			if (diff.length() > correct_dist)
 			{
 				player_.transform_.position_ = inputinator_.get_corrected_position(server_tick_, tickrate_, message.position_, player_.speed_);
 				networkinfo_.input_misprediction_++;
 			}
 
-			if(abs(input.turret_rotation - message.turret_rotation_) > correct_dist)
+			inputinator_.inputSnapshots_.clear();
+
+			if (abs(input.turret_rotation - message.turret_rotation_) > correct_dist)
 			{
 				player_.turret_rotation_ = message.turret_rotation_;
 			}
@@ -274,8 +280,9 @@ void ClientApp::on_receive(network::Connection* connection,
 
 			network::NetworkMessageAck msg;
 			msg.message_id_ = message.message_id_;
-			spawn_message_queue_.push(msg);
+			message_queue_.push(msg);
 		} break;
+
 		case network::NETWORK_MESSAGE_DISCONNECTED:
 		{
 			network::NetworkMessagePlayerDisconnected message;
@@ -286,7 +293,7 @@ void ClientApp::on_receive(network::Connection* connection,
 
 			network::NetworkMessageAck msg;
 			msg.message_id_ = message.message_id_;
-			spawn_message_queue_.push(msg);
+			message_queue_.push(msg);
 		} break;
 		case network::NETWORK_MESSAGE_PROJECTILE_SPAWN:
 		{
@@ -298,8 +305,9 @@ void ClientApp::on_receive(network::Connection* connection,
 
 			network::NetworkMessageAck msg;
 			msg.message_id_ = message.message_id_;
-			spawn_message_queue_.push(msg);
+			message_queue_.push(msg);
 		} break;
+
 		case network::NETWORK_MESSAGE_PROJECTILE_DESTROYED:
 		{
 			network::NetworkMessageProjectileSpawn message;
@@ -307,11 +315,12 @@ void ClientApp::on_receive(network::Connection* connection,
 				assert(!"could not read message!");
 			}
 			destroy_projectile(message);
-				
+
 			network::NetworkMessageAck msg;
 			msg.message_id_ = message.message_id_;
-			spawn_message_queue_.push(msg);
+			message_queue_.push(msg);
 		} break;
+
 		default:
 		{
 			printf("Unknown message %i", (int)reader.peek());
@@ -330,13 +339,13 @@ void ClientApp::on_send(network::Connection* connection,
 		assert(!"could not write network command!");
 	}
 
-	while (!spawn_message_queue_.empty())
+	while (!message_queue_.empty())
 	{
-		network::NetworkMessageAck msg = spawn_message_queue_.front();
+		network::NetworkMessageAck msg = message_queue_.front();
 		if (!msg.write(writer)) {
 			assert(!"could not write network command!");
 		}
-		spawn_message_queue_.pop();
+		message_queue_.pop();
 		//printf("Sent spawn ack to server \n");
 	}
 
@@ -395,13 +404,13 @@ void ClientApp::spawn_projectile(network::NetworkMessageProjectileSpawn message)
 
 	for (auto& projectile : projectiles_)
 	{
-		if(message.message_id_ == projectile.id_)
+		if (message.message_id_ == projectile.id_)
 		{
 			// projectile exists already
 			return;
 		}
 	}
-	
+
 	Projectile e(message.pos_, message.rotation_, message.message_id_, message.owner_);
 	e.renderer_ = renderer_.get_renderer();
 	e.load_sprite(config::TANK_SHELL, 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);

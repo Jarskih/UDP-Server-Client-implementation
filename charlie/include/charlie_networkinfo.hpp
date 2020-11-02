@@ -20,14 +20,13 @@ namespace charlie
 		void update(Time dt, network::Connection connection);
 		void render(SDL_Renderer* renderer, const network::Connection connection, const TextHandler& text_handler);
 		void render_text(SDL_Renderer* renderer, network::Connection connection, const TextHandler& text_handler,
-		                 const char* text, SDL_Color color, int x, int y);
+			const std::string& text, SDL_Color color, int x, int y);
 		void packet_received(int32 size);
 		void packet_sent(int32 size);
-		
+
 		SDLSprite* text_;
 		SDL_Rect rect_;
-		
-		Time rtt_;
+
 		Time rtt_max_;
 		Time rtt_min_;
 		Time rtt_sum_;
@@ -39,7 +38,7 @@ namespace charlie
 		uint32 packets_recv_;
 		uint32 packets_sent_avg_;
 		uint32 packets_recv_avg_;
-		
+
 		float bytes_recv_;
 		float bytes_sent_;
 		float kibibytes_recv_avg_;

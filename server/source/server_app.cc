@@ -10,9 +10,9 @@
 
 ServerApp::ServerApp()
 	: tickrate_(1.0 / 60.0)
-	  , tick_(0)
-	  , index_(0)
-	  , projectile_index_(0)
+	, tick_(0)
+	, index_(0)
+	, projectile_index_(0)
 {
 }
 
@@ -53,10 +53,10 @@ bool ServerApp::on_tick(const Time& dt)
 	while (accumulator_ >= tickrate_) {
 		accumulator_ -= tickrate_;
 		tick_++;
-		
+
 		read_input_queue();
 		update_players(dt);
-		
+
 		for (auto& projectile : projectiles_)
 		{
 			projectile.update(dt);
@@ -74,7 +74,7 @@ bool ServerApp::on_tick(const Time& dt)
 			remove_projectile(id);
 		}
 	}
-	
+
 	return true;
 }
 
@@ -100,8 +100,8 @@ void ServerApp::on_timeout(network::Connection* connection)
 	const uint32 id = clients_.find_client((uint64)connection);
 
 	players_to_remove_.push_back(id);
-	create_destroy_event(id, EventType::DESTROY_PLAYER);
-		
+	reliable_events_.create_destroy_event(id, EventType::DESTROY_PLAYER, players_);
+
 	clients_.remove_client((uint64)connection);
 	printf("Player %i disconnected. Players %i \n", id, (int)clients_.clients_.size());
 }
@@ -111,7 +111,7 @@ void ServerApp::on_connect(network::Connection* connection)
 	connection->set_listener(this);
 
 	const auto id = clients_.add_client((uint64)connection);
-	
+
 	Player player;
 	player.id_ = id;
 
@@ -122,10 +122,10 @@ void ServerApp::on_connect(network::Connection* connection)
 
 	for (const Player& p : players_)
 	{
-		create_spawn_event(player.id_, p, EventType::SPAWN_PLAYER);
-		create_spawn_event(p.id_, player, EventType::SPAWN_PLAYER);
+		reliable_events_.create_spawn_event(player.id_, p, EventType::SPAWN_PLAYER, players_, projectile_index_);
+		reliable_events_.create_spawn_event(p.id_, player, EventType::SPAWN_PLAYER, players_, projectile_index_);
 	}
-	
+
 	players_.push_back(player);
 	index_ += 1;
 
@@ -137,10 +137,10 @@ void ServerApp::on_disconnect(network::Connection* connection)
 	connection->set_listener(nullptr);
 
 	const uint32 id = clients_.find_client((uint64)connection);
-	
+
 	players_to_remove_.push_back(id);
 
-	create_destroy_event(id, EventType::DESTROY_PLAYER);
+	reliable_events_.create_destroy_event(id, EventType::DESTROY_PLAYER, players_);
 
 	clients_.remove_client((uint64)connection);
 
@@ -160,43 +160,44 @@ void ServerApp::on_receive(network::Connection* connection,
 	while (reader.position() < reader.length()) {
 		switch (reader.peek()) {
 		case(network::NETWORK_MESSAGE_INPUT_COMMAND):
-			{
-				network::NetworkMessageInputCommand command;
-				if (!command.read(reader)) {
-					assert(!"could not read command!");
-				}
+		{
+			network::NetworkMessageInputCommand command;
+			if (!command.read(reader)) {
+				assert(!"could not read command!");
+			}
 
-				for (auto& player : players_) {
-					if (player.id_ == id) {
-						gameplay::InputCommand cmd{};
-						cmd.id_ = id;
-						cmd.input_bits_ = command.bits_;
-						cmd.rot_ = command.rot_;
-						cmd.fire_ = command.fire_;
-						input_queue_.push(cmd);
-						break;
-					}
+			for (auto& player : players_) {
+				if (player.id_ == id) {
+					gameplay::InputCommand cmd{};
+					cmd.id_ = id;
+					cmd.input_bits_ = command.bits_;
+					cmd.rot_ = command.rot_;
+					cmd.fire_ = command.fire_;
+					input_queue_.push(cmd);
+					break;
 				}
-			} break;
+			}
+		} break;
+
 		case(network::NETWORK_MESSAGE_ACK):
-			{
-				network::NetworkMessageAck msg;
-				if (!msg.read(reader)) {
-					assert(!"could not read command!");
-				}
+		{
+			network::NetworkMessageAck msg;
+			if (!msg.read(reader)) {
+				assert(!"could not read command!");
+			}
 
-				const auto message = reliable_queue_.get_message(connection->acknowledge_);
-				if(message.seq_ != 0)
-				{
-					// printf("Spawn command %i acknowledged on sequence %i \n", msg.message_id_, message.seq_);
-					remove_from_array(spawn_event_list, message.id_);
-				}
-			} break;
-		default: 
+			const auto message = reliable_queue_.get_message(connection->acknowledge_);
+			if (message.seq_ != 0)
 			{
-				printf("Unknown message %i", (int)reader.peek());
-				assert(!"unknown message type received from client!");
-			} break;
+				remove_from_array(spawn_event_list, message.id_);
+			}
+		} break;
+
+		default:
+		{
+			printf("Unknown message %i", (int)reader.peek());
+			assert(!"unknown message type received from client!");
+		} break;
 		}
 	}
 }
@@ -216,14 +217,14 @@ void ServerApp::on_send(network::Connection* connection,
 
 	// Send reliable messages
 	{
-		for (Event reliable_event : reliable_events_)
+		for (Event reliable_event : reliable_events_.events_)
 		{
 			if (id == reliable_event.send_to_)
 			{
 				gameplay::Message msg;
 				msg.id_ = reliable_event.id_;
 				msg.seq_ = sequence;
-					
+
 				// Keep track of sent reliable messages
 				reliable_queue_.add_message(tick_, msg);
 
@@ -258,112 +259,112 @@ void ServerApp::read_input_queue()
 {
 	while (!input_queue_.empty())
 	{
-			const gameplay::InputCommand cmd = input_queue_.front();
-			input_queue_.pop();
+		const gameplay::InputCommand cmd = input_queue_.front();
+		input_queue_.pop();
 
-			for (auto& player : players_)
+		for (auto& player : players_)
+		{
+			if (player.id_ == cmd.id_)
 			{
-				if(player.id_ == cmd.id_)
-				{
-					player.input_bits_ = cmd.input_bits_;
-					player.turret_rotation_ = cmd.rot_;
-					player.fire_ = cmd.fire_;
-					break;
-				}	
+				player.input_bits_ = cmd.input_bits_;
+				player.turret_rotation_ = cmd.rot_;
+				player.fire_ = cmd.fire_;
+				break;
 			}
+		}
 	}
 }
 
 void ServerApp::update_players(const Time& dt)
 {
-			for (auto& player : players_)
+	for (auto& player : players_)
+	{
+		float direction = 0;
+		float rotation = 0;
+
+		const bool player_move_up = player.get_input_bits() & (1 << int32(gameplay::Action::Up));
+		const bool player_move_down = player.get_input_bits() & (1 << int32(gameplay::Action::Down));
+		const bool player_move_left = player.get_input_bits() & (1 << int32(gameplay::Action::Left));
+		const bool player_move_right = player.get_input_bits() & (1 << int32(gameplay::Action::Right));
+
+		if (player_move_up) {
+			direction -= 1.0f;
+		}
+		if (player_move_down) {
+			direction += 1.0f;
+		}
+		if (player_move_left) {
+			rotation -= 1.0f;
+		}
+		if (player_move_right) {
+			rotation += 1.0f;
+		}
+
+		if (abs(rotation) > 0.0f)
 		{
-			float direction = 0;
-			float rotation = 0;
+			const float rot = player.transform_.rotation_ + rotation * player.tank_turn_speed_ * dt.as_seconds();
+			player.transform_.set_rotation(rot);
+		}
 
-			const bool player_move_up = player.get_input_bits() & (1 << int32(gameplay::Action::Up));
-			const bool player_move_down = player.get_input_bits() & (1 << int32(gameplay::Action::Down));
-			const bool player_move_left = player.get_input_bits() & (1 << int32(gameplay::Action::Left));
-			const bool player_move_right = player.get_input_bits() & (1 << int32(gameplay::Action::Right));
+		if (abs(direction) > 0.0f) {
+			player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+		}
 
-			if (player_move_up) {
-				direction -= 1.0f;
-			}
-			if (player_move_down) {
-				direction += 1.0f;
-			}
-			if (player_move_left) {
-				rotation -= 1.0f;
-			}
-			if (player_move_right) {
-				rotation += 1.0f;
-			}
 
-			if (abs(rotation) > 0.0f)
+		if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w > level_width_))
+		{
+			player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+		}
+
+		if ((player.transform_.position_.y_ < 0) || (player.transform_.position_.y_ + (float)player.body_sprite_->get_area().h > level_heigth_))
+		{
+			player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+		}
+
+		{
+			cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - config::SCREEN_WIDTH / 2;
+			cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - config::SCREEN_HEIGHT / 2;
+
+			if (cam_.x < 0)
 			{
-				const float rot = player.transform_.rotation_ + rotation * player.tank_turn_speed_ * dt.as_seconds();
-				player.transform_.set_rotation(rot);
+				cam_.x = 0;
 			}
-
-			if (abs(direction) > 0.0f) {
-				player.transform_.position_ += player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
-			}
-
-
-			if ((player.transform_.position_.x_ < 0) || (player.transform_.position_.x_ + (float)player.body_sprite_->get_area().w > level_width_))
+			if (cam_.y < 0)
 			{
-				player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+				cam_.y = 0;
 			}
-
-			if ((player.transform_.position_.y_ < 0) || (player.transform_.position_.y_ + (float)player.body_sprite_->get_area().h > level_heigth_))
+			if (cam_.x > level_width_ - cam_.w)
 			{
-				player.transform_.position_ -= player.transform_.forward() * direction * player.speed_ * dt.as_seconds();
+				cam_.x = level_width_ - cam_.w;
 			}
-
+			if (cam_.y > level_heigth_ - cam_.h)
 			{
-				cam_.x = (int)player.transform_.position_.x_ + player.body_sprite_->get_area().w / 2 - config::SCREEN_WIDTH / 2;
-				cam_.y = (int)player.transform_.position_.y_ + player.body_sprite_->get_area().h / 2 - config::SCREEN_HEIGHT / 2;
-
-				if (cam_.x < 0)
-				{
-					cam_.x = 0;
-				}
-				if (cam_.y < 0)
-				{
-					cam_.y = 0;
-				}
-				if (cam_.x > level_width_ - cam_.w)
-				{
-					cam_.x = level_width_ - cam_.w;
-				}
-				if (cam_.y > level_heigth_ - cam_.h)
-				{
-					cam_.y = level_heigth_ - cam_.h;
-				}
-			}
-
-			player.fire_acc_ += dt;
-			if(player.fire_ && player.can_shoot())
-			{
-				spawn_projectile(player.get_shoot_pos(), player.turret_rotation_, player.id_);
-				player.fire();
-				create_spawn_event(projectile_index_, player, EventType::SPAWN_PROJECTILE);
+				cam_.y = level_heigth_ - cam_.h;
 			}
 		}
+
+		player.fire_acc_ += dt;
+		if (player.fire_ && player.can_shoot())
+		{
+			spawn_projectile(player.get_shoot_pos(), player.turret_rotation_, player.id_);
+			player.fire();
+			reliable_events_.create_spawn_event(projectile_index_, player, EventType::SPAWN_PROJECTILE, players_, projectile_index_);
+		}
+	}
 }
 
 void ServerApp::check_collisions()
 {
-	for (int i = 0 ; i < (int)players_.size(); i++)
+	for (int i = 0; i < (int)players_.size(); i++)
 	{
-		for (int j = 0 ; j < (int)projectiles_.size(); j++)
+		for (int j = 0; j < (int)projectiles_.size(); j++)
 		{
-			if(CollisionHandler::IsColliding(players_[i].collider_, projectiles_[j].collider_))
+			if (CollisionHandler::IsColliding(players_[i].collider_, projectiles_[j].collider_))
 			{
 				players_[i].on_collision();
 				projectiles_[j].on_collision();
+				reliable_events_.create_destroy_event(projectiles_[j].id_, EventType::DESTROY_PROJECTILE, players_);
 				projectiles_to_remove_.push_back(projectiles_[j].id_);
-				create_destroy_event(projectiles_[j].id_, EventType::DESTROY_PROJECTILE);
 			}
 		}
 	}
@@ -409,100 +410,50 @@ void ServerApp::remove_projectile(uint32 id)
 	}
 }
 
-void ServerApp::create_spawn_event(const uint32 owner, const Player& p, const EventType event)
-{
-	for (auto& player : players_)
-	{
-		if(player.id_ == owner)
-		{
-			continue;
-		}
-
-		switch(event)
-		{
-		case EventType::SPAWN_PLAYER:
-			{
-				PlayerSpawned e(owner, player.id_, p.transform_.position_);
-				reliable_events_.push_back(e);
-				printf("created player spawned event \n");
-			} break;
-		case EventType::SPAWN_PROJECTILE:
-			{
-				ProjectileSpawned e(projectile_index_, player.id_, owner, player.get_shoot_pos(), p.turret_rotation_);
-				reliable_events_.push_back(e);
-				printf("created projectile spawned event \n");
-			} break;
-		default:
-			break;
-		}
-	}
-	printf("reliable events in queue %i \n", (int)reliable_events_.size());
-}
-
-void ServerApp::create_destroy_event(const uint32 id, const EventType event)
-{
-	for (auto& player : players_)
-	{
-		switch(event)
-		{
-		case EventType::DESTROY_PLAYER:
-			{
-				PlayerDestroyed e(id, player.id_);
-				reliable_events_.push_back(e);
-				printf("created player destroy event \n");
-			} break;
-		case EventType::DESTROY_PROJECTILE:
-			{
-				ProjectileDestroyed e(id, player.id_);
-				reliable_events_.push_back(e);
-				printf("created projectile destroy event \n");
-			} break;
-		default:
-			break;
-		}
-	}
-	printf("reliable events in queue %i \n", (int)reliable_events_.size());
-}
-
 void ServerApp::write_message(const Event& reliable_event, network::NetworkStreamWriter& writer)
 {
-	switch(reliable_event.type_)
-			{
-			case(EventType::SPAWN_PLAYER):
-			{
-				network::NetworkMessagePlayerSpawn message(reliable_event.pos_, reliable_event.id_);
-				if(!message.write(writer))
-				{
-					assert(!"failed to write message!");
-				}	
-			} break;
-			case(EventType::SPAWN_PROJECTILE):
-			{
-				network::NetworkMessageProjectileSpawn message(reliable_event.id_, reliable_event.owner_,reliable_event.pos_, reliable_event.rot_);
-				if(!message.write(writer))
-				{
-					assert(!"failed to write message!");
-				}
-			} break;
-			case(EventType::DESTROY_PLAYER):
-			{
-				network::NetworkMessagePlayerDisconnected message(reliable_event.id_);
-				if(!message.write(writer))
-				{
-					assert(!"failed to write message!");
-				}
-			} break;
-			case(EventType::DESTROY_PROJECTILE):
-			{
-				network::NetworkMessageProjectileDestroy message(reliable_event.id_);
-				if(!message.write(writer))
-				{
-					assert(!"failed to write message!");
-				}
-			} break;
-			default:
-				break;
-			}
+	switch (reliable_event.type_)
+	{
+	case(EventType::SPAWN_PLAYER):
+	{
+		network::NetworkMessagePlayerSpawn message(reliable_event.pos_, reliable_event.id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::SPAWN_PROJECTILE):
+	{
+		network::NetworkMessageProjectileSpawn message(reliable_event.id_, reliable_event.owner_, reliable_event.pos_, reliable_event.rot_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::DESTROY_PLAYER):
+	{
+		network::NetworkMessagePlayerDisconnected message(reliable_event.id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::DESTROY_PROJECTILE):
+	{
+		network::NetworkMessageProjectileDestroy message(reliable_event.id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	default:
+		assert(!"Unknown event type");
+		break;
+	}
 }
 
 bool ServerApp::contains(const DynamicArray<uint32>& arr, const uint32 id)

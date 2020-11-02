@@ -5,10 +5,10 @@ namespace charlie
 	namespace config
 	{
 		static const int  PORT = 54345;
-		static const uint8  IP_A = 192;
-		static const uint8  IP_B = 168;
-		static const uint8  IP_C = 0;
-		static const uint8  IP_D = 255;
+		static const uint8  IP_A = 82;
+		static const uint8  IP_B = 117;
+		static const uint8  IP_C = 111;
+		static const uint8  IP_D = 100;
 		static const int  SCREEN_WIDTH = 640;
 		static const int  SCREEN_HEIGHT = 480;
 		static const int  PLAYER_WIDTH = 150;

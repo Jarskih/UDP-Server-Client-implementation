@@ -15,12 +15,12 @@ namespace charlie
 		void render(SDL_Rect cameraPos);
 		void load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
 		void load_turret_sprite(const char* turret, int srcX, int srcY, int srcW, int srcH);
-		Vector2 get_shoot_pos();
+		Vector2 get_shoot_pos() const;
 		void destroy();
 		uint8 get_input_bits() const;
-		bool can_shoot();
+		bool can_shoot() const;
 		void fire();
-		void on_collision();
+		static void on_collision();
 
 		// SDL
 		SDL_Renderer* renderer_;
@@ -38,7 +38,7 @@ namespace charlie
 		float speed_;
 		float tank_turn_speed_;
 		float turret_turn_speed_;
-		
+
 		bool fire_;
 		Time fire_acc_;
 		Time fire_delay_;
