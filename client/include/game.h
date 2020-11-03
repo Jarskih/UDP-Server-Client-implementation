@@ -8,7 +8,7 @@
 
 namespace charlie
 {
-	struct Game : Scene, network::IConnectionListener
+	struct Game : Scene, network::IConnectionListener, network::IServiceListener
 	{
 		Game();
 
@@ -21,7 +21,12 @@ namespace charlie
 		void on_receive(network::Connection* connection, network::NetworkStreamReader& reader) override;
 		void on_send(network::Connection* connection, uint16 sequence, network::NetworkStreamWriter& writer) override;
 
+		void on_timeout(network::Connection* connection) override;
+		void on_connect(network::Connection* connection) override;
+		void on_disconnect(network::Connection* connection) override;
+
 		void spawn_entity(network::NetworkMessagePlayerSpawn message);
+		void spawn_player();
 		void remove_entity(uint32 id);
 		void remove_projectile(uint32 id);
 		void spawn_projectile(network::NetworkMessageProjectileSpawn message);
@@ -59,6 +64,5 @@ namespace charlie
 		uint32 local_projectile_index_;
 		int level_width_;
 		int level_heigth_;
-
 	};
 }

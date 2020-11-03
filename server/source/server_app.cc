@@ -149,7 +149,7 @@ void ServerApp::on_disconnect(network::Connection* connection)
 
 	players_to_remove_.push_back(id);
 
-	reliable_events_.create_destroy_event(id, EventType::DESTROY_PLAYER, players_);
+	reliable_events_.create_destroy_event(id, EventType::PLAYER_DISCONNECTED, players_);
 
 	clients_.remove_client((uint64)connection);
 
@@ -294,12 +294,22 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::DESTROY_PLAYER):
 	{
-		network::NetworkMessagePlayerDisconnected message(reliable_event.entity_id_, reliable_event.event_id_);
+		network::NetworkMessagePlayerDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
 		}
 	} break;
+
+	case(EventType::PLAYER_DISCONNECTED):
+	{
+		network::NetworkMessagePlayerDisconnected message(reliable_event.entity_id_, reliable_event.event_id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	}
+	break;
 
 	case(EventType::DESTROY_PROJECTILE):
 	{
@@ -417,7 +427,9 @@ void ServerApp::check_collisions()
 				projectiles_[projectile].on_collision();
 				reliable_events_.create_destroy_event(projectiles_[projectile].id_, EventType::DESTROY_PROJECTILE, players_);
 				projectiles_to_remove_.push_back(projectiles_[projectile].id_);
-				//printf("COLLISION: Projectile collided with player \n");
+
+				reliable_events_.create_destroy_event(players_[p1].id_, EventType::DESTROY_PLAYER, players_);
+				players_to_remove_.push_back(players_[p1].id_);
 			}
 		}
 

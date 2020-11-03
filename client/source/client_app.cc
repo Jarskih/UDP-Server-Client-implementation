@@ -52,7 +52,7 @@ bool ClientApp::on_tick(const Time& dt)
 	{
 		if (!end_.on_tick(dt))
 		{
-			set_state(SceneState::MENU);
+			return false;
 		}
 	} break;
 	}

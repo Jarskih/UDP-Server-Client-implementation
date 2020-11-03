@@ -35,6 +35,7 @@ namespace charlie
 
 	void Player::init(SDL_Renderer* renderer, Vector2& pos, uint32 id)
 	{
+		is_dead_ = false;
 		renderer_ = renderer;
 		transform_.position_ = pos;
 		old_pos_ = pos;

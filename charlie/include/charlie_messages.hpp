@@ -18,6 +18,7 @@ namespace charlie {
 			NETWORK_MESSAGE_PLAYER_SPAWN,
 			NETWORK_MESSAGE_PROJECTILE_SPAWN,
 			NETWORK_MESSAGE_DISCONNECTED,
+			NETWORK_MESSAGE_PLAYER_DESTROYED,
 			NETWORK_MESSAGE_PROJECTILE_DESTROYED,
 			NETWORK_MESSAGE_ACK,
 			NETWORK_MESSAGE_COUNT,
@@ -228,6 +229,28 @@ namespace charlie {
 		{
 			NetworkMessageProjectileDestroy();
 			explicit NetworkMessageProjectileDestroy(uint32 entity_id, uint32 event_id);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(entity_id_);
+				result &= stream.serialize(event_id_);
+				return result;
+			}
+
+			uint8 type_;
+			uint32 entity_id_;
+			uint32 event_id_;
+		};
+
+		struct NetworkMessagePlayerDestroy
+		{
+			NetworkMessagePlayerDestroy();
+			explicit NetworkMessagePlayerDestroy(uint32 entity_id, uint32 event_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 

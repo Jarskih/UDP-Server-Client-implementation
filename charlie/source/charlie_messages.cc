@@ -234,5 +234,29 @@ namespace charlie {
 		{
 			return serialize(writer);
 		}
+
+		NetworkMessagePlayerDestroy::NetworkMessagePlayerDestroy()
+			: type_(NETWORK_MESSAGE_PLAYER_DESTROYED)
+			, entity_id_(0)
+			, event_id_(0)
+		{
+		}
+
+		NetworkMessagePlayerDestroy::NetworkMessagePlayerDestroy(uint32 entity_id, uint32 event_id) :
+			type_(NETWORK_MESSAGE_PLAYER_DESTROYED)
+			, entity_id_(entity_id)
+			, event_id_(event_id)
+		{
+		}
+
+		bool NetworkMessagePlayerDestroy::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessagePlayerDestroy::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
 	} // !network
 } // !messages

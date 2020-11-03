@@ -23,10 +23,8 @@ namespace charlie
 	bool Game::on_init(SDL_Renderer* renderer)
 	{
 		renderer_ = renderer;
-		Vector2 pos = Vector2(200, 300);
-		player_.init(renderer_, pos, 0);
-		player_.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
-		player_.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+
+		spawn_player();
 
 		auto data = Leveldata();
 		data.create_level(config::LEVEL1);
@@ -57,7 +55,12 @@ namespace charlie
 		Singleton<InputHandler>::Get()->HandleEvents();
 		if (Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_ESCAPE))
 		{
-			return false;
+			player_.is_dead_ = true;
+		}
+
+		if (connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
+		{
+			// TODO show disconnected
 		}
 
 		accumulator_ += dt;
@@ -99,7 +102,6 @@ namespace charlie
 
 			for (auto& projectile : projectiles_)
 			{
-				printf("Projectile update %i \n", projectile.id_);
 				projectile.update(dt);
 			}
 
@@ -266,6 +268,18 @@ namespace charlie
 
 				create_ack_message(message.message_id_);
 			} break;
+			case network::NETWORK_MESSAGE_PLAYER_DESTROYED:
+			{
+				network::NetworkMessagePlayerDestroy message;
+				if (!message.read(reader)) {
+					assert(!"could not read message!");
+				}
+
+				player_.is_dead_ = true;
+
+				create_ack_message(message.event_id_);
+
+			} break;
 			case network::NETWORK_MESSAGE_PROJECTILE_SPAWN:
 			{
 				network::NetworkMessageProjectileSpawn message;
@@ -296,7 +310,6 @@ namespace charlie
 
 				create_ack_message(message.event_id_);
 			} break;
-
 			default:
 			{
 				assert(!"unknown message type received from server!");
@@ -326,6 +339,21 @@ namespace charlie
 		networkinfo_.packet_sent(writer.length());
 	}
 
+	void Game::on_timeout(network::Connection* connection)
+	{
+		printf("NETWORK: connection timed out");
+	}
+
+	void Game::on_connect(network::Connection* connection)
+	{
+		printf("NETWORK: connected to host");
+	}
+
+	void Game::on_disconnect(network::Connection* connection)
+	{
+		printf("NETWORK: connection disconnected");
+	}
+
 	void Game::spawn_entity(network::NetworkMessagePlayerSpawn message)
 	{
 		Entity e{};
@@ -334,6 +362,15 @@ namespace charlie
 		e.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		entities_.push_back(e);
 		printf("RELIABLE MESSAGE: Remote player spawned with message id: %i \n", message.event_id_);
+	}
+
+	void Game::spawn_player()
+	{
+		Vector2 pos = Vector2(200, 300);
+		player_ = Player();
+		player_.init(renderer_, pos, 0);
+		player_.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+		player_.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	}
 
 	void Game::remove_entity(uint32 id)
