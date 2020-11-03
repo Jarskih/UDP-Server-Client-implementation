@@ -5,15 +5,20 @@
 
 #include <sdl_application.hpp>
 #include "entity.h"
-#include "level_manager.h"
-#include "player.hpp"
-#include "projectile.h"
-#include "sdl_text_handler.h"
+#include "game.h"
+#include "menu.h"
 
 using namespace charlie;
 
-struct ClientApp final : SDLApplication, network::IConnectionListener {
+struct ClientApp final : SDLApplication {
 	ClientApp();
+
+	enum class SceneState
+	{
+		MENU,
+		GAME,
+		END
+	};
 
 	// note: Application
 	virtual bool on_init();
@@ -21,46 +26,13 @@ struct ClientApp final : SDLApplication, network::IConnectionListener {
 	virtual bool on_tick(const Time& dt);
 	virtual void on_draw();
 
-	// note: IConnectionListener 
-	virtual void on_acknowledge(network::Connection* connection, const uint16 sequence);
-	virtual void on_receive(network::Connection* connection, network::NetworkStreamReader& reader);
-	virtual void on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer);
-	void spawn_entity(network::NetworkMessagePlayerSpawn message);
-	void remove_entity(uint32 id);
-	void remove_projectile(uint32 id);
-	void spawn_projectile(network::NetworkMessageProjectileSpawn message);
-	void create_ack_message(uint32 message_id);
+	void set_state(SceneState state);
 
-	static bool contains(const std::vector<Entity>& vector, uint32 message_id);
-	static bool contains(const DynamicArray<Projectile>& vector, uint32 id);
+	Menu menu_;
+	Game game_;
+	Menu end_;
 
-	// Networking
-	network::Connection connection_;
-	const Time tickrate_;
-	Time accumulator_;
-	Time lastSend_;
-	Time lastReceive_;
-	Queue<network::NetworkMessageAck> message_queue_;
-	gameplay::Inputinator inputinator_;
-	Networkinfo networkinfo_;
-	Vector2 oldPos_;
-	Vector2 newPos_;
-	uint32 tick_;
-	uint32 server_tick_;
-	Time server_time_;
-
-	// Gameplay
-	Camera cam_;
-	Player player_;
-	DynamicArray <Entity> entities_;
-	DynamicArray<uint32> entities_to_remove_;
-	DynamicArray<Projectile> projectiles_;
-	DynamicArray<Projectile> local_projectiles_;
-	DynamicArray<uint32> projectiles_to_remove_;
-	LevelManager level_manager_;
-	TextHandler text_handler_;
-	SDLFont text_font_;
-	uint32 local_projectile_index_;
+	SceneState state_;
 };
 
 #endif // !CLIENT_APP_HPP_INCLUDED

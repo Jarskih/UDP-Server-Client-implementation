@@ -27,8 +27,10 @@ namespace charlie
 		, fire_(false)
 		, collider_offset_x_(0)
 		, collider_offset_y_(0)
+		, is_dead_(false)
 	{
 		fire_delay_ = Time(config::FIRE_DELAY);
+		fire_acc_ = fire_delay_;
 	}
 
 	void Player::init(SDL_Renderer* renderer, Vector2& pos, uint32 id)
@@ -185,7 +187,7 @@ namespace charlie
 
 	void Player::on_collision(const Projectile& other)
 	{
-		// TODO die
+		is_dead_ = true;
 	}
 
 	void Player::reset_old_pos()
@@ -196,8 +198,13 @@ namespace charlie
 		body_window_rect_.y = (int)transform_.position_.y_;
 	}
 
-	Vector2 Player::get_collider_pos()
+	Vector2 Player::get_collider_pos() const
 	{
-		return Vector2(transform_.position_.x_ + collider_offset_x_, transform_.position_.y_ + collider_offset_y_);
+		return { transform_.position_.x_ + (float)collider_offset_x_, transform_.position_.y_ + (float)collider_offset_y_ };
+	}
+
+	bool Player::is_dead() const
+	{
+		return is_dead_;
 	}
 }

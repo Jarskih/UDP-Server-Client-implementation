@@ -1,8 +1,6 @@
 #pragma once
 #include <SDL.h>
 
-#include "charlie.hpp"
-
 namespace charlie
 {
 	struct SDLRenderer

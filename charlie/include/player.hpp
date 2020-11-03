@@ -26,7 +26,8 @@ namespace charlie
 		void on_collision(const Player& other);
 		void on_collision(const Projectile& other);
 		void reset_old_pos();
-		Vector2 get_collider_pos();
+		Vector2 get_collider_pos() const;
+		bool is_dead() const;
 
 		// SDL
 		SDL_Renderer* renderer_;
@@ -51,5 +52,6 @@ namespace charlie
 		Vector2 old_pos_;
 		int collider_offset_x_;
 		int collider_offset_y_;
+		bool is_dead_;
 	};
 }

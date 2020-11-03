@@ -147,7 +147,7 @@ namespace charlie {
 				port_);
 			return string;
 		}
-		
+
 		// static 
 		bool UDPSocket::get_address(const UDPSocket& socket, IPAddress& address)
 		{
@@ -434,7 +434,7 @@ namespace charlie {
 
 		bool NetworkStreamWriter::serialize(const bool& value)
 		{
-			if(!can_write_bytes(*this, value)) { return false;}
+			if (!can_write_bytes(*this, value)) { return false; }
 			at_[0] = value;
 			at_ += sizeof(value);
 			update_base_stream_length(*this);
@@ -617,7 +617,7 @@ namespace charlie {
 
 		bool NetworkStreamReader::serialize(bool& value)
 		{
-			if(!can_read_bytes(*this, value)) { return false; }
+			if (!can_read_bytes(*this, value)) { return false; }
 			value = at_[0];
 			at_ += sizeof(value);
 			return true;
@@ -864,7 +864,7 @@ namespace charlie {
 			//       packet.ticks_);
 
 			if (listener_) {
-				listener_->on_acknowledge(this, acknowledge_);
+				listener_->on_acknowledge(this, packet.acknowledge_);
 				// todo: parse bits and let listener know
 			}
 
@@ -1174,7 +1174,7 @@ namespace charlie {
 				}
 
 				// Update broadcast address to received one
-				if(connection->address_ == network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT)) {
+				if (connection->address_ == network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT)) {
 					connection->set_address(address);
 					return connection;
 				}

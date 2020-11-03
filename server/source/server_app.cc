@@ -394,6 +394,7 @@ void ServerApp::update_players(const Time& dt)
 			spawn_projectile(player.get_shoot_pos(), player.turret_rotation_, player.id_);
 			player.fire();
 			reliable_events_.create_spawn_event(projectile_index_, player, EventType::SPAWN_PROJECTILE, players_);
+			projectile_index_ += 1;
 		}
 	}
 }
@@ -480,7 +481,6 @@ void ServerApp::spawn_projectile(const Vector2 pos, const float rotation, const 
 	e.renderer_ = renderer_.get_renderer();
 	e.load_sprite(config::TANK_SHELL, 0, 0, config::PROJECTILE_WIDTH, config::PROJECTILE_HEIGHT);
 	projectiles_.push_back(e);
-	projectile_index_ += 1;
 }
 
 void ServerApp::remove_projectile(uint32 id)

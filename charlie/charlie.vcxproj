@@ -98,6 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\Scene.cpp" />
     <ClCompile Include="source\reliable_events.cpp" />
     <ClCompile Include="source\projectile.cpp" />
     <ClCompile Include="source\entity.cpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="include\level_manager.h" />
     <ClInclude Include="include\projectile.h" />
     <ClInclude Include="include\reliable_events.h" />
+    <ClInclude Include="include\Scene.h" />
     <ClInclude Include="include\sdl_collider.h" />
     <ClInclude Include="include\collision_handler.h" />
     <ClInclude Include="include\input_handler.h" />

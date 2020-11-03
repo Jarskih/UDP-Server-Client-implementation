@@ -100,11 +100,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\menu.cpp" />
     <ClCompile Include="source\client_app.cc" />
+    <ClCompile Include="source\Game.cpp" />
     <ClCompile Include="source\main.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\client_app.hpp" />
+    <ClInclude Include="include\Game.h" />
+    <ClInclude Include="include\menu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

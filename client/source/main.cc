@@ -9,6 +9,5 @@ int main(int argc, char** argv)
 		app.run();
 		app.exit();
 	}
-
 	return 0;
 }

@@ -50,7 +50,6 @@ namespace charlie {
 
 		SDLWindow window_;
 		SDLRenderer renderer_;
-		//SDL_Rect cam_;
 		network::Service network_;
 		InputHandler input_handler_;
 		SpriteHandler sprite_handler_;
