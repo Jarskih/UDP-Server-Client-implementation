@@ -4,7 +4,7 @@
 
 namespace charlie
 {
-	TextHandler::TextHandler(): renderer_(nullptr)
+	TextHandler::TextHandler() : renderer_(nullptr)
 	{
 	}
 
@@ -15,7 +15,7 @@ namespace charlie
 
 	SDLSprite* TextHandler::CreateText(const std::string p_text, SDL_Color p_textColor, int p_x, int p_y, int p_w, int p_h) const
 	{
-		if(font_.font_ == nullptr)
+		if (font_.font_ == nullptr)
 		{
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "No font created while trying to create text %s", SDL_GetError());
 			return nullptr;
@@ -25,7 +25,7 @@ namespace charlie
 		{
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "No renderer sent in the TextHandler %s", SDL_GetError());
 		}
-		
+
 		SDL_Surface* textSurface = TTF_RenderText_Solid(font_.font_, p_text.c_str(), p_textColor);
 		if (textSurface == nullptr)
 		{
@@ -47,7 +47,7 @@ namespace charlie
 
 	TextHandler::~TextHandler()
 	{
+		font_.destroy();
 		renderer_ = nullptr;
 	}
-
 }

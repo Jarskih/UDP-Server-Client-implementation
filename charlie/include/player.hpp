@@ -5,6 +5,13 @@
 
 namespace charlie
 {
+	enum class PlayerState
+	{
+		WAITING_TO_SPAWN,
+		ALIVE,
+		DEAD
+	};
+
 	struct LevelObject;
 	struct Projectile;
 	struct Camera;
@@ -28,6 +35,7 @@ namespace charlie
 		void reset_old_pos();
 		Vector2 get_collider_pos() const;
 		bool is_dead() const;
+		bool is_waiting_to_spawn() const;
 
 		// SDL
 		SDL_Renderer* renderer_;
@@ -52,6 +60,6 @@ namespace charlie
 		Vector2 old_pos_;
 		int collider_offset_x_;
 		int collider_offset_y_;
-		bool is_dead_;
+		PlayerState state_;
 	};
 }

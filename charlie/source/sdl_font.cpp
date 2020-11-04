@@ -9,7 +9,10 @@ namespace charlie
 
 	SDLFont::~SDLFont()
 	{
-		SDL_Log("Font::~Font");
+	}
+
+	void SDLFont::destroy()
+	{
 		if (font_ != nullptr)
 		{
 			TTF_CloseFont(font_);

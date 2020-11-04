@@ -65,6 +65,16 @@ namespace charlie
 	{
 	}
 
+	EntitySpawned::EntitySpawned(
+		uint32 event_id,
+		uint32 entity_id,
+		uint32 send_to,
+		Vector2 position
+	)
+		: Event(event_id, entity_id, EventType::SPAWN_ENTITY, send_to, position)
+	{
+	}
+
 	ProjectileSpawned::ProjectileSpawned(
 		uint32 event_id,
 		uint32 entity_id,
@@ -77,11 +87,15 @@ namespace charlie
 	{
 	}
 
-	ProjectileDestroyed::ProjectileDestroyed(uint32 id, uint32 entity_id, uint32 send_to) : Event(id, entity_id, EventType::DESTROY_PROJECTILE, send_to)
+	ProjectileDestroyed::ProjectileDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to) : Event(event_id, entity_id, EventType::DESTROY_PROJECTILE, send_to)
 	{
 	}
 
-	PlayerDestroyed::PlayerDestroyed(uint32 id, uint32 entity_id, uint32 send_to) : Event(id, entity_id, EventType::DESTROY_PLAYER, send_to)
+	PlayerDestroyed::PlayerDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to) : Event(event_id, entity_id, EventType::DESTROY_PLAYER, send_to)
+	{
+	}
+
+	EntityDestroyed::EntityDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to) : Event(event_id, entity_id, EventType::DESTROY_ENTITY, send_to)
 	{
 	}
 
@@ -93,67 +107,67 @@ namespace charlie
 	/// Create spawn event to be sent to players
 	/// </summary>
 	/// <param name="entity_id">Entity id which is spawned</param>
-	/// <param name="p">Player who is spawned or spawned projectile</param>
+	/// <param name="event_creator">Player who is spawned or spawned projectile</param>
+	/// <param name="send_to">Send to player with this id</param>
 	/// <param name="event">Event type SPAWN_PLAYER or SPAWN_PROJECTILE</param>
 	/// <param name="players">List of connected players</param>
 
-	void ReliableEvents::create_spawn_event(const uint32 entity_id, const Player& p, const EventType event, const DynamicArray<Player>& players)
+	void ReliableEvents::create_spawn_event(uint32 entity_id, const Player& event_creator, uint32 send_to, const EventType event, const DynamicArray<Player>& players)
 	{
-		for (auto& player : players)
+		switch (event)
 		{
-			switch (event)
-			{
-			case EventType::SPAWN_PLAYER:
-			{
-				if (player.id_ == p.id_)
-				{
-					continue;
-				}
-				PlayerSpawned e(event_id_, entity_id, player.id_, p.transform_.position_);
-				events_.push_back(e);
-			} break;
-			case EventType::SPAWN_PROJECTILE:
-			{
-				ProjectileSpawned e(event_id_, entity_id, p.id_, player.id_, player.get_shoot_pos(), p.turret_rotation_);
-				events_.push_back(e);
-			} break;
-			default:
-				break;
-			}
+		case EventType::SPAWN_ENTITY:
+		{
+			EntitySpawned e(event_id_, entity_id, send_to, event_creator.transform_.position_);
+			events_.push_back(e);
+		} break;
+		case EventType::SPAWN_PLAYER:
+		{
+			PlayerSpawned e(event_id_, entity_id, send_to, event_creator.transform_.position_);
+			events_.push_back(e);
+		} break;
+		case EventType::SPAWN_PROJECTILE:
+		{
+			ProjectileSpawned e(event_id_, entity_id, event_creator.id_, send_to, event_creator.get_shoot_pos(), event_creator.turret_rotation_);
+			events_.push_back(e);
+		} break;
+		default:
+			break;
 		}
+
 		event_id_ += 1;
 	}
 
-	void ReliableEvents::create_destroy_event(const uint32 entity_id, const EventType event, const DynamicArray<Player>& players)
+	void ReliableEvents::create_destroy_event(const uint32 entity_id, const uint32 send_to, const EventType event, const DynamicArray<Player>& players)
 	{
-		for (auto& player : players)
+		switch (event)
 		{
-			switch (event)
-			{
-			case EventType::DESTROY_PLAYER:
-			{
-				if (player.id_ == entity_id)
-				{
-					PlayerDestroyed e(event_id_, entity_id, player.id_);
-					events_.push_back(e);
-					printf("RELIABLE MESSAGE: Created player destroy event for player: %i\n", entity_id);
-				}
-			} break;
-			case EventType::DESTROY_PROJECTILE:
-			{
-				ProjectileDestroyed e(event_id_, entity_id, player.id_);
-				events_.push_back(e);
-				printf("RELIABLE MESSAGE: Created projectile destroy event for projectile: %i \n", entity_id);
-			} break;
-			case EventType::PLAYER_DISCONNECTED:
-			{
-				PlayerDestroyed e(event_id_, entity_id, player.id_);
-				events_.push_back(e);
-				printf("RELIABLE MESSAGE: Created player disconnected event for player: %i\n", entity_id);
-			} break;
-			default:
-				break;
-			}
+		case EventType::DESTROY_PLAYER:
+		{
+			PlayerDestroyed e(event_id_, entity_id, send_to);
+			events_.push_back(e);
+			printf("RELIABLE MESSAGE: Created player destroy event for player: %i\n", entity_id);
+		} break;
+		case EventType::DESTROY_ENTITY:
+		{
+			EntityDestroyed e(event_id_, entity_id, send_to);
+			events_.push_back(e);
+			printf("RELIABLE MESSAGE: Created entity destroy event for player: %i\n", entity_id);
+		} break;
+		case EventType::DESTROY_PROJECTILE:
+		{
+			ProjectileDestroyed e(event_id_, entity_id, send_to);
+			events_.push_back(e);
+			printf("RELIABLE MESSAGE: Created projectile destroy event for projectile: %i \n", entity_id);
+		} break;
+		case EventType::PLAYER_DISCONNECTED:
+		{
+			PlayerDestroyed e(event_id_, entity_id, send_to);
+			events_.push_back(e);
+			printf("RELIABLE MESSAGE: Created player disconnected event for player: %i\n", entity_id);
+		} break;
+		default:
+			break;
 		}
 		printf("RELIABLE MESSAGE: reliable events in queue %i \n", (int)events_.size());
 		event_id_ += 1;

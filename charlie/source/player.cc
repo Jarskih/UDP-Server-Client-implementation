@@ -27,7 +27,7 @@ namespace charlie
 		, fire_(false)
 		, collider_offset_x_(0)
 		, collider_offset_y_(0)
-		, is_dead_(false)
+		, state_(PlayerState::WAITING_TO_SPAWN)
 	{
 		fire_delay_ = Time(config::FIRE_DELAY);
 		fire_acc_ = fire_delay_;
@@ -35,7 +35,7 @@ namespace charlie
 
 	void Player::init(SDL_Renderer* renderer, Vector2& pos, uint32 id)
 	{
-		is_dead_ = false;
+		state_ = PlayerState::ALIVE;
 		renderer_ = renderer;
 		transform_.position_ = pos;
 		old_pos_ = pos;
@@ -47,6 +47,11 @@ namespace charlie
 
 	void Player::update(Time deltaTime, int levelHeight, int levelWidth)
 	{
+		if (is_waiting_to_spawn())
+		{
+			return;
+		}
+
 		float direction = 0;
 		float rotation = 0;
 		input_bits_ = 0;
@@ -104,11 +109,21 @@ namespace charlie
 			fire_ = true;
 		}
 
+		if (fire_ && can_shoot())
+		{
+			fire();
+		}
+
 		collider_.SetPosition(get_collider_pos());
 	}
 
 	void Player::render(SDL_Rect cam)
 	{
+		if (is_waiting_to_spawn())
+		{
+			return;
+		}
+
 		body_window_rect_.x = static_cast<int>(transform_.position_.x_) - cam.x;
 		body_window_rect_.y = static_cast<int>(transform_.position_.y_) - cam.y;
 		turret_window_rect_.x = static_cast<int>(transform_.position_.x_) - cam.x;
@@ -188,7 +203,7 @@ namespace charlie
 
 	void Player::on_collision(const Projectile& other)
 	{
-		is_dead_ = true;
+		state_ = PlayerState::DEAD;
 	}
 
 	void Player::reset_old_pos()
@@ -206,6 +221,11 @@ namespace charlie
 
 	bool Player::is_dead() const
 	{
-		return is_dead_;
+		return state_ == PlayerState::DEAD;
+	}
+
+	bool Player::is_waiting_to_spawn() const
+	{
+		return state_ == PlayerState::WAITING_TO_SPAWN;
 	}
 }

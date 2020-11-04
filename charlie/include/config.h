@@ -31,6 +31,7 @@ namespace charlie
 		static const int LEVEL_OBJECT_WIDTH = 50;
 		static const int LEVEL_OBJECT_HEIGHT = 50;
 		static const char* MENU_SCREEN = "../assets/menu_screen.png";
+		static const char* DEFEAT_SCREEN = "../assets/defeat.png";
 	};
 }
 #endif

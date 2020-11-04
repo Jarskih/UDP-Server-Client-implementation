@@ -4,7 +4,7 @@
 
 namespace charlie
 {
-	Menu::Menu() : fullscreen_(), sprite_(nullptr)
+	Menu::Menu() : sprite_(nullptr), renderer_(nullptr)
 	{
 	}
 
@@ -12,7 +12,6 @@ namespace charlie
 	{
 		renderer_ = renderer;
 		sprite_ = Singleton<SpriteHandler>::Get()->create_sprite(config::MENU_SCREEN, 0, 0, config::SCREEN_WIDTH, config::SCREEN_HEIGHT);
-		fullscreen_ = { 0, 0, config::SCREEN_WIDTH, config::SCREEN_HEIGHT };
 		if (sprite_ == nullptr)
 		{
 			return false;

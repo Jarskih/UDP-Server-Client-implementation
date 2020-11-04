@@ -16,9 +16,11 @@ namespace charlie {
 			NETWORK_MESSAGE_INPUT_COMMAND,
 			NETWORK_MESSAGE_PLAYER_STATE,
 			NETWORK_MESSAGE_PLAYER_SPAWN,
+			NETWORK_MESSAGE_ENTITY_SPAWN,
 			NETWORK_MESSAGE_PROJECTILE_SPAWN,
 			NETWORK_MESSAGE_DISCONNECTED,
 			NETWORK_MESSAGE_PLAYER_DESTROYED,
+			NETWORK_MESSAGE_ENTITY_DESTROYED,
 			NETWORK_MESSAGE_PROJECTILE_DESTROYED,
 			NETWORK_MESSAGE_ACK,
 			NETWORK_MESSAGE_COUNT,
@@ -51,7 +53,7 @@ namespace charlie {
 
 		struct NetworkMessageEntityState {
 			NetworkMessageEntityState();
-			explicit NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 id);
+			explicit NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 entity_id);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -173,6 +175,30 @@ namespace charlie {
 			uint32 event_id_;
 		};
 
+		struct NetworkMessageEntitySpawn
+		{
+			NetworkMessageEntitySpawn();
+			explicit NetworkMessageEntitySpawn(uint32 event_id, uint32 entity_id, const Vector2& position);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(position_.x_);
+				result &= stream.serialize(position_.y_);
+				result &= stream.serialize(entity_id_);
+				result &= stream.serialize(event_id_);
+				return result;
+			}
+
+			uint8 type_;
+			Vector2 position_;
+			uint32 entity_id_;
+			uint32 event_id_;
+		};
 
 		struct NetworkMessageProjectileSpawn
 		{
@@ -229,6 +255,28 @@ namespace charlie {
 		{
 			NetworkMessageProjectileDestroy();
 			explicit NetworkMessageProjectileDestroy(uint32 entity_id, uint32 event_id);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(entity_id_);
+				result &= stream.serialize(event_id_);
+				return result;
+			}
+
+			uint8 type_;
+			uint32 entity_id_;
+			uint32 event_id_;
+		};
+
+		struct NetworkMessageEntityDestroy
+		{
+			NetworkMessageEntityDestroy();
+			explicit NetworkMessageEntityDestroy(uint32 entity_id, uint32 event_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 

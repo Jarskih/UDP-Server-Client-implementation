@@ -35,6 +35,8 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	// note: gameplay
 	void read_input_queue();
 	void update_players(const Time& dt);
+	void destroy_projectile(uint32 id);
+	void destroy_player(uint32 id);
 	void check_collisions();
 	void remove_player(uint32 id);
 	void spawn_projectile(Vector2 pos, float rotation, uint32 id);

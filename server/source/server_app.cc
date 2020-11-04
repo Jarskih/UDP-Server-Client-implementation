@@ -73,8 +73,7 @@ bool ServerApp::on_tick(const Time& dt)
 		{
 			if (projectile.is_dead())
 			{
-				reliable_events_.create_destroy_event(projectile.id_, EventType::DESTROY_PROJECTILE, players_);
-				projectiles_to_remove_.push_back(projectile.id_);
+				destroy_projectile(projectile.id_);
 			}
 		}
 
@@ -108,8 +107,7 @@ void ServerApp::on_timeout(network::Connection* connection)
 	connection->set_listener(nullptr);
 	const uint32 id = clients_.find_client((uint64)connection);
 
-	players_to_remove_.push_back(id);
-	reliable_events_.create_destroy_event(id, EventType::DESTROY_PLAYER, players_);
+	destroy_player(id);
 
 	clients_.remove_client((uint64)connection);
 	printf("NETWORK: Player %i disconnected. Players %i \n", id, (int)clients_.clients_.size());
@@ -129,10 +127,19 @@ void ServerApp::on_connect(network::Connection* connection)
 	player.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	player.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 
-	for (const Player& p : players_)
+	// Spawn new player
+	reliable_events_.create_spawn_event(player.id_, player, player.id_, EventType::SPAWN_PLAYER, players_);
+
+	// Other players spawns new player as entity
+	for (const Player& other : players_)
 	{
-		reliable_events_.create_spawn_event(player.id_, p, EventType::SPAWN_PLAYER, players_);
-		reliable_events_.create_spawn_event(p.id_, player, EventType::SPAWN_PLAYER, players_);
+		reliable_events_.create_spawn_event(player.id_, player, other.id_, EventType::SPAWN_ENTITY, players_);
+	}
+
+	// New player spawns existing players as entities
+	for (const Player& other : players_)
+	{
+		reliable_events_.create_spawn_event(other.id_, player, player.id_, EventType::SPAWN_ENTITY, players_);
 	}
 
 	players_.push_back(player);
@@ -149,7 +156,7 @@ void ServerApp::on_disconnect(network::Connection* connection)
 
 	players_to_remove_.push_back(id);
 
-	reliable_events_.create_destroy_event(id, EventType::PLAYER_DISCONNECTED, players_);
+	destroy_player(id);
 
 	clients_.remove_client((uint64)connection);
 
@@ -283,6 +290,15 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 		}
 	} break;
 
+	case(EventType::SPAWN_ENTITY):
+	{
+		network::NetworkMessageEntitySpawn message(reliable_event.event_id_, reliable_event.entity_id_, reliable_event.pos_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
 	case(EventType::SPAWN_PROJECTILE):
 	{
 		network::NetworkMessageProjectileSpawn message(reliable_event.event_id_, reliable_event.entity_id_, reliable_event.creator_, reliable_event.pos_, reliable_event.rot_);
@@ -314,6 +330,15 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 	case(EventType::DESTROY_PROJECTILE):
 	{
 		network::NetworkMessageProjectileDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::DESTROY_ENTITY):
+	{
+		network::NetworkMessageEntityDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -403,10 +428,39 @@ void ServerApp::update_players(const Time& dt)
 		{
 			spawn_projectile(player.get_shoot_pos(), player.turret_rotation_, player.id_);
 			player.fire();
-			reliable_events_.create_spawn_event(projectile_index_, player, EventType::SPAWN_PROJECTILE, players_);
+			for (const Player& p : players_)
+			{
+				reliable_events_.create_spawn_event(projectile_index_, player, p.id_, EventType::SPAWN_PROJECTILE, players_);
+			}
 			projectile_index_ += 1;
 		}
 	}
+}
+
+void ServerApp::destroy_projectile(uint32 id)
+{
+	for (auto& p : players_)
+	{
+		reliable_events_.create_destroy_event(id, p.id_, EventType::DESTROY_PROJECTILE, players_);
+	}
+	projectiles_to_remove_.push_back(id);
+}
+
+void ServerApp::destroy_player(uint32 id)
+{
+	for (auto& p : players_)
+	{
+		if (p.id_ == id)
+		{
+			reliable_events_.create_destroy_event(id, p.id_, EventType::DESTROY_PLAYER, players_);
+		}
+		else
+		{
+			reliable_events_.create_destroy_event(id, p.id_, EventType::DESTROY_ENTITY, players_);
+		}
+	}
+
+	players_to_remove_.push_back(id);
 }
 
 void ServerApp::check_collisions()
@@ -425,11 +479,9 @@ void ServerApp::check_collisions()
 			{
 				players_[p1].on_collision(projectiles_[projectile]);
 				projectiles_[projectile].on_collision();
-				reliable_events_.create_destroy_event(projectiles_[projectile].id_, EventType::DESTROY_PROJECTILE, players_);
-				projectiles_to_remove_.push_back(projectiles_[projectile].id_);
 
-				reliable_events_.create_destroy_event(players_[p1].id_, EventType::DESTROY_PLAYER, players_);
-				players_to_remove_.push_back(players_[p1].id_);
+				destroy_projectile(projectiles_[projectile].id_);
+				destroy_player(players_[p1].id_);
 			}
 		}
 
@@ -465,7 +517,7 @@ void ServerApp::check_collisions()
 			{
 				p.on_collision();
 				printf("COLLISION: Projectile collided with terrain \n");
-				reliable_events_.create_destroy_event(p.id_, EventType::DESTROY_PROJECTILE, players_);
+				destroy_projectile(p.id_);
 				projectiles_to_remove_.push_back(p.id_);
 			}
 		}

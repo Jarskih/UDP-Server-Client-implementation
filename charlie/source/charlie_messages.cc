@@ -38,11 +38,11 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageEntityState::NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 id)
+		NetworkMessageEntityState::NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 entity_id)
 			: type_(NETWORK_MESSAGE_ENTITY_STATE)
 			, position_(transform.position_)
 			, rotation_(transform.rotation_)
-			, entity_id_(id)
+			, entity_id_(entity_id)
 			, turret_rotation_(turret_rotation)
 		{
 		}
@@ -132,6 +132,28 @@ namespace charlie {
 		}
 
 		bool NetworkMessagePlayerSpawn::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
+
+		NetworkMessageEntitySpawn::NetworkMessageEntitySpawn() : type_(NETWORK_MESSAGE_ENTITY_SPAWN), entity_id_(0), event_id_(0)
+		{
+		}
+
+		NetworkMessageEntitySpawn::NetworkMessageEntitySpawn(uint32 event_id, uint32 entity_id, const Vector2& position) :
+			type_(NETWORK_MESSAGE_ENTITY_SPAWN),
+			position_(position),
+			entity_id_(entity_id),
+			event_id_(event_id)
+		{
+		}
+
+		bool NetworkMessageEntitySpawn::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessageEntitySpawn::write(NetworkStreamWriter& writer)
 		{
 			return serialize(writer);
 		}
@@ -231,6 +253,26 @@ namespace charlie {
 		}
 
 		bool NetworkMessageProjectileDestroy::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
+
+		NetworkMessageEntityDestroy::NetworkMessageEntityDestroy() : type_(NETWORK_MESSAGE_ENTITY_DESTROYED), entity_id_(0), event_id_(0)
+		{
+		}
+
+		NetworkMessageEntityDestroy::NetworkMessageEntityDestroy(uint32 entity_id, uint32 event_id) :
+			type_(NETWORK_MESSAGE_ENTITY_DESTROYED), entity_id_(entity_id),
+			event_id_(event_id)
+		{
+		}
+
+		bool NetworkMessageEntityDestroy::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessageEntityDestroy::write(NetworkStreamWriter& writer)
 		{
 			return serialize(writer);
 		}

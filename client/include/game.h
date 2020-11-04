@@ -8,7 +8,7 @@
 
 namespace charlie
 {
-	struct Game : Scene, network::IConnectionListener, network::IServiceListener
+	struct Game : Scene, network::IConnectionListener
 	{
 		Game();
 
@@ -21,17 +21,13 @@ namespace charlie
 		void on_receive(network::Connection* connection, network::NetworkStreamReader& reader) override;
 		void on_send(network::Connection* connection, uint16 sequence, network::NetworkStreamWriter& writer) override;
 
-		void on_timeout(network::Connection* connection) override;
-		void on_connect(network::Connection* connection) override;
-		void on_disconnect(network::Connection* connection) override;
-
-		void spawn_entity(network::NetworkMessagePlayerSpawn message);
-		void spawn_player();
+		void spawn_entity(network::NetworkMessageEntitySpawn message);
+		void spawn_player(network::NetworkMessagePlayerSpawn message);
 		void remove_entity(uint32 id);
 		void remove_projectile(uint32 id);
 		void spawn_projectile(network::NetworkMessageProjectileSpawn message);
-		bool contains(const DynamicArray<Entity>& vector, uint32 id);
-		bool contains(const DynamicArray<Projectile>& vector, uint32 id);
+		static bool contains(const DynamicArray<Entity>& vector, uint32 id);
+		static bool contains(const DynamicArray<Projectile>& vector, uint32 id);
 		void create_ack_message(uint32 event_id_);
 
 		SDL_Renderer* renderer_;

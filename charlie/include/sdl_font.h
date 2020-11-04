@@ -10,5 +10,6 @@ namespace charlie
 		SDLFont();
 		void create(const char* font_path, int font_size, SDL_Color color);
 		~SDLFont();
+		void destroy();
 	};
 }

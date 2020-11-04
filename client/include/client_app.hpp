@@ -4,6 +4,8 @@
 #define CLIENT_APP_HPP_INCLUDED
 
 #include <sdl_application.hpp>
+
+#include "end.h"
 #include "entity.h"
 #include "game.h"
 #include "menu.h"
@@ -21,16 +23,17 @@ struct ClientApp final : SDLApplication {
 	};
 
 	// note: Application
-	virtual bool on_init();
-	virtual void on_exit();
-	virtual bool on_tick(const Time& dt);
-	virtual void on_draw();
+	bool on_init() override;
+	void on_exit() override;
+	bool on_tick(const Time& dt) override;
+	void on_draw() override;
 
 	void set_state(SceneState state);
 
+	// Scenes
 	Menu menu_;
 	Game game_;
-	Menu end_;
+	End end_;
 
 	SceneState state_;
 };

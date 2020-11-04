@@ -24,8 +24,6 @@ namespace charlie
 	{
 		renderer_ = renderer;
 
-		spawn_player();
-
 		auto data = Leveldata();
 		data.create_level(config::LEVEL1);
 		level_manager_ = LevelManager();
@@ -52,10 +50,23 @@ namespace charlie
 
 	bool Game::on_tick(const Time& dt)
 	{
+		for (auto& e : entities_)
+		{
+			if (e.id_ == player_.id_)
+			{
+				assert(!"Entity has same id as player");
+			}
+		}
+
 		Singleton<InputHandler>::Get()->HandleEvents();
 		if (Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_ESCAPE))
 		{
-			player_.is_dead_ = true;
+			player_.state_ = PlayerState::DEAD;
+		}
+
+		if (player_.is_waiting_to_spawn())
+		{
+			return true;
 		}
 
 		if (connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
@@ -70,13 +81,6 @@ namespace charlie
 			networkinfo_.update(dt, connection_);
 
 			player_.update(dt, level_heigth_, level_width_);
-
-			if (player_.fire_ && player_.can_shoot())
-			{
-				// TODO decide if should use local projectiles
-				//spawn_local_projectile(player_.get_shoot_pos(), player_.turret_rotation_);
-				player_.fire();
-			}
 
 			{
 				const uint32 delayInTicks = (uint32)(networkinfo_.rtt_avg_ / tickrate_.as_milliseconds());
@@ -246,6 +250,18 @@ namespace charlie
 					assert(!"could not read message!");
 				}
 
+				spawn_player(message);
+
+				create_ack_message(message.event_id_);
+			} break;
+
+			case network::NETWORK_MESSAGE_ENTITY_SPAWN:
+			{
+				network::NetworkMessageEntitySpawn message;
+				if (!message.read(reader)) {
+					assert(!"could not read message!");
+				}
+
 				if (entities_.empty() || !contains(entities_, message.entity_id_))
 				{
 					spawn_entity(message);
@@ -275,7 +291,7 @@ namespace charlie
 					assert(!"could not read message!");
 				}
 
-				player_.is_dead_ = true;
+				player_.state_ = PlayerState::DEAD;
 
 				create_ack_message(message.event_id_);
 
@@ -310,6 +326,23 @@ namespace charlie
 
 				create_ack_message(message.event_id_);
 			} break;
+
+			case network::NETWORK_MESSAGE_ENTITY_DESTROYED:
+			{
+				network::NetworkMessageEntityDestroy message;
+				if (!message.read(reader)) {
+					assert(!"could not read message!");
+				}
+
+				if (contains(entities_, message.entity_id_))
+				{
+					entities_to_remove_.push_back(message.entity_id_);
+					printf("RELIABLE MESSAGE: Destroying projectile: %i \n", message.entity_id_);
+				}
+
+				create_ack_message(message.event_id_);
+			} break;
+
 			default:
 			{
 				assert(!"unknown message type received from server!");
@@ -339,38 +372,24 @@ namespace charlie
 		networkinfo_.packet_sent(writer.length());
 	}
 
-	void Game::on_timeout(network::Connection* connection)
-	{
-		printf("NETWORK: connection timed out");
-	}
-
-	void Game::on_connect(network::Connection* connection)
-	{
-		printf("NETWORK: connected to host");
-	}
-
-	void Game::on_disconnect(network::Connection* connection)
-	{
-		printf("NETWORK: connection disconnected");
-	}
-
-	void Game::spawn_entity(network::NetworkMessagePlayerSpawn message)
+	void Game::spawn_entity(network::NetworkMessageEntitySpawn message)
 	{
 		Entity e{};
 		e.init(renderer_, message.position_, message.entity_id_);
 		e.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		e.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		entities_.push_back(e);
-		printf("RELIABLE MESSAGE: Remote player spawned with message id: %i \n", message.event_id_);
+		printf("RELIABLE MESSAGE: Remote player (id %i) spawned with message id: %i \n", message.entity_id_, message.event_id_);
 	}
 
-	void Game::spawn_player()
+	void Game::spawn_player(network::NetworkMessagePlayerSpawn message)
 	{
 		Vector2 pos = Vector2(200, 300);
 		player_ = Player();
-		player_.init(renderer_, pos, 0);
+		player_.init(renderer_, pos, message.entity_id_);
 		player_.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		player_.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
+		printf("RELIABLE MESSAGE: Player (id %i) spawned with message id: %i \n", message.entity_id_, message.event_id_);
 	}
 
 	void Game::remove_entity(uint32 id)
