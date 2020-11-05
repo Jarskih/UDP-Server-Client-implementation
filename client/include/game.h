@@ -21,13 +21,18 @@ namespace charlie
 		void on_receive(network::Connection* connection, network::NetworkStreamReader& reader) override;
 		void on_send(network::Connection* connection, uint16 sequence, network::NetworkStreamWriter& writer) override;
 
+		// Modify entities
 		void spawn_entity(network::NetworkMessageEntitySpawn message);
 		void spawn_player(network::NetworkMessagePlayerSpawn message);
 		void remove_entity(uint32 id);
 		void remove_projectile(uint32 id);
 		void spawn_projectile(network::NetworkMessageProjectileSpawn message);
+
+		// Helpers
 		static bool contains(const DynamicArray<Entity>& vector, uint32 id);
 		static bool contains(const DynamicArray<Projectile>& vector, uint32 id);
+
+		// Messages
 		void create_ack_message(uint32 event_id_);
 
 		SDL_Renderer* renderer_;
@@ -39,6 +44,7 @@ namespace charlie
 		Time lastSend_;
 		Time lastReceive_;
 		Queue<network::NetworkMessageAck> message_queue_;
+		Queue<network::NetworkMessageLevelDataRequest> level_message_queue_;
 		gameplay::Inputinator inputinator_;
 		Networkinfo networkinfo_;
 		Vector2 oldPos_;

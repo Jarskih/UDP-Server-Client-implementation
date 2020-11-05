@@ -30,7 +30,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	virtual void on_receive(network::Connection* connection, network::NetworkStreamReader& reader);
 	virtual void on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer);
 
-	static void write_message(const Event& reliable_event, network::NetworkStreamWriter& writer);
+	void write_message(const Event& reliable_event, network::NetworkStreamWriter& writer) const;
 
 	// note: gameplay
 	void read_input_queue();
@@ -66,6 +66,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	DynamicArray<uint32> projectiles_to_remove_;
 	LevelManager level_manager_;
 	Random random_;
+	uint8 current_map_;
 };
 
 #endif // !SERVER_APP_HPP_INCLUDED

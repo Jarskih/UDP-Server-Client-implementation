@@ -80,11 +80,8 @@ namespace charlie
 			collider_.GetBounds().h
 		};
 
-		SDL_SetRenderDrawColor(renderer_, 0, 0, 255, 255);
-		SDL_RenderDrawRect(renderer_, &collider_rect_);
-
-		SDL_SetRenderDrawColor(renderer_, 255, 0, 255, 255);
-		SDL_RenderDrawRect(renderer_, &window_rect_);
+		//SDL_SetRenderDrawColor(renderer_, 0, 0, 255, 255);
+		//SDL_RenderDrawRect(renderer_, &collider_rect_);
 	}
 
 	void Projectile::load_sprite(const char* body, int srcX, int srcY, int srcW, int srcH)

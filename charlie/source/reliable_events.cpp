@@ -4,75 +4,27 @@
 
 namespace charlie
 {
-	Event::Event(
-		uint32 event_id,
-		uint32 entity_id,
-		EventType type,
-		uint32 send_to
-	)
-		: event_id_(event_id)
-		, type_(type)
-		, entity_id_(entity_id)
-		, creator_(0)
-		, send_to_(send_to)
-		, rot_(0)
+	Event::Event() : event_id_(), type_(EventType::INVALID), entity_id_(0), creator_(0), send_to_(0), rot_(0), tile_()
 	{
 	}
 
-	Event::Event(
-		uint32 event_id,
-		uint32 entity_id,
-		EventType type,
-		uint32 send_to,
-		Vector2 position
+	PlayerSpawned::PlayerSpawned(uint32 event_id, uint32 entity_id, uint32 send_to, Vector2 position
 	)
-		: event_id_(event_id)
-		, type_(type)
-		, entity_id_(entity_id)
-		, creator_(0)
-		, send_to_(send_to)
-		, pos_(position)
-		, rot_(0)
 	{
+		event_id_ = event_id;
+		entity_id_ = entity_id;
+		type_ = EventType::SPAWN_PLAYER;
+		send_to_ = send_to;
+		pos_ = position;
 	}
 
-	Event::Event(
-		uint32 event_id,
-		uint32 entity_id,
-		EventType type,
-		uint32 creator,
-		uint32 send_to,
-		Vector2 position,
-		float rotation
-	)
-		: event_id_(event_id)
-		, type_(type)
-		, entity_id_(entity_id)
-		, creator_(creator)
-		, send_to_(send_to)
-		, pos_(position)
-		, rot_(rotation)
+	EntitySpawned::EntitySpawned(uint32 event_id, uint32 entity_id, uint32 send_to, Vector2 position)
 	{
-	}
-
-	PlayerSpawned::PlayerSpawned(
-		uint32 event_id,
-		uint32 entity_id,
-		uint32 send_to,
-		Vector2 position
-	)
-		: Event(event_id, entity_id, EventType::SPAWN_PLAYER, send_to, position)
-	{
-	}
-
-	EntitySpawned::EntitySpawned(
-		uint32 event_id,
-		uint32 entity_id,
-		uint32 send_to,
-		Vector2 position
-	)
-		: Event(event_id, entity_id, EventType::SPAWN_ENTITY, send_to, position)
-	{
+		event_id_ = event_id;
+		entity_id_ = entity_id;
+		type_ = EventType::SPAWN_ENTITY;
+		send_to_ = send_to;
+		pos_ = position;
 	}
 
 	ProjectileSpawned::ProjectileSpawned(
@@ -83,20 +35,38 @@ namespace charlie
 		Vector2 position,
 		float rotation
 	)
-		: Event(event_id, entity_id, EventType::SPAWN_PROJECTILE, creator, send_to, position, rotation)
 	{
+		event_id_ = event_id;
+		entity_id_ = entity_id;
+		type_ = EventType::SPAWN_PROJECTILE;
+		creator_ = creator;
+		send_to_ = send_to;
+		pos_ = position;
+		rot_ = rotation;
 	}
 
-	ProjectileDestroyed::ProjectileDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to) : Event(event_id, entity_id, EventType::DESTROY_PROJECTILE, send_to)
+	ProjectileDestroyed::ProjectileDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to)
 	{
+		event_id_ = event_id;
+		entity_id_ = entity_id;
+		type_ = EventType::DESTROY_PROJECTILE;
+		send_to_ = send_to;
 	}
 
-	PlayerDestroyed::PlayerDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to) : Event(event_id, entity_id, EventType::DESTROY_PLAYER, send_to)
+	PlayerDestroyed::PlayerDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to)
 	{
+		event_id_ = event_id;
+		entity_id_ = entity_id;
+		type_ = EventType::DESTROY_PLAYER;
+		send_to_ = send_to;
 	}
 
-	EntityDestroyed::EntityDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to) : Event(event_id, entity_id, EventType::DESTROY_ENTITY, send_to)
+	EntityDestroyed::EntityDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to)
 	{
+		event_id_ = event_id;
+		entity_id_ = entity_id;
+		type_ = EventType::DESTROY_ENTITY;
+		send_to_ = send_to;
 	}
 
 	ReliableEvents::ReliableEvents() : event_id_(0)
@@ -118,17 +88,17 @@ namespace charlie
 		{
 		case EventType::SPAWN_ENTITY:
 		{
-			EntitySpawned e(event_id_, entity_id, send_to, event_creator.transform_.position_);
+			const EntitySpawned e(event_id_, entity_id, send_to, event_creator.transform_.position_);
 			events_.push_back(e);
 		} break;
 		case EventType::SPAWN_PLAYER:
 		{
-			PlayerSpawned e(event_id_, entity_id, send_to, event_creator.transform_.position_);
+			const PlayerSpawned e(event_id_, entity_id, send_to, event_creator.transform_.position_);
 			events_.push_back(e);
 		} break;
 		case EventType::SPAWN_PROJECTILE:
 		{
-			ProjectileSpawned e(event_id_, entity_id, event_creator.id_, send_to, event_creator.get_shoot_pos(), event_creator.turret_rotation_);
+			const ProjectileSpawned e(event_id_, entity_id, event_creator.id_, send_to, event_creator.get_shoot_pos(), event_creator.turret_rotation_);
 			events_.push_back(e);
 		} break;
 		default:
@@ -180,8 +150,8 @@ namespace charlie
 
 	Event ReliableEvents::get_event(uint32 id)
 	{
-		Event event(0, 0, EventType::INVALID, 0);
-		for (auto e : events_)
+		Event event;
+		for (const auto e : events_)
 		{
 			if (e.event_id_ == id)
 			{
@@ -189,5 +159,27 @@ namespace charlie
 			}
 		}
 		return event;
+	}
+
+	void ReliableEvents::send_level_info(uint8 level_id, uint32 send_to)
+	{
+		Event e;
+		e.event_id_ = event_id_;
+		e.level_id_ = level_id;
+		e.type_ = EventType::SEND_LEVEL_INFO;
+		e.send_to_ = send_to;
+		events_.push_back(e);
+		event_id_ += 1;
+	}
+
+	void ReliableEvents::send_level_data(Tile tile, uint32 send_to)
+	{
+		Event e;
+		e.event_id_ = event_id_;
+		e.tile_ = tile;
+		e.type_ = EventType::SEND_LEVEL_DATA;
+		e.send_to_ = send_to;
+		events_.push_back(e);
+		event_id_ += 1;
 	}
 }

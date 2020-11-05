@@ -4,8 +4,11 @@
 #define CHARLIE_MESSAGES_HPP_INCLUDED
 
 #include <charlie.hpp>
+#include <leveldata.h>
 
 namespace charlie {
+	struct Tile;
+
 	namespace network {
 		struct NetworkStreamReader;
 		struct NetworkStreamWriter;
@@ -22,6 +25,9 @@ namespace charlie {
 			NETWORK_MESSAGE_PLAYER_DESTROYED,
 			NETWORK_MESSAGE_ENTITY_DESTROYED,
 			NETWORK_MESSAGE_PROJECTILE_DESTROYED,
+			NETWORK_MESSAGE_LEVEL_INFO,
+			NETWORK_MESSAGE_LEVEL_REQUEST,
+			NETWORK_MESSAGE_LEVEL_DATA,
 			NETWORK_MESSAGE_ACK,
 			NETWORK_MESSAGE_COUNT,
 		};
@@ -63,8 +69,8 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
-				result &= stream.serialize(position_.x_);
-				result &= stream.serialize(position_.y_);
+				result &= stream.serialize(x_);
+				result &= stream.serialize(y_);
 				result &= stream.serialize(rotation_);
 				result &= stream.serialize(entity_id_);
 				result &= stream.serialize(turret_rotation_);
@@ -72,10 +78,11 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			Vector2 position_;
-			float rotation_;
-			uint32 entity_id_;
-			float turret_rotation_;
+			uint16 x_;
+			uint16 y_;
+			int16 rotation_;
+			uint8 entity_id_;
+			int16 turret_rotation_;
 		};
 
 		struct NetworkMessageInputCommand {
@@ -98,7 +105,7 @@ namespace charlie {
 
 			uint8 type_;
 			uint8 bits_;
-			float rot_;
+			int16 rot_;
 			bool fire_;
 		};
 
@@ -122,10 +129,10 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			float rotation_;
+			int16 rotation_;
 			uint16 y_;
 			uint16 x_;
-			float turret_rotation_;
+			int16 turret_rotation_;
 		};
 
 		// Reliable messages
@@ -171,7 +178,7 @@ namespace charlie {
 
 			uint8 type_;
 			Vector2 position_;
-			uint32 entity_id_;
+			uint8 entity_id_;
 			uint32 event_id_;
 		};
 
@@ -196,7 +203,7 @@ namespace charlie {
 
 			uint8 type_;
 			Vector2 position_;
-			uint32 entity_id_;
+			uint8 entity_id_;
 			uint32 event_id_;
 		};
 
@@ -222,7 +229,7 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint32 entity_id_;
+			uint8 entity_id_;
 			uint32 shot_by_;
 			uint32 event_id_;
 			Vector2 pos_;
@@ -247,7 +254,7 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint32 entity_id_;
+			uint8 entity_id_;
 			uint32 message_id_;
 		};
 
@@ -269,7 +276,7 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint32 entity_id_;
+			uint8 entity_id_;
 			uint32 event_id_;
 		};
 
@@ -291,7 +298,7 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint32 entity_id_;
+			uint8 entity_id_;
 			uint32 event_id_;
 		};
 
@@ -313,7 +320,79 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint32 entity_id_;
+			uint8 entity_id_;
+			uint32 event_id_;
+		};
+
+		struct NetworkMessageLevelInfo
+		{
+			NetworkMessageLevelInfo();
+			explicit NetworkMessageLevelInfo(uint8 level_id, uint8 size_x_, uint8 size_y_, uint32 event_id);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(level_id_);
+				result &= stream.serialize(size_x_);
+				result &= stream.serialize(size_y_);
+				result &= stream.serialize(event_id_);
+				return result;
+			}
+
+			uint8 type_;
+			uint8 level_id_;
+			uint8 size_x_;
+			uint8 size_y_;
+			uint32 event_id_;
+		};
+
+		struct NetworkMessageLevelDataRequest
+		{
+			NetworkMessageLevelDataRequest();
+			explicit NetworkMessageLevelDataRequest(uint32 event_id_);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(event_id_);
+				return result;
+			}
+
+			uint8 type_;
+			uint32 event_id_;
+		};
+
+		struct NetworkMessageLevelData
+		{
+			NetworkMessageLevelData();
+			explicit NetworkMessageLevelData(Tile level_tile, uint32 event_id);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(level_tile_);
+				result &= stream.serialize(x_);
+				result &= stream.serialize(y_);
+				result &= stream.serialize(event_id_);
+				return result;
+			}
+
+			uint8 type_;
+			uint8 level_tile_;
+			uint8 x_;
+			uint8 y_;
 			uint32 event_id_;
 		};
 	} // !network

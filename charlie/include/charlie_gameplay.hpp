@@ -359,7 +359,7 @@ namespace charlie {
 			void add_message(Message& msg);
 			Message get_message(uint32 tick);
 			void mark_received(uint32 id);
-			static const int buffer_size_ = 60;
+			static const int buffer_size_ = 100;
 			Message buffer_[buffer_size_];
 			uint32 index_;
 		};

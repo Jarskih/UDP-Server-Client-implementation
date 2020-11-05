@@ -13,6 +13,7 @@ ServerApp::ServerApp()
 	, tick_(0)
 	, index_(0)
 	, projectile_index_(0)
+	, current_map_(0)
 {
 }
 
@@ -26,8 +27,9 @@ bool ServerApp::on_init()
 
 	network_.add_service_listener(this);
 
+	current_map_ = config::map;
 	auto data = Leveldata();
-	data.create_level(config::LEVEL1);
+	data.create_level(current_map_);
 	level_manager_ = LevelManager();
 	level_manager_.load_assets(data);
 
@@ -122,7 +124,7 @@ void ServerApp::on_connect(network::Connection* connection)
 	Player player;
 	player.id_ = id;
 
-	Vector2 pos = Vector2(20.0f + random_() % 200, 200.0f + random_() % 100);
+	Vector2 pos = level_manager_.get_spawn_pos();
 	player.init(renderer_.get_renderer(), pos, index_);
 	player.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 	player.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
@@ -145,6 +147,9 @@ void ServerApp::on_connect(network::Connection* connection)
 	players_.push_back(player);
 	index_ += 1;
 
+	// Send level name
+	reliable_events_.send_level_info(current_map_, player.id_);
+
 	printf("NETWORK: Player joined. players: %i\n", (int)clients_.clients_.size());
 }
 
@@ -153,8 +158,6 @@ void ServerApp::on_disconnect(network::Connection* connection)
 	connection->set_listener(nullptr);
 
 	const uint32 id = clients_.find_client((uint64)connection);
-
-	players_to_remove_.push_back(id);
 
 	destroy_player(id);
 
@@ -205,9 +208,21 @@ void ServerApp::on_receive(network::Connection* connection,
 			reliable_queue_.mark_received(msg.event_id_);
 		} break;
 
+		case(network::NETWORK_MESSAGE_LEVEL_REQUEST):
+		{
+			network::NetworkMessageLevelDataRequest msg;
+			if (!msg.read(reader)) {
+				assert(!"could not read command!");
+			}
+
+			const Tile tile = level_manager_.get_level_data(id);
+			reliable_events_.send_level_data(tile, id);
+
+			reliable_queue_.mark_received(msg.event_id_);
+		} break;
+
 		default:
 		{
-			printf("Unknown message %i", (int)reader.peek());
 			assert(!"unknown message type received from client!");
 		} break;
 		}
@@ -224,35 +239,6 @@ void ServerApp::on_send(network::Connection* connection,
 		network::NetworkMessageServerTick message(Time::now().as_ticks(), tick_);
 		if (!message.write(writer)) {
 			assert(!"failed to write message!");
-		}
-	}
-
-	// Send reliable messages
-	{
-		// Remove confirmed messages
-		for (auto& msg : reliable_queue_.buffer_)
-		{
-			if (msg.received_)
-			{
-				remove_from_array(reliable_events_.events_, msg.id_);
-			}
-		}
-
-		// Create message from event
-		for (Event reliable_event : reliable_events_.events_)
-		{
-			if (id == reliable_event.send_to_)
-			{
-				gameplay::Message msg{};
-				msg.id_ = reliable_event.event_id_;
-				msg.seq_ = sequence;
-				msg.received_ = false;
-
-				// Keep track of sent reliable messages
-				reliable_queue_.add_message(msg);
-				write_message(reliable_event, writer);
-				printf("RELIABLE MESSAGE: Sent message with id %i \n", (int)reliable_event.event_id_);
-			}
 		}
 	}
 
@@ -275,9 +261,43 @@ void ServerApp::on_send(network::Connection* connection,
 			}
 		}
 	}
+
+	// Send reliable messages
+	{
+		// Remove confirmed messages
+		for (auto& msg : reliable_queue_.buffer_)
+		{
+			if (msg.received_)
+			{
+				remove_from_array(reliable_events_.events_, msg.id_);
+			}
+		}
+
+		// Create message from event
+		for (Event reliable_event : reliable_events_.events_)
+		{
+			if (writer.length() >= 1024 - sizeof(reliable_event))
+			{
+				break;
+			}
+
+			if (id == reliable_event.send_to_)
+			{
+				gameplay::Message msg{};
+				msg.id_ = reliable_event.event_id_;
+				msg.seq_ = sequence;
+				msg.received_ = false;
+
+				// Keep track of sent reliable messages
+				reliable_queue_.add_message(msg);
+				write_message(reliable_event, writer);
+				printf("RELIABLE MESSAGE: Sent message with id %i \n", (int)reliable_event.event_id_);
+			}
+		}
+	}
 }
 
-void ServerApp::write_message(const Event& reliable_event, network::NetworkStreamWriter& writer)
+void ServerApp::write_message(const Event& reliable_event, network::NetworkStreamWriter& writer) const
 {
 	switch (reliable_event.type_)
 	{
@@ -339,6 +359,24 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 	case(EventType::DESTROY_ENTITY):
 	{
 		network::NetworkMessageEntityDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::SEND_LEVEL_INFO):
+	{
+		network::NetworkMessageLevelInfo message(current_map_, (uint8)level_manager_.data_.sizeX_, (uint8)level_manager_.data_.sizeY_, reliable_event.event_id_);
+		if (!message.write(writer))
+		{
+			assert(!"failed to write message!");
+		}
+	} break;
+
+	case(EventType::SEND_LEVEL_DATA):
+	{
+		network::NetworkMessageLevelData message(reliable_event.tile_, reliable_event.event_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -516,7 +554,7 @@ void ServerApp::check_collisions()
 			if (CollisionHandler::IsColliding(obj.collider_, p.collider_))
 			{
 				p.on_collision();
-				printf("COLLISION: Projectile collided with terrain \n");
+				// printf("COLLISION: Projectile collided with terrain \n");
 				destroy_projectile(p.id_);
 				projectiles_to_remove_.push_back(p.id_);
 			}

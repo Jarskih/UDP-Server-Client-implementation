@@ -4,6 +4,7 @@
 #define CHARLIE_NETWORK_HPP_INCLUDED
 
 #include <charlie.hpp>
+#include <string>
 
 namespace charlie {
 	namespace network {

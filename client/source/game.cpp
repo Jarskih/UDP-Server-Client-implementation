@@ -24,22 +24,12 @@ namespace charlie
 	{
 		renderer_ = renderer;
 
-		auto data = Leveldata();
-		data.create_level(config::LEVEL1);
-		level_manager_ = LevelManager();
-		level_manager_.load_assets(data);
-
-		level_width_ = level_manager_.width_;
-		level_heigth_ = level_manager_.height_;
-
-		cam_.init(level_width_, level_heigth_, { 0, 0, 640, 480 });
+		connection_.set_listener(this);
+		connection_.connect(network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT));
 
 		text_font_.create(config::FONT_PATH, 20, SDL_Color({ 255,255,255,255 }));
 		text_handler_.renderer_ = renderer_;
 		text_handler_.LoadFont(text_font_);
-
-		connection_.set_listener(this);
-		connection_.connect(network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT));
 
 		return true;
 	}
@@ -193,7 +183,8 @@ namespace charlie
 				gameplay::PosSnapshot snapshot;
 				snapshot.tick_ = server_tick_;
 				snapshot.servertime_ = server_time_;
-				snapshot.position = message.position_;
+				snapshot.position.x_ = message.x_;
+				snapshot.position.y_ = message.y_;
 				snapshot.rotation = message.rotation_;
 				snapshot.turret_rotation = message.turret_rotation_;
 
@@ -219,7 +210,7 @@ namespace charlie
 				// Find old position with ack and compare to server pos
 				gameplay::InputSnapshot input = inputinator_.get_snapshot(server_tick_);
 
-				auto diff = Vector2(input.position_.x_ - message.x_, input.position_.y_ - message.y_);
+				auto diff = Vector2(input.position_.x_ - (float)message.x_, input.position_.y_ - (float)message.y_);
 
 				diff = player_.transform_.position_ - Vector2(message.x_, message.y_);
 
@@ -231,13 +222,13 @@ namespace charlie
 					networkinfo_.input_misprediction_++;
 				}
 
-				if (abs(input.turret_rotation - message.turret_rotation_) > correct_dist)
+				if (abs(input.turret_rotation - (float)message.turret_rotation_) > correct_dist)
 				{
 					player_.turret_rotation_ = message.turret_rotation_;
 				}
 
 
-				if (abs(input.rotation_ - message.rotation_) > correct_dist)
+				if (abs(input.rotation_ - (float)message.rotation_) > correct_dist)
 				{
 					player_.transform_.set_rotation(message.rotation_);
 				}
@@ -343,6 +334,56 @@ namespace charlie
 				create_ack_message(message.event_id_);
 			} break;
 
+			case network::NETWORK_MESSAGE_LEVEL_INFO:
+			{
+				network::NetworkMessageLevelInfo message;
+				if (!message.read(reader)) {
+					assert(!"could not read message!");
+				}
+
+				level_width_ = message.size_x_ * config::LEVEL_OBJECT_WIDTH;
+				level_heigth_ = message.size_y_ * config::LEVEL_OBJECT_HEIGHT;
+
+				cam_.init(level_width_, level_heigth_, { (int)player_.transform_.position_.x_, (int)player_.transform_.position_.y_, config::SCREEN_WIDTH, config::SCREEN_HEIGHT });
+
+				auto data = Leveldata();
+				//Attempt to load level if exits on client
+				if (data.create_level(message.level_id_))
+				{
+					level_manager_ = LevelManager();
+					level_manager_.load_assets(data);
+				}
+				else
+				{
+
+					// Request level data for current level
+					level_manager_.request_map_data(message.level_id_, message.size_x_, message.size_y_);
+					network::NetworkMessageLevelDataRequest msg(message.event_id_);
+					level_message_queue_.push(msg);
+				}
+
+				create_ack_message(message.event_id_);
+			} break;
+
+			case network::NETWORK_MESSAGE_LEVEL_DATA:
+			{
+				network::NetworkMessageLevelData message;
+				if (!message.read(reader)) {
+					assert(!"could not read message!");
+				}
+				//printf("RELIABLE MESSAGE: x: %i y: %i id: %i \n", message.x_, message.y_, message.level_tile_);
+
+				level_manager_.create_tile(message.level_tile_, message.x_, message.y_);
+				create_ack_message(message.event_id_);
+
+				if (!level_manager_.is_done_sending())
+				{
+					network::NetworkMessageLevelDataRequest msg(message.event_id_);
+					level_message_queue_.push(msg);
+				}
+
+			} break;
+
 			default:
 			{
 				assert(!"unknown message type received from server!");
@@ -358,7 +399,20 @@ namespace charlie
 			assert(!"could not write network command!");
 		}
 
-		while (!message_queue_.empty())
+		if (level_manager_.waiting_for_data())
+		{
+			while (!level_message_queue_.empty() && writer.length() < 1024 - sizeof(network::NetworkMessageLevelDataRequest))
+			{
+				network::NetworkMessageLevelDataRequest msg = level_message_queue_.front();
+				if (!msg.write(writer)) {
+					assert(!"could not write network command!");
+				}
+				level_message_queue_.pop();
+				//printf("RELIABLE MESSAGE: Requesting next tile from server \n");
+			}
+		}
+
+		while (!message_queue_.empty() && writer.length() < 1024 - sizeof(network::NetworkMessageAck))
 		{
 			network::NetworkMessageAck msg = message_queue_.front();
 			if (!msg.write(writer)) {
@@ -384,9 +438,8 @@ namespace charlie
 
 	void Game::spawn_player(network::NetworkMessagePlayerSpawn message)
 	{
-		Vector2 pos = Vector2(200, 300);
 		player_ = Player();
-		player_.init(renderer_, pos, message.entity_id_);
+		player_.init(renderer_, message.position_, message.entity_id_);
 		player_.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		player_.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		printf("RELIABLE MESSAGE: Player (id %i) spawned with message id: %i \n", message.entity_id_, message.event_id_);
@@ -463,5 +516,4 @@ namespace charlie
 		message_queue_.push(msg);
 		printf("RELIABLE MESSAGE: Message confirmation sent with id %i \n", msg.event_id_);
 	}
-
 }
