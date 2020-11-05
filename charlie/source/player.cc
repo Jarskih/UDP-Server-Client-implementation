@@ -1,5 +1,7 @@
 #include "player.hpp"
 
+#include <cmath>
+
 #include "charlie_gameplay.hpp"
 #include "config.h"
 #include "input_handler.h"
@@ -18,16 +20,15 @@ namespace charlie
 		, turret_sprite_(nullptr)
 		, turret_window_rect_()
 		, point()
-		, turret_rotation_(0)
 		, input_bits_(0)
 		, id_(0)
-		, speed_(config::PLAYER_SPEED)
-		, tank_turn_speed_(config::PLAYER_TURN_SPEED)
-		, turret_turn_speed_(1)
-		, fire_(false)
 		, collider_offset_x_(0)
 		, collider_offset_y_(0)
+		, speed_(config::PLAYER_SPEED)
+		, tank_turn_speed_(config::PLAYER_TURN_SPEED)
+		, turret_turn_speed_(100)
 		, state_(PlayerState::WAITING_TO_SPAWN)
+		, fire_(false)
 	{
 		fire_delay_ = Time(config::FIRE_DELAY);
 		fire_acc_ = fire_delay_;
@@ -38,6 +39,7 @@ namespace charlie
 		state_ = PlayerState::ALIVE;
 		renderer_ = renderer;
 		transform_.position_ = pos;
+		turret_transform_.position_ = pos;
 		old_pos_ = pos;
 		id_ = id;
 		collider_offset_x_ = config::PLAYER_WIDTH / 3;
@@ -52,10 +54,10 @@ namespace charlie
 			return;
 		}
 
+		fire_ = false;
 		float direction = 0;
 		float rotation = 0;
 		input_bits_ = 0;
-		fire_ = false;
 
 		if (Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_W)) {
 			input_bits_ |= (1 << int32(gameplay::Action::Up));
@@ -80,38 +82,53 @@ namespace charlie
 			transform_.set_rotation(rot);
 		}
 
+		if (direction > 0)
+		{
+			speed_ = config::PLAYER_REVERSE_SPEED;
+		}
+		else
+		{
+			speed_ = config::PLAYER_SPEED;
+		}
+
 		old_pos_ = transform_.position_;
 		if (abs(direction) > 0.0f) {
 			transform_.position_ += transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
+
 
 		if ((transform_.position_.x_ < 0) || (int)(transform_.position_.x_ + (float)body_sprite_->get_area().w) > (float)levelHeight)
 		{
 			transform_.position_ -= transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
 
-		if ((transform_.position_.y_ < 0) || (int)(transform_.position_.y_ + (float)body_sprite_->get_area().h) > levelWidth)
+		if ((transform_.position_.y_ < 0) || (int)(transform_.position_.y_ + (float)body_sprite_->get_area().h) > (float)levelWidth)
 		{
 			transform_.position_ -= transform_.forward() * direction * speed_ * deltaTime.as_seconds();
 		}
 
-		const auto mouse_x = Singleton<InputHandler>::Get()->GetMousePositionX();
-		const auto mouse_y = Singleton<InputHandler>::Get()->GetMousePositionY();
+		turret_transform_.position_ = transform_.position_;
 
-		const auto delta_y = body_window_rect_.y + point.y - mouse_y;
-		const auto delta_x = body_window_rect_.x + point.x - mouse_x;
-		turret_rotation_ = static_cast<float>(-90 + atan2(delta_y, delta_x) * (180 / M_PI));
-		turret_rotation_ >= 0 ? turret_rotation_ : 360 + turret_rotation_;
-
-		fire_acc_ += deltaTime;
-		if (Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_SPACE) || Singleton<InputHandler>::Get()->IsMouseButtonDown(1))
 		{
-			fire_ = true;
+			fire_acc_ += deltaTime;
+			if (Singleton<InputHandler>::Get()->IsKeyDown(SDL_SCANCODE_SPACE) || Singleton<InputHandler>::Get()->IsMouseButtonDown(1))
+			{
+				fire_ = true;
+			}
+
+			if (fire_ && can_shoot())
+			{
+				fire();
+			}
 		}
 
-		if (fire_ && can_shoot())
 		{
-			fire();
+			const auto mouse_x = Singleton<InputHandler>::Get()->GetMousePositionX();
+			const auto mouse_y = Singleton<InputHandler>::Get()->GetMousePositionY();
+			const auto delta_y = body_window_rect_.y + point.y - mouse_y;
+			const auto delta_x = body_window_rect_.x + point.x - mouse_x;
+			turret_transform_.rotation_ = static_cast<float>(-90 + atan2(delta_y, delta_x) * (180 / M_PI));
+			turret_transform_.rotation_ >= 0 ? turret_transform_.rotation_ : 360 + turret_transform_.rotation_;
 		}
 
 		collider_.SetPosition(get_collider_pos());
@@ -133,7 +150,7 @@ namespace charlie
 		point.y = static_cast<int>(transform_.origin_.y_);
 
 		SDL_RenderCopyEx(renderer_, body_sprite_->get_texture(), nullptr, &body_window_rect_, (double)transform_.rotation_, &point, SDL_FLIP_NONE);
-		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, (double)turret_rotation_, &point, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer_, turret_sprite_->get_texture(), nullptr, &turret_window_rect_, (double)turret_transform_.rotation_, &point, SDL_FLIP_NONE);
 
 		SDL_Rect collider_rect_ = {
 			collider_.GetBounds().x - cam.x,
@@ -142,8 +159,19 @@ namespace charlie
 			collider_.GetBounds().h
 		};
 
-		//SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
-		//SDL_RenderDrawRect(renderer_, &collider_rect_);
+		const auto mouse_x = Singleton<InputHandler>::Get()->GetMousePositionX();
+		const auto mouse_y = Singleton<InputHandler>::Get()->GetMousePositionY();
+
+		if (can_shoot())
+		{
+			SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
+		}
+		else
+		{
+			SDL_SetRenderDrawColor(renderer_, 255, 0, 0, 255);
+		}
+		SDL_Rect mouse = { mouse_x, mouse_y, 5, 5 };
+		SDL_RenderDrawRect(renderer_, &mouse);
 	}
 
 	void Player::load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH)

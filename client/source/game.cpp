@@ -80,8 +80,7 @@ namespace charlie
 				snapshot.tick_ = server_tick_ + delayInTicks;
 				snapshot.position_ = player_.transform_.position_;
 				snapshot.rotation_ = player_.transform_.rotation_;
-				snapshot.turret_rotation = player_.turret_rotation_;
-				snapshot.fire_ = player_.fire_;
+				snapshot.turret_rotation = player_.turret_transform_.rotation_;
 
 				inputinator_.add_snapshot(snapshot);
 			}
@@ -224,7 +223,7 @@ namespace charlie
 
 				if (abs(input.turret_rotation - (float)message.turret_rotation_) > correct_dist)
 				{
-					player_.turret_rotation_ = message.turret_rotation_;
+					player_.turret_transform_.rotation_ = message.turret_rotation_;
 				}
 
 
@@ -394,7 +393,7 @@ namespace charlie
 
 	void Game::on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer)
 	{
-		network::NetworkMessageInputCommand command(player_.input_bits_, player_.turret_rotation_, player_.fire_);
+		network::NetworkMessageInputCommand command(player_.input_bits_, player_.turret_transform_.rotation_, player_.fire_);
 		if (!command.write(writer)) {
 			assert(!"could not write network command!");
 		}

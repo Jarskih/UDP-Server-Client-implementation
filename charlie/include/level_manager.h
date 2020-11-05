@@ -38,7 +38,7 @@ namespace charlie
 		bool waiting_for_data() const;
 		void create_tile(uint8 level_tile, uint8 x, uint8 y);
 		uint32 get_chunk(const uint32 send_to);
-		bool is_done_sending();
+		bool is_done_sending() const;
 		static SDLSprite* load_asset_with_id(int type, int x, int y);
 		void create_level_object(const int type, int i, int y);
 		bool load_assets(Leveldata& data);

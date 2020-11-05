@@ -132,8 +132,7 @@ namespace charlie {
 			}
 			const auto start = snapshots_[snapshots_.size() - 2];
 			const auto end = snapshots_[snapshots_.size() - 1];
-			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds() + rtt / 2;
-
+			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
 			const Vector2 newPos = Vector2::lerp(start.position, end.position, t);
 			return newPos;
 		}

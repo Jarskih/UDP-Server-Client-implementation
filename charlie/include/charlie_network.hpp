@@ -4,7 +4,6 @@
 #define CHARLIE_NETWORK_HPP_INCLUDED
 
 #include <charlie.hpp>
-#include <string>
 
 namespace charlie {
 	namespace network {
@@ -237,7 +236,7 @@ namespace charlie {
 			Connection* find_established_connection(const IPAddress& address) const;
 
 			void handle_connection_request(const IPAddress& address, NetworkStreamReader& reader);
-			void handle_connection_challenge(const IPAddress& address, NetworkStreamReader& reader);
+			void handle_connection_challenge(const IPAddress& address, NetworkStreamReader& reader) const;
 			void handle_connection_response(const IPAddress& address, NetworkStreamReader& reader);
 			void handle_connection_rejected(const IPAddress& address, NetworkStreamReader& reader);
 			void handle_connection_payload(const IPAddress& address, NetworkStreamReader& reader);

@@ -48,10 +48,10 @@ namespace charlie
 		return 0;
 	}
 
-	bool LevelManager::is_done_sending()
+	bool LevelManager::is_done_sending() const
 	{
 		printf("Tiles loaded %i \n", data_.tiles_loaded_);
-		return data_.tiles_loaded_ > (data_.sizeY_ * data_.sizeX_)-1;
+		return data_.tiles_loaded_ > (data_.sizeY_ * data_.sizeX_) - 1;
 	}
 
 	SDLSprite* LevelManager::load_asset_with_id(int type, int x, int y)
@@ -166,7 +166,6 @@ namespace charlie
 					return send;
 				}
 				send = data_.get_tile(progress.second);
-				printf("Send progress %i \n", progress.second);
 				progress.second += 1;
 				return send;
 			}
@@ -175,7 +174,6 @@ namespace charlie
 			// Send first time
 			std::pair<uint32, uint32> progress(player_id, 0);
 			send = data_.get_tile(progress.second);
-			printf("Send progress %i \n", progress.second);
 			progress.second += 1;
 			send_progress_.push_back(progress);
 		}

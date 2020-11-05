@@ -18,6 +18,7 @@ namespace charlie
 		static const int  PLAYER_WIDTH = 100;
 		static const int  PLAYER_HEIGHT = 100;
 		static const float PLAYER_SPEED = 70.0f;
+		static const float PLAYER_REVERSE_SPEED = 35.0f;
 		static const float PLAYER_TURN_SPEED = 30.0f;
 		static const int  PROJECTILE_WIDTH = 15;
 		static const int  PROJECTILE_HEIGHT = 15;
@@ -36,6 +37,7 @@ namespace charlie
 		static const char* BLOCK_TEXTURE = "../assets/block.png";
 		static std::string LEVEL_PATH_PREFIX = "../assets/";
 		static const uint8 map = 2;
+		static const char* MASTER_SERVER_FILE = "../assets/masterserver.txt";
 	};
 }
 #endif

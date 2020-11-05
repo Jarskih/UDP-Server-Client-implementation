@@ -98,7 +98,7 @@ namespace charlie
 		} break;
 		case EventType::SPAWN_PROJECTILE:
 		{
-			const ProjectileSpawned e(event_id_, entity_id, event_creator.id_, send_to, event_creator.get_shoot_pos(), event_creator.turret_rotation_);
+			const ProjectileSpawned e(event_id_, entity_id, event_creator.id_, send_to, event_creator.get_shoot_pos(), event_creator.turret_transform_.rotation_);
 			events_.push_back(e);
 		} break;
 		default:

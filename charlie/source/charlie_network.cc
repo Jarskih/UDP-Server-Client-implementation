@@ -1286,7 +1286,7 @@ namespace charlie {
 			}
 		}
 
-		void Service::handle_connection_challenge(const IPAddress& address, NetworkStreamReader& reader)
+		void Service::handle_connection_challenge(const IPAddress& address, NetworkStreamReader& reader) const
 		{
 			printf("NFO: + handle_connection_challenge from %s\n", address.as_string());
 			Connection* connection = find_pending_connection(address);

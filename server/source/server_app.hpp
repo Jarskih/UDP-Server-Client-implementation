@@ -8,11 +8,14 @@
 #include "level_manager.h"
 #include "projectile.h"
 #include "reliable_events.h"
+#include "server_register.h"
 
 using namespace charlie;
 
 struct ServerApp final : SDLApplication, network::IServiceListener, network::IConnectionListener {
 	ServerApp();
+
+	static int register_server(network::IPAddress address, std::string message);
 
 	// note: Application
 	virtual bool on_init();
@@ -46,6 +49,8 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	static bool contains(const DynamicArray<uint32>& arr, uint32 id);
 
 	// note: Network
+	ServerRegister server_register_;
+	network::Connection connection_;
 	const Time tickrate_;
 	Time accumulator_;
 	uint32 tick_;

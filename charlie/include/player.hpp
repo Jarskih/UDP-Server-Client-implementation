@@ -45,21 +45,22 @@ namespace charlie
 		SDL_Rect turret_window_rect_;
 		SDL_Point point;
 
+		// Inputs
+		uint8 input_bits_;
+		bool fire_;
+
+		uint32 id_;
+		Transform turret_transform_;
 		Transform transform_;
 		RectangleCollider collider_;
-		float turret_rotation_;
-		uint8 input_bits_;
-		uint32 id_;
+		int collider_offset_x_;
+		int collider_offset_y_;
 		float speed_;
 		float tank_turn_speed_;
 		float turret_turn_speed_;
-
-		bool fire_;
 		Time fire_acc_;
 		Time fire_delay_;
 		Vector2 old_pos_;
-		int collider_offset_x_;
-		int collider_offset_y_;
 		PlayerState state_;
 	};
 }

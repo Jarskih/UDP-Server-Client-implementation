@@ -4,6 +4,8 @@
 #include <charlie_messages.hpp>
 #include <cstdio>
 #include <cmath>
+#include <WinSock2.h>
+
 #include "collision_handler.h"
 #include "config.h"
 #include "reliable_events.h"
@@ -24,6 +26,8 @@ bool ServerApp::on_init()
 	if (!network_.initialize(network::IPAddress(network::IPAddress::ANY_HOST, 54345))) {
 		return false;
 	}
+
+	server_register_.register_server("heartbeat");
 
 	network_.add_service_listener(this);
 
@@ -55,6 +59,8 @@ bool ServerApp::on_tick(const Time& dt)
 	while (accumulator_ >= tickrate_) {
 		accumulator_ -= tickrate_;
 		tick_++;
+
+		server_register_.update(dt);
 
 		read_input_queue();
 		update_players(dt);
@@ -248,14 +254,14 @@ void ServerApp::on_send(network::Connection* connection,
 		{
 			if (player.id_ == id)
 			{
-				network::NetworkMessagePlayerState message(player.transform_, player.turret_rotation_);
+				network::NetworkMessagePlayerState message(player.transform_, player.turret_transform_.rotation_);
 				if (!message.write(writer)) {
 					assert(!"failed to write message!");
 				}
 				continue;
 			}
 
-			network::NetworkMessageEntityState message(player.transform_, player.turret_rotation_, player.id_);
+			network::NetworkMessageEntityState message(player.transform_, player.turret_transform_.rotation_, player.id_);
 			if (!message.write(writer)) {
 				assert(!"failed to write message!");
 			}
@@ -402,7 +408,7 @@ void ServerApp::read_input_queue()
 			if (player.id_ == cmd.id_)
 			{
 				player.input_bits_ = cmd.input_bits_;
-				player.turret_rotation_ = cmd.rot_;
+				player.turret_transform_.rotation_ = cmd.rot_;
 				player.fire_ = cmd.fire_;
 				break;
 			}
@@ -437,6 +443,15 @@ void ServerApp::update_players(const Time& dt)
 			rotation += 1.0f;
 		}
 
+		if (direction > 0)
+		{
+			player.speed_ = config::PLAYER_REVERSE_SPEED;
+		}
+		else
+		{
+			player.speed_ = config::PLAYER_SPEED;
+		}
+
 		if (abs(rotation) > 0.0f)
 		{
 			const float rot = player.transform_.rotation_ + rotation * player.tank_turn_speed_ * dt.as_seconds();
@@ -464,7 +479,7 @@ void ServerApp::update_players(const Time& dt)
 		player.fire_acc_ += dt;
 		if (player.fire_ && player.can_shoot())
 		{
-			spawn_projectile(player.get_shoot_pos(), player.turret_rotation_, player.id_);
+			spawn_projectile(player.get_shoot_pos(), player.turret_transform_.rotation_, player.id_);
 			player.fire();
 			for (const Player& p : players_)
 			{
