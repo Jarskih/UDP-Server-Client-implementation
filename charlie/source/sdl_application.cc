@@ -15,6 +15,7 @@ namespace charlie {
 		level_width_ = level_width;
 		level_heigth_ = level_height;
 		rect_ = rect;
+		SDL_ShowCursor(false);
 	}
 
 	void Camera::lookAt(Player& player)

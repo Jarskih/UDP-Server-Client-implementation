@@ -101,7 +101,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="include\ClientList.cpp" />
+    <ClCompile Include="source\ClientList.cpp" />
     <ClCompile Include="source\main.cc" />
     <ClCompile Include="source\server_app.cc" />
     <ClCompile Include="source\server_register.cpp" />

@@ -196,7 +196,7 @@ namespace charlie {
 		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const uint32 id, const uint32 entity_id, const uint32 shot_by, const Vector2& position, float rotation)
 			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
 			, entity_id_((uint8)entity_id)
-			, shot_by_(shot_by)
+			, shot_by_((uint8)shot_by)
 			, event_id_(id)
 			, pos_(position)
 			, rotation_(rotation)

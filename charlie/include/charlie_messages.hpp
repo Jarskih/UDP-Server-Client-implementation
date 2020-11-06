@@ -231,7 +231,7 @@ namespace charlie {
 
 			uint8 type_;
 			uint8 entity_id_;
-			uint32 shot_by_;
+			uint8 shot_by_;
 			uint32 event_id_;
 			Vector2 pos_;
 			float rotation_;
