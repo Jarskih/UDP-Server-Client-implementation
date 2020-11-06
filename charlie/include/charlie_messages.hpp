@@ -20,6 +20,7 @@ namespace charlie {
 			NETWORK_MESSAGE_PLAYER_STATE,
 			NETWORK_MESSAGE_PLAYER_SPAWN,
 			NETWORK_MESSAGE_ENTITY_SPAWN,
+			NETWORK_MESSAGE_MASTER_SERVER,
 			NETWORK_MESSAGE_PROJECTILE_SPAWN,
 			NETWORK_MESSAGE_DISCONNECTED,
 			NETWORK_MESSAGE_PLAYER_DESTROYED,
@@ -394,6 +395,32 @@ namespace charlie {
 			uint8 x_;
 			uint8 y_;
 			uint32 event_id_;
+		};
+
+		struct NetworkMessageMasterServer
+		{
+			NetworkMessageMasterServer();
+			explicit NetworkMessageMasterServer(uint8 a_, uint8 b_, uint8 c_, uint8 d_);
+			bool read(NetworkStreamReader& reader);
+			bool write(NetworkStreamWriter& writer);
+
+			template <typename Stream>
+			bool serialize(Stream& stream)
+			{
+				bool result = true;
+				result &= stream.serialize(type_);
+				result &= stream.serialize(a_);
+				result &= stream.serialize(b_);
+				result &= stream.serialize(c_);
+				result &= stream.serialize(d_);
+				return result;
+			}
+
+			uint8 type_;
+			uint8 a_;
+			uint8 b_;
+			uint8 c_;
+			uint8 d_;
 		};
 	} // !network
 } // !charlie

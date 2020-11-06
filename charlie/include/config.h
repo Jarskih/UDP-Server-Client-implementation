@@ -32,11 +32,12 @@ namespace charlie
 		static const int LEVEL_OBJECT_WIDTH = 50;
 		static const int LEVEL_OBJECT_HEIGHT = 50;
 		static const char* MENU_SCREEN = "../assets/menu_screen.png";
+		static const char* DISCONNECTED = "../assets/disconnected.png";
 		static const char* DEFEAT_SCREEN = "../assets/defeat.png";
 		static const char* GRASS_TEXTURE = "../assets/grass.png";
 		static const char* BLOCK_TEXTURE = "../assets/block.png";
 		static std::string LEVEL_PATH_PREFIX = "../assets/";
-		static const uint8 map = 2;
+		static const uint8 map = 1;
 		static const char* MASTER_SERVER_FILE = "../assets/masterserver.txt";
 	};
 }

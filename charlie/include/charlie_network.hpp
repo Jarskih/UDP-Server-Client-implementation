@@ -45,8 +45,25 @@ namespace charlie {
 			bool open(const IPAddress& address);
 			void close();
 
-			bool send(const IPAddress& address, const uint8* data, const int32 length);
-			bool receive(IPAddress& address, uint8* data, int32& length);
+			bool send(const IPAddress& address, const uint8* data, const int32 length) const;
+			bool receive(IPAddress& address, uint8* data, int32& length) const;
+
+			uint64 id_;
+		};
+
+		struct TCPSocket
+		{
+			static bool get_address(const UDPSocket& socket, IPAddress& address);
+
+			TCPSocket();
+
+			bool is_valid() const;
+			bool open();
+			bool open(const IPAddress& address);
+			void close();
+
+			bool send(const IPAddress& address, const uint8* data, const int32 length) const;
+			bool receive(IPAddress& address, uint8* data, int32& length) const;
 
 			uint64 id_;
 		};
@@ -241,6 +258,7 @@ namespace charlie {
 			void handle_connection_rejected(const IPAddress& address, NetworkStreamReader& reader);
 			void handle_connection_payload(const IPAddress& address, NetworkStreamReader& reader);
 			void handle_connection_disconnect(const IPAddress& address, NetworkStreamReader& reader);
+			void handle_master_server_package(const IPAddress& address, const NetworkStreamReader& reader);
 
 			void send_connection_request(Connection* connection);
 			void send_connection_response(Connection* connection);

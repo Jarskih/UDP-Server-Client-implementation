@@ -4,7 +4,7 @@
 
 namespace charlie
 {
-	Menu::Menu() : sprite_(nullptr), renderer_(nullptr)
+	Menu::Menu() : sprite_(nullptr), renderer_(nullptr), servers_available_(false)
 	{
 	}
 
@@ -30,8 +30,12 @@ namespace charlie
 		Singleton<InputHandler>::Get()->HandleEvents();
 		if (Singleton<InputHandler>::Get()->IsKeyPressed(SDL_SCANCODE_SPACE) || Singleton<InputHandler>::Get()->IsKeyPressed(SDL_SCANCODE_KP_ENTER))
 		{
-			return false;
+			if (servers_available_)
+			{
+				return false;
+			}
 		}
+
 		return true;
 	}
 

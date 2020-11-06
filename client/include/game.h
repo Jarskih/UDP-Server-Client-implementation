@@ -2,9 +2,11 @@
 #include <sdl_application.hpp>
 
 #include "level_manager.h"
+#include "master_server_client.h"
 #include "player.hpp"
 #include "projectile.h"
 #include "Scene.h"
+#include "entity.h"
 
 namespace charlie
 {
@@ -52,6 +54,7 @@ namespace charlie
 		uint32 tick_;
 		uint32 server_tick_;
 		Time server_time_;
+		network::IPAddress server_;
 
 		// Gameplay
 		Camera cam_;
@@ -66,5 +69,6 @@ namespace charlie
 		uint32 local_projectile_index_;
 		int level_width_;
 		int level_heigth_;
+		SDLSprite* disconnected_;
 	};
 }

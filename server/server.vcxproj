@@ -108,7 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ClientList.h" />
-    <ClInclude Include="source\server_app.hpp" />
+    <ClInclude Include="include\server_app.hpp" />
     <ClInclude Include="include\server_register.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

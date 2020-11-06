@@ -375,5 +375,28 @@ namespace charlie {
 		{
 			return serialize(writer);
 		}
+
+		NetworkMessageMasterServer::NetworkMessageMasterServer() : type_(NETWORK_MESSAGE_MASTER_SERVER), a_(0), b_(0), c_(0), d_(0)
+		{
+		}
+
+		NetworkMessageMasterServer::NetworkMessageMasterServer(uint8 a_, uint8 b_, uint8 c_, uint8 d_)
+			: type_(NETWORK_MESSAGE_MASTER_SERVER)
+			, a_(a_)
+			, b_(b_)
+			, c_(c_)
+			, d_(d_)
+		{
+		}
+
+		bool NetworkMessageMasterServer::read(NetworkStreamReader& reader)
+		{
+			return serialize(reader);
+		}
+
+		bool NetworkMessageMasterServer::write(NetworkStreamWriter& writer)
+		{
+			return serialize(writer);
+		}
 	} // !network
 } // !messages

@@ -6,9 +6,9 @@
 #include <sdl_application.hpp>
 
 #include "end.h"
-#include "entity.h"
 #include "game.h"
 #include "menu.h"
+#include "master_server_client.h"
 
 using namespace charlie;
 
@@ -30,12 +30,13 @@ struct ClientApp final : SDLApplication {
 
 	void set_state(SceneState state);
 
+	MasterServerClient master_server_client_;
+	SceneState state_;
+
 	// Scenes
 	Menu menu_;
 	Game game_;
 	End end_;
-
-	SceneState state_;
 };
 
 #endif // !CLIENT_APP_HPP_INCLUDED

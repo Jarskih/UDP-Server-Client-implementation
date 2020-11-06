@@ -27,7 +27,7 @@ bool ServerApp::on_init()
 		return false;
 	}
 
-	server_register_.register_server("heartbeat");
+	server_register_.register_server();
 
 	network_.add_service_listener(this);
 

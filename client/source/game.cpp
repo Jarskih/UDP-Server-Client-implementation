@@ -23,13 +23,18 @@ namespace charlie
 	bool Game::on_init(SDL_Renderer* renderer)
 	{
 		renderer_ = renderer;
-
 		connection_.set_listener(this);
-		connection_.connect(network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT));
+		connection_.connect(server_);
 
 		text_font_.create(config::FONT_PATH, 20, SDL_Color({ 255,255,255,255 }));
 		text_handler_.renderer_ = renderer_;
 		text_handler_.LoadFont(text_font_);
+
+		disconnected_ = Singleton<SpriteHandler>::Get()->create_sprite(config::DISCONNECTED, 0, 0, config::SCREEN_WIDTH, config::SCREEN_HEIGHT);
+		if (disconnected_ == nullptr)
+		{
+			return false;
+		}
 
 		return true;
 	}
@@ -57,11 +62,6 @@ namespace charlie
 		if (player_.is_waiting_to_spawn())
 		{
 			return true;
-		}
-
-		if (connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
-		{
-			// TODO show disconnected
 		}
 
 		accumulator_ += dt;
@@ -146,6 +146,11 @@ namespace charlie
 		player_.render(cam_.rect_);
 
 		networkinfo_.render(renderer_, connection_, text_handler_);
+
+		if(connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
+		{
+			SDL_RenderCopy(renderer_, disconnected_->get_texture(), nullptr, nullptr);
+		}
 	}
 
 	void Game::on_acknowledge(network::Connection* connection, const uint16 sequence)

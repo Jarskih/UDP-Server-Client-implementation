@@ -217,7 +217,7 @@ namespace charlie {
 			}
 		}
 
-		bool UDPSocket::send(const IPAddress& address, const uint8* data, const int32 length)
+		bool UDPSocket::send(const IPAddress& address, const uint8* data, const int32 length) const
 		{
 			if (!is_valid()) {
 				return false;
@@ -235,7 +235,94 @@ namespace charlie {
 			return true;
 		}
 
-		bool UDPSocket::receive(IPAddress& address, uint8* data, int32& length)
+		bool UDPSocket::receive(IPAddress& address, uint8* data, int32& length) const
+		{
+			if (!is_valid()) {
+				return false;
+			}
+
+			int remote_size = sizeof(sockaddr_in);
+			sockaddr_in remote = {};
+			int r = ::recvfrom(id_, (char*)data, length, 0, (sockaddr*)&remote, &remote_size);
+			if (r == SOCKET_ERROR) {
+				return false;
+			}
+
+			length = r;
+			address.host_ = ntohl(remote.sin_addr.s_addr);
+			address.port_ = ntohs(remote.sin_port);
+
+			return true;
+		}
+
+		TCPSocket::TCPSocket() : id_(INVALID_SOCKET)
+		{
+		}
+
+		bool TCPSocket::is_valid() const
+		{
+			return id_ != INVALID_SOCKET;
+		}
+
+		bool TCPSocket::open()
+		{
+			return open({});
+		}
+
+		bool TCPSocket::open(const IPAddress& address)
+		{
+			if (is_valid()) {
+				close();
+			}
+
+			id_ = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+			if (id_ == INVALID_SOCKET) {
+				return false;
+			}
+
+			sockaddr_in local = {};
+			local.sin_family = AF_INET;
+			local.sin_port = htons(address.port_);
+			local.sin_addr.s_addr = htonl(address.host_);
+			if (bind(id_, (const sockaddr*)&local, sizeof(local)) == SOCKET_ERROR) {
+				return false;
+			}
+
+			u_long non_blocking = 1;
+			if (ioctlsocket(id_, FIONBIO, &non_blocking) == SOCKET_ERROR) {
+				return false;
+			}
+
+			return true;
+		}
+
+		void TCPSocket::close()
+		{
+			if (is_valid()) {
+				::closesocket(id_);
+				id_ = INVALID_SOCKET;
+			}
+		}
+
+		bool TCPSocket::send(const IPAddress& address, const uint8* data, const int32 length) const
+		{
+			if (!is_valid()) {
+				return false;
+			}
+
+			sockaddr_in remote = {};
+			remote.sin_family = AF_INET;
+			remote.sin_port = htons(address.port_);
+			remote.sin_addr.s_addr = htonl(address.host_);
+			int s = ::sendto(id_, (const char*)data, length, 0, (const sockaddr*)&remote, sizeof(remote));
+			if (s == SOCKET_ERROR) {
+				return false;
+			}
+
+			return true;
+		}
+
+		bool TCPSocket::receive(IPAddress& address, uint8* data, int32& length) const
 		{
 			if (!is_valid()) {
 				return false;
@@ -1017,6 +1104,9 @@ namespace charlie {
 					case PROTOCOL_PACKET_DISCONNECT:
 						handle_connection_disconnect(address, reader);
 						break;
+					case PROTOCOL_PACKET_MASTER_SERVER:
+						handle_master_server_package(address, reader);
+						break;
 					default:
 						assert(!"invalid packet received!");
 						break;
@@ -1431,6 +1521,10 @@ namespace charlie {
 					connection_pool_.release(connection);
 				}
 			}
+		}
+
+		void Service::handle_master_server_package(const IPAddress& address, const NetworkStreamReader& reader)
+		{
 		}
 
 		void Service::send_connection_request(Connection* connection)

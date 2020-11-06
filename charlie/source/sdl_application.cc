@@ -89,6 +89,7 @@ namespace charlie {
 			if (!window_.update()) {
 				running = false;
 			}
+
 			network_.update();
 
 			const auto dt = Time::deltatime();

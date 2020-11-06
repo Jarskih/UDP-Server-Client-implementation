@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "game.h"
 #include "Scene.h"
 
 namespace charlie
@@ -14,5 +15,6 @@ namespace charlie
 
 		SDLSprite* sprite_;
 		SDL_Renderer* renderer_;
+		bool servers_available_;
 	};
 }

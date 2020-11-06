@@ -43,12 +43,12 @@ namespace charlie
 		if (timer_.as_seconds() > 5)
 		{
 			printf("ServerRegister: Send heartbeat to master server \n");
-			register_server("register");
+			register_server();
 			timer_ = Time(0.0);
 		}
 	}
 
-	void ServerRegister::register_server(const std::string& message) const
+	void ServerRegister::register_server() const
 	{
 		sockaddr_in local = {};
 		local.sin_family = AF_INET;
@@ -57,7 +57,7 @@ namespace charlie
 
 		const SOCKET client = socket(AF_INET, SOCK_DGRAM, 0);
 
-		const int result = sendto(client, message.c_str(), (int)message.size(), 0, (const sockaddr*)&local, sizeof(SOCKADDR));
+		const int result = sendto(client, HEARTBEAT.c_str(), (int)HEARTBEAT.size(), 0, (const sockaddr*)&local, sizeof(SOCKADDR));
 
 		closesocket(client);
 
