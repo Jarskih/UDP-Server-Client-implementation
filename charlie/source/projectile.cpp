@@ -1,6 +1,4 @@
 ﻿#include "projectile.h"
-
-
 #include "config.h"
 #include "Singleton.hpp"
 #include "sprite_handler.hpp"
@@ -79,9 +77,6 @@ namespace charlie
 			collider_.GetBounds().w,
 			collider_.GetBounds().h
 		};
-
-		//SDL_SetRenderDrawColor(renderer_, 0, 0, 255, 255);
-		//SDL_RenderDrawRect(renderer_, &collider_rect_);
 	}
 
 	void Projectile::load_sprite(std::string body, int srcX, int srcY, int srcW, int srcH)

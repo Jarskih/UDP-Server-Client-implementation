@@ -14,7 +14,7 @@ namespace charlie {
 		}
 
 		NetworkMessageServerTick::NetworkMessageServerTick(const int64  server_time,
-			const uint32 server_tick)
+			const int32 server_tick)
 			: type_(NETWORK_MESSAGE_SERVER_TICK)
 			, server_time_(server_time)
 			, server_tick_(server_tick)
@@ -41,12 +41,12 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageEntityState::NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 entity_id)
+		NetworkMessageEntityState::NetworkMessageEntityState(const Transform& transform, float turret_rotation, int32 entity_id)
 			: type_(NETWORK_MESSAGE_ENTITY_STATE)
-			, x_((uint16)transform.position_.x_)
-			, y_((uint16)transform.position_.y_)
+			, x_((int16)transform.position_.x_)
+			, y_((int16)transform.position_.y_)
 			, rotation_((int16)transform.rotation_)
-			, entity_id_((uint8)entity_id)
+			, entity_id_((int8)entity_id)
 			, turret_rotation_((int16)turret_rotation)
 		{
 		}
@@ -98,10 +98,10 @@ namespace charlie {
 
 		NetworkMessagePlayerState::NetworkMessagePlayerState(const Transform& transform, float turret_rotation)
 			: type_(NETWORK_MESSAGE_PLAYER_STATE)
-			, rotation_((int16)transform.rotation_)
-			, y_((uint16)transform.position_.y_)
-			, x_((uint16)transform.position_.x_)
-			, turret_rotation_((int16)turret_rotation)
+			, rotation_(static_cast<int16>(transform.rotation_))
+			, y_(static_cast<int16>(transform.position_.y_))
+			, x_(static_cast<int16>(transform.position_.x_))
+			, turret_rotation_(static_cast<int16>(turret_rotation))
 		{
 		}
 
@@ -122,7 +122,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn(uint32 event_id, uint32 entity_id, const Vector2& position)
+		NetworkMessagePlayerSpawn::NetworkMessagePlayerSpawn(int32 event_id, int32 entity_id, const Vector2& position)
 			: type_(NETWORK_MESSAGE_PLAYER_SPAWN)
 			, position_(position)
 			, entity_id_((uint8)entity_id)
@@ -144,7 +144,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageEntitySpawn::NetworkMessageEntitySpawn(uint32 event_id, uint32 entity_id, const Vector2& position) :
+		NetworkMessageEntitySpawn::NetworkMessageEntitySpawn(int32 event_id, int32 entity_id, const Vector2& position) :
 			type_(NETWORK_MESSAGE_ENTITY_SPAWN),
 			position_(position),
 			entity_id_((uint8)entity_id),
@@ -193,7 +193,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const uint32 id, const uint32 entity_id, const uint32 shot_by, const Vector2& position, float rotation)
+		NetworkMessageProjectileSpawn::NetworkMessageProjectileSpawn(const int32 id, const int32 entity_id, const int32 shot_by, const Vector2& position, float rotation)
 			: type_(NETWORK_MESSAGE_PROJECTILE_SPAWN)
 			, entity_id_((uint8)entity_id)
 			, shot_by_((uint8)shot_by)
@@ -220,7 +220,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected(const uint32 entity_id, const uint32 message_id)
+		NetworkMessagePlayerDisconnected::NetworkMessagePlayerDisconnected(const int32 entity_id, const int32 message_id)
 			: type_(NETWORK_MESSAGE_DISCONNECTED)
 			, entity_id_((uint8)entity_id)
 			, message_id_(message_id)
@@ -244,7 +244,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(const uint32 entity_id, const uint32 event_id)
+		NetworkMessageProjectileDestroy::NetworkMessageProjectileDestroy(const int32 entity_id, const int32 event_id)
 			: type_(NETWORK_MESSAGE_PROJECTILE_DESTROYED)
 			, entity_id_((uint8)entity_id)
 			, event_id_(event_id)
@@ -268,7 +268,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageEntityDestroy::NetworkMessageEntityDestroy(uint32 entity_id, uint32 event_id) :
+		NetworkMessageEntityDestroy::NetworkMessageEntityDestroy(int32 entity_id, int32 event_id) :
 			type_(NETWORK_MESSAGE_ENTITY_DESTROYED)
 			, entity_id_((uint8)entity_id)
 			, event_id_(event_id)
@@ -292,7 +292,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessagePlayerDestroy::NetworkMessagePlayerDestroy(uint32 entity_id, uint32 event_id) :
+		NetworkMessagePlayerDestroy::NetworkMessagePlayerDestroy(int32 entity_id, int32 event_id) :
 			type_(NETWORK_MESSAGE_PLAYER_DESTROYED)
 			, entity_id_((uint8)entity_id)
 			, event_id_(event_id)
@@ -315,7 +315,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageLevelInfo::NetworkMessageLevelInfo(uint8 level_id, uint8 size_x_, uint8 size_y_, uint32 event_id)
+		NetworkMessageLevelInfo::NetworkMessageLevelInfo(uint8 level_id, uint8 size_x_, uint8 size_y_, int32 event_id)
 			: type_(NETWORK_MESSAGE_LEVEL_INFO)
 			, level_id_(level_id)
 			, size_x_(size_x_), size_y_(size_y_), event_id_(event_id)
@@ -337,7 +337,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageLevelDataRequest::NetworkMessageLevelDataRequest(uint32 event_id) : type_(NETWORK_MESSAGE_LEVEL_REQUEST), event_id_(event_id)
+		NetworkMessageLevelDataRequest::NetworkMessageLevelDataRequest(int32 event_id) : type_(NETWORK_MESSAGE_LEVEL_REQUEST), event_id_(event_id)
 		{
 		}
 
@@ -357,7 +357,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageLevelData::NetworkMessageLevelData(Tile tile, uint32 event_id)
+		NetworkMessageLevelData::NetworkMessageLevelData(Tile tile, int32 event_id)
 			: type_(NETWORK_MESSAGE_LEVEL_DATA)
 			, level_tile_(tile.tile_id_)
 			, x_(tile.x_)

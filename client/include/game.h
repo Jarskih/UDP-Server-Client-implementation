@@ -26,16 +26,16 @@ namespace charlie
 		// Modify entities
 		void spawn_entity(network::NetworkMessageEntitySpawn message);
 		void spawn_player(network::NetworkMessagePlayerSpawn message);
-		void remove_entity(uint32 id);
-		void remove_projectile(uint32 id);
+		void remove_entity(int32 id);
+		void remove_projectile(int32 id);
 		void spawn_projectile(network::NetworkMessageProjectileSpawn message);
 
 		// Helpers
-		static bool contains(const DynamicArray<Entity>& vector, uint32 id);
-		static bool contains(const DynamicArray<Projectile>& vector, uint32 id);
+		static bool contains(const DynamicArray<Entity>& vector, int32 id);
+		static bool contains(const DynamicArray<Projectile>& vector, int32 id);
 
 		// Messages
-		void create_ack_message(uint32 event_id_);
+		void create_ack_message(int32 event_id_);
 
 		SDL_Renderer* renderer_;
 
@@ -51,8 +51,8 @@ namespace charlie
 		Networkinfo networkinfo_;
 		Vector2 oldPos_;
 		Vector2 newPos_;
-		uint32 tick_;
-		uint32 server_tick_;
+		int32 tick_;
+		int32 server_tick_;
 		Time server_time_;
 		network::IPAddress server_;
 
@@ -60,13 +60,13 @@ namespace charlie
 		Camera cam_;
 		Player player_;
 		DynamicArray <Entity> entities_;
-		DynamicArray<uint32> entities_to_remove_;
+		DynamicArray<int32> entities_to_remove_;
 		DynamicArray<Projectile> projectiles_;
-		DynamicArray<uint32> projectiles_to_remove_;
+		DynamicArray<int32> projectiles_to_remove_;
 		LevelManager level_manager_;
 		TextHandler text_handler_;
 		SDLFont text_font_;
-		uint32 local_projectile_index_;
+		int32 local_projectile_index_;
 		int level_width_;
 		int level_heigth_;
 		SDLSprite* disconnected_;

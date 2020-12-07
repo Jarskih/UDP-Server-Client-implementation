@@ -8,7 +8,7 @@ namespace charlie
 	{
 	}
 
-	PlayerSpawned::PlayerSpawned(uint32 event_id, uint32 entity_id, uint32 send_to, Vector2 position
+	PlayerSpawned::PlayerSpawned(int32 event_id, int32 entity_id, int32 send_to, Vector2 position
 	)
 	{
 		event_id_ = event_id;
@@ -18,7 +18,7 @@ namespace charlie
 		pos_ = position;
 	}
 
-	EntitySpawned::EntitySpawned(uint32 event_id, uint32 entity_id, uint32 send_to, Vector2 position)
+	EntitySpawned::EntitySpawned(int32 event_id, int32 entity_id, int32 send_to, Vector2 position)
 	{
 		event_id_ = event_id;
 		entity_id_ = entity_id;
@@ -28,10 +28,10 @@ namespace charlie
 	}
 
 	ProjectileSpawned::ProjectileSpawned(
-		uint32 event_id,
-		uint32 entity_id,
-		uint32 creator,
-		uint32 send_to,
+		int32 event_id,
+		int32 entity_id,
+		int32 creator,
+		int32 send_to,
 		Vector2 position,
 		float rotation
 	)
@@ -45,7 +45,7 @@ namespace charlie
 		rot_ = rotation;
 	}
 
-	ProjectileDestroyed::ProjectileDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to)
+	ProjectileDestroyed::ProjectileDestroyed(int32 event_id, int32 entity_id, int32 send_to)
 	{
 		event_id_ = event_id;
 		entity_id_ = entity_id;
@@ -53,7 +53,7 @@ namespace charlie
 		send_to_ = send_to;
 	}
 
-	PlayerDestroyed::PlayerDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to)
+	PlayerDestroyed::PlayerDestroyed(int32 event_id, int32 entity_id, int32 send_to)
 	{
 		event_id_ = event_id;
 		entity_id_ = entity_id;
@@ -61,7 +61,7 @@ namespace charlie
 		send_to_ = send_to;
 	}
 
-	EntityDestroyed::EntityDestroyed(uint32 event_id, uint32 entity_id, uint32 send_to)
+	EntityDestroyed::EntityDestroyed(int32 event_id, int32 entity_id, int32 send_to)
 	{
 		event_id_ = event_id;
 		entity_id_ = entity_id;
@@ -82,7 +82,7 @@ namespace charlie
 	/// <param name="event">Event type SPAWN_PLAYER or SPAWN_PROJECTILE</param>
 	/// <param name="players">List of connected players</param>
 
-	void ReliableEvents::create_spawn_event(uint32 entity_id, const Player& event_creator, uint32 send_to, const EventType event, const DynamicArray<Player>& players)
+	void ReliableEvents::create_spawn_event(int32 entity_id, const Player& event_creator, int32 send_to, const EventType event, const DynamicArray<Player>& players)
 	{
 		switch (event)
 		{
@@ -108,7 +108,7 @@ namespace charlie
 		event_id_ += 1;
 	}
 
-	void ReliableEvents::create_destroy_event(const uint32 entity_id, const uint32 send_to, const EventType event, const DynamicArray<Player>& players)
+	void ReliableEvents::create_destroy_event(const int32 entity_id, const int32 send_to, const EventType event, const DynamicArray<Player>& players)
 	{
 		switch (event)
 		{
@@ -148,7 +148,7 @@ namespace charlie
 		events_.clear();
 	}
 
-	Event ReliableEvents::get_event(uint32 id)
+	Event ReliableEvents::get_event(int32 id)
 	{
 		Event event;
 		for (const auto e : events_)
@@ -161,7 +161,7 @@ namespace charlie
 		return event;
 	}
 
-	void ReliableEvents::send_level_info(uint8 level_id, uint32 send_to)
+	void ReliableEvents::send_level_info(uint8 level_id, int32 send_to)
 	{
 		Event e;
 		e.event_id_ = event_id_;
@@ -172,7 +172,7 @@ namespace charlie
 		event_id_ += 1;
 	}
 
-	void ReliableEvents::send_level_data(Tile tile, uint32 send_to)
+	void ReliableEvents::send_level_data(Tile tile, int32 send_to)
 	{
 		Event e;
 		e.event_id_ = event_id_;

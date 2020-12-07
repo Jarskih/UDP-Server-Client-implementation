@@ -21,7 +21,7 @@ namespace charlie
 
 	struct Player {
 		Player();
-		void init(SDL_Renderer* renderer, Vector2& pos, uint32 id);
+		void init(SDL_Renderer* renderer, Vector2& pos, int32 id);
 		void update(Time deltaTime, int level_height, int level_width);
 		void render(SDL_Rect cameraPos);
 		void load_body_sprite(std::string body, int srcX, int srcY, int srcW, int srcH);
@@ -51,7 +51,7 @@ namespace charlie
 		uint8 input_bits_;
 		bool fire_;
 
-		uint32 id_;
+		int32 id_;
 		Transform turret_transform_;
 		Transform transform_;
 		RectangleCollider collider_;

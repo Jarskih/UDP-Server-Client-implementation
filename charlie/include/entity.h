@@ -21,7 +21,7 @@ namespace charlie
 		SDL_Point point_;
 
 		Transform transform_;
-		uint32 id_;
+		int32 id_;
 		gameplay::Interpolator interpolator_;
 		float turret_rotation_;
 	};

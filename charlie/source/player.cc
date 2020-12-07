@@ -34,7 +34,7 @@ namespace charlie
 		fire_acc_ = fire_delay_;
 	}
 
-	void Player::init(SDL_Renderer* renderer, Vector2& pos, uint32 id)
+	void Player::init(SDL_Renderer* renderer, Vector2& pos, int32 id)
 	{
 		state_ = PlayerState::ALIVE;
 		renderer_ = renderer;

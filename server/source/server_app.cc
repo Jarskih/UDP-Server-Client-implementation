@@ -180,7 +180,7 @@ void ServerApp::on_acknowledge(network::Connection* connection,
 void ServerApp::on_receive(network::Connection* connection,
 	network::NetworkStreamReader& reader)
 {
-	const uint32 id = clients_.find_client((uint64)connection);
+	const int32 id = clients_.find_client((uint64)connection);
 
 	while (reader.position() < reader.length()) {
 		switch (reader.peek()) {
@@ -239,7 +239,7 @@ void ServerApp::on_send(network::Connection* connection,
 	const uint16 sequence,
 	network::NetworkStreamWriter& writer)
 {
-	const uint32 id = clients_.find_client((uint64)connection);
+	const int32 id = clients_.find_client((uint64)connection);
 
 	{
 		network::NetworkMessageServerTick message(Time::now().as_ticks(), tick_);
@@ -490,7 +490,7 @@ void ServerApp::update_players(const Time& dt)
 	}
 }
 
-void ServerApp::destroy_projectile(uint32 id)
+void ServerApp::destroy_projectile(int32 id)
 {
 	for (auto& p : players_)
 	{
@@ -499,7 +499,7 @@ void ServerApp::destroy_projectile(uint32 id)
 	projectiles_to_remove_.push_back(id);
 }
 
-void ServerApp::destroy_player(uint32 id)
+void ServerApp::destroy_player(int32 id)
 {
 	for (auto& p : players_)
 	{
@@ -577,7 +577,7 @@ void ServerApp::check_collisions()
 	}
 }
 
-void ServerApp::remove_player(const uint32 id)
+void ServerApp::remove_player(const int32 id)
 {
 	auto it = players_.begin();
 	while (it != players_.end())
@@ -592,7 +592,7 @@ void ServerApp::remove_player(const uint32 id)
 	}
 }
 
-void ServerApp::spawn_projectile(const Vector2 pos, const float rotation, const uint32 id)
+void ServerApp::spawn_projectile(const Vector2 pos, const float rotation, const int32 id)
 {
 	Projectile e(pos, rotation, projectile_index_, id);
 	e.renderer_ = renderer_.get_renderer();
@@ -600,7 +600,7 @@ void ServerApp::spawn_projectile(const Vector2 pos, const float rotation, const 
 	projectiles_.push_back(e);
 }
 
-void ServerApp::remove_projectile(uint32 id)
+void ServerApp::remove_projectile(int32 id)
 {
 	auto it = projectiles_.begin();
 	while (it != projectiles_.end())
@@ -615,12 +615,12 @@ void ServerApp::remove_projectile(uint32 id)
 	}
 }
 
-bool ServerApp::contains(const DynamicArray<uint32>& arr, const uint32 id)
+bool ServerApp::contains(const DynamicArray<int32>& arr, const int32 id)
 {
 	return std::find(arr.begin(), arr.end(), id) != arr.end();
 }
 
-void ServerApp::remove_from_array(DynamicArray<Event>& arr, uint32 id)
+void ServerApp::remove_from_array(DynamicArray<Event>& arr, int32 id)
 {
 	auto it = arr.begin();
 	while (it != arr.end())

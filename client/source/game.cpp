@@ -68,16 +68,16 @@ namespace charlie
 		while (accumulator_ >= tickrate_) {
 			accumulator_ -= tickrate_;
 
-			networkinfo_.update(dt, connection_);
+			networkinfo_.update(tickrate_, connection_);
 
-			player_.update(dt, level_heigth_, level_width_);
+			player_.update(tickrate_, level_heigth_, level_width_);
 
 			{
-				const uint32 delayInTicks = (uint32)(networkinfo_.rtt_avg_ / tickrate_.as_milliseconds());
-
+				const auto send_delay = networkinfo_.rtt_avg_ * 0.5 / tickrate_.as_milliseconds();
+				const int buffer = 2;
 				gameplay::InputSnapshot snapshot;
 				snapshot.input_bits_ = player_.input_bits_;
-				snapshot.tick_ = server_tick_ + delayInTicks;
+				snapshot.tick_ = server_tick_ + (uint32)(ceil(send_delay + buffer));
 				snapshot.position_ = player_.transform_.position_;
 				snapshot.rotation_ = player_.transform_.rotation_;
 				snapshot.turret_rotation = player_.turret_transform_.rotation_;
@@ -87,9 +87,8 @@ namespace charlie
 
 			for (auto& entity : entities_)
 			{
-				entity.interpolator_.acc_ += dt;
-				gameplay::PositionSnapshot snapshot = entity.interpolator_.interpolate(
-					tickrate_, server_tick_, networkinfo_.rtt_avg_);
+				entity.interpolator_.acc_ += tickrate_;
+				const gameplay::PositionSnapshot snapshot = entity.interpolator_.interpolate(tickrate_, server_tick_, networkinfo_.rtt_avg_);
 				entity.transform_.position_ = snapshot.position;
 				entity.transform_.rotation_ = snapshot.rotation;
 				entity.turret_rotation_ = snapshot.turret_rotation;
@@ -184,7 +183,7 @@ namespace charlie
 					assert(!"could not read message!");
 				}
 
-				const uint32 id = message.entity_id_;
+				const int32 id = message.entity_id_;
 
 				gameplay::PositionSnapshot snapshot;
 				snapshot.tick_ = server_tick_;
@@ -451,7 +450,7 @@ namespace charlie
 		printf("RELIABLE MESSAGE: Player (id %i) spawned with message id: %i \n", message.entity_id_, message.event_id_);
 	}
 
-	void Game::remove_entity(uint32 id)
+	void Game::remove_entity(int32 id)
 	{
 		auto it = entities_.begin();
 		while (it != entities_.end())
@@ -465,7 +464,7 @@ namespace charlie
 		}
 	}
 
-	void Game::remove_projectile(uint32 id)
+	void Game::remove_projectile(int32 id)
 	{
 		auto it = projectiles_.begin();
 		while (it != projectiles_.end())
@@ -490,7 +489,7 @@ namespace charlie
 		printf("RELIABLE MESSAGE: Remote projectile: %i spawned with owner: %i \n", message.entity_id_, message.shot_by_);
 	}
 
-	bool Game::contains(const DynamicArray<Entity>& vector, uint32 id)
+	bool Game::contains(const DynamicArray<Entity>& vector, int32 id)
 	{
 		for (const auto& element : vector)
 		{
@@ -502,7 +501,7 @@ namespace charlie
 		return false;
 	}
 
-	bool Game::contains(const DynamicArray<Projectile>& vector, uint32 id)
+	bool Game::contains(const DynamicArray<Projectile>& vector, int32 id)
 	{
 		for (const auto& element : vector)
 		{
@@ -514,7 +513,7 @@ namespace charlie
 		return false;
 	}
 
-	void Game::create_ack_message(uint32 event_id_)
+	void Game::create_ack_message(int32 event_id_)
 	{
 		network::NetworkMessageAck msg;
 		msg.event_id_ = event_id_;

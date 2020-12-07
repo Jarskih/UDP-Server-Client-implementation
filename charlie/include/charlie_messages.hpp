@@ -37,8 +37,8 @@ namespace charlie {
 
 		struct NetworkMessageServerTick {
 			NetworkMessageServerTick();
-			explicit NetworkMessageServerTick(const int64  server_time,
-				const uint32 server_tick);
+			explicit NetworkMessageServerTick(int64  server_time,
+				const int32 server_tick);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -55,12 +55,12 @@ namespace charlie {
 
 			uint8 type_;
 			int64 server_time_;
-			uint32 server_tick_;
+			int32 server_tick_;
 		};
 
 		struct NetworkMessageEntityState {
 			NetworkMessageEntityState();
-			explicit NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 entity_id);
+			explicit NetworkMessageEntityState(const Transform& transform, float turret_rotation, int32 entity_id);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -79,10 +79,10 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint16 x_;
-			uint16 y_;
+			int16 x_;
+			int16 y_;
 			int16 rotation_;
-			uint8 entity_id_;
+			int8 entity_id_;
 			int16 turret_rotation_;
 		};
 
@@ -131,8 +131,8 @@ namespace charlie {
 
 			uint8 type_;
 			int16 rotation_;
-			uint16 y_;
-			uint16 x_;
+			int16 y_;
+			int16 x_;
 			int16 turret_rotation_;
 		};
 
@@ -161,7 +161,7 @@ namespace charlie {
 		struct NetworkMessagePlayerSpawn
 		{
 			NetworkMessagePlayerSpawn();
-			explicit NetworkMessagePlayerSpawn(uint32 event_id, uint32 entity_id, const Vector2& position);
+			explicit NetworkMessagePlayerSpawn(int32 event_id, int32 entity_id, const Vector2& position);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -186,7 +186,7 @@ namespace charlie {
 		struct NetworkMessageEntitySpawn
 		{
 			NetworkMessageEntitySpawn();
-			explicit NetworkMessageEntitySpawn(uint32 event_id, uint32 entity_id, const Vector2& position);
+			explicit NetworkMessageEntitySpawn(int32 event_id, int32 entity_id, const Vector2& position);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -205,13 +205,13 @@ namespace charlie {
 			uint8 type_;
 			Vector2 position_;
 			uint8 entity_id_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessageProjectileSpawn
 		{
 			NetworkMessageProjectileSpawn();
-			explicit NetworkMessageProjectileSpawn(uint32 event_id, uint32 entity_id, uint32 shot_by, const Vector2& position, float rotation);
+			explicit NetworkMessageProjectileSpawn(int32 event_id, int32 entity_id, int32 shot_by, const Vector2& position, float rotation);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -240,7 +240,7 @@ namespace charlie {
 		struct NetworkMessagePlayerDisconnected
 		{
 			NetworkMessagePlayerDisconnected();
-			explicit NetworkMessagePlayerDisconnected(uint32 entity_id, uint32 message_id);
+			explicit NetworkMessagePlayerDisconnected(int32 entity_id, int32 message_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -262,7 +262,7 @@ namespace charlie {
 		struct NetworkMessageProjectileDestroy
 		{
 			NetworkMessageProjectileDestroy();
-			explicit NetworkMessageProjectileDestroy(uint32 entity_id, uint32 event_id);
+			explicit NetworkMessageProjectileDestroy(int32 entity_id, int32 event_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -278,13 +278,13 @@ namespace charlie {
 
 			uint8 type_;
 			uint8 entity_id_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessageEntityDestroy
 		{
 			NetworkMessageEntityDestroy();
-			explicit NetworkMessageEntityDestroy(uint32 entity_id, uint32 event_id);
+			explicit NetworkMessageEntityDestroy(int32 entity_id, int32 event_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -300,13 +300,13 @@ namespace charlie {
 
 			uint8 type_;
 			uint8 entity_id_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessagePlayerDestroy
 		{
 			NetworkMessagePlayerDestroy();
-			explicit NetworkMessagePlayerDestroy(uint32 entity_id, uint32 event_id);
+			explicit NetworkMessagePlayerDestroy(int32 entity_id, int32 event_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -322,13 +322,13 @@ namespace charlie {
 
 			uint8 type_;
 			uint8 entity_id_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessageLevelInfo
 		{
 			NetworkMessageLevelInfo();
-			explicit NetworkMessageLevelInfo(uint8 level_id, uint8 size_x_, uint8 size_y_, uint32 event_id);
+			explicit NetworkMessageLevelInfo(uint8 level_id, uint8 size_x_, uint8 size_y_, int32 event_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -348,13 +348,13 @@ namespace charlie {
 			uint8 level_id_;
 			uint8 size_x_;
 			uint8 size_y_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessageLevelDataRequest
 		{
 			NetworkMessageLevelDataRequest();
-			explicit NetworkMessageLevelDataRequest(uint32 event_id_);
+			explicit NetworkMessageLevelDataRequest(int32 event_id_);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -368,13 +368,13 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessageLevelData
 		{
 			NetworkMessageLevelData();
-			explicit NetworkMessageLevelData(Tile level_tile, uint32 event_id);
+			explicit NetworkMessageLevelData(Tile level_tile, int32 event_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -394,7 +394,7 @@ namespace charlie {
 			uint8 level_tile_;
 			uint8 x_;
 			uint8 y_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessageMasterServer

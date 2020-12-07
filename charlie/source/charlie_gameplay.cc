@@ -77,7 +77,7 @@ namespace charlie {
 			buffer_[snapshot.tick_ % buffer_size_] = snapshot;
 		}
 
-		Vector2 Inputinator::correct_predicted_position(const uint32 tick, const Time tickrate, const Vector2 server_position, const float speed)
+		Vector2 Inputinator::correct_predicted_position(const int32 tick, const Time tickrate, const Vector2 server_position, const float speed)
 		{
 			Vector2 position_at_tick = server_position;
 			for (int i = 0; i < buffer_size_; i++)
@@ -139,12 +139,12 @@ namespace charlie {
 			index_ += 1;
 		}
 
-		Message ReliableMessageQueue::get_message(uint32 tick)
+		Message ReliableMessageQueue::get_message(int32 tick)
 		{
 			return buffer_[tick % buffer_size_];
 		}
 
-		void ReliableMessageQueue::mark_received(const uint32 id)
+		void ReliableMessageQueue::mark_received(const int32 id)
 		{
 			for (auto& msg : buffer_)
 			{

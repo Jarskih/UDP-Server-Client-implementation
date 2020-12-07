@@ -29,9 +29,9 @@ namespace charlie
 		SDL_Point point;
 		RectangleCollider collider_;
 
-		uint32 id_;
+		int32 id_;
 		Transform transform_;
-		uint32 owner_;
+		int32 owner_;
 		float speed_;
 		Vector2 direction_;
 		Time lifetime_;

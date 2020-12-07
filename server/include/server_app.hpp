@@ -38,15 +38,15 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	// note: gameplay
 	void read_input_queue();
 	void update_players(const Time& dt);
-	void destroy_projectile(uint32 id);
-	void destroy_player(uint32 id);
+	void destroy_projectile(int32 id);
+	void destroy_player(int32 id);
 	void check_collisions();
-	void remove_player(uint32 id);
-	void spawn_projectile(Vector2 pos, float rotation, uint32 id);
-	void remove_projectile(uint32 id);
+	void remove_player(int32 id);
+	void spawn_projectile(Vector2 pos, float rotation, int32 id);
+	void remove_projectile(int32 id);
 
-	static void remove_from_array(DynamicArray<Event>& arr, uint32 id);
-	static bool contains(const DynamicArray<uint32>& arr, uint32 id);
+	static void remove_from_array(DynamicArray<Event>& arr, int32 id);
+	static bool contains(const DynamicArray<int32>& arr, int32 id);
 
 	// note: Network
 	ServerRegister server_register_;

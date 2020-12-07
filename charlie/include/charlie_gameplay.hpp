@@ -20,15 +20,16 @@ namespace charlie {
 
 		struct InputCommand
 		{
-			uint32 id_;
+			int32 id_;
 			uint8 input_bits_;
 			float rot_;
 			bool fire_;
+			int32 tick_;
 		};
 
 		struct InputSnapshot {
 			InputSnapshot();
-			uint32 tick_;
+			int32 tick_;
 			uint8 input_bits_;
 			Vector2 position_;
 			float rotation_;
@@ -39,7 +40,7 @@ namespace charlie {
 		struct PositionSnapshot
 		{
 			PositionSnapshot();
-			uint32 tick_;
+			int32 tick_;
 			Vector2 position;
 			Time servertime_;
 			float rotation;
@@ -61,7 +62,7 @@ namespace charlie {
 		{
 			Inputinator();
 			void add_snapshot(InputSnapshot snapshot);
-			Vector2 correct_predicted_position(uint32 tick, Time tickrate, Vector2 server_position, float speed);
+			Vector2 correct_predicted_position(int32 tick, Time tickrate, Vector2 server_position, float speed);
 			Vector2 get_position_from_tick(uint32 tick) const;
 			void modify_position(uint32 tick, const Vector2 position);
 			InputSnapshot get_snapshot(uint32 index);
@@ -73,7 +74,7 @@ namespace charlie {
 		struct Message
 		{
 			uint16 seq_;
-			uint32 id_;
+			int32 id_;
 			bool received_;
 		};
 
@@ -81,8 +82,8 @@ namespace charlie {
 		{
 			ReliableMessageQueue();
 			void add_message(Message& msg);
-			Message get_message(uint32 tick);
-			void mark_received(uint32 id);
+			Message get_message(int32 tick);
+			void mark_received(int32 id);
 			static constexpr int buffer_size_ = 100;
 			Message buffer_[buffer_size_];
 			uint32 index_;
