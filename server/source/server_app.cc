@@ -217,6 +217,14 @@ void ServerApp::on_receive(network::Connection* connection,
 			reliable_events_.send_level_data(tile, id);
 		} break;
 
+		case(network::NETWORK_MESSAGE_ACK):
+			{
+			network::NetworkMessageLevelDataRequest msg;
+			if (!msg.read(reader)) {
+				assert(!"could not read command!");
+			}
+			} break;
+			
 		default:
 		{
 			assert(!"unknown message type received from client!");
