@@ -1,9 +1,9 @@
 var PORT = 5555;
-var HOST = 'localhost';
+var HOST = '82.117.111.100';
 var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 var servers = [];
-var timeOutTime = 900 * 1000; // 15 min to ms
+var timeOutTime = 30 * 1000; // 30 seconds to ms
 
 const messagetypes = {
     HEARTBEAT: "0",
@@ -67,7 +67,7 @@ function sendServer(remote) {
 
         const offset = 0;
         const package_type = messagetypes.DATA_PACKAGE;
-        const addressArr = servers[0].address.split('.');
+        const addressArr = servers[0].address.split('.'); // Choose first server in the server array
 
         var byteArray = new Uint8Array(addressArr.length + 1);
         for (var i = 0; i < addressArr.length + 1; i++) {

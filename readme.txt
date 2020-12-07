@@ -12,7 +12,8 @@ Reliable messages (reliable_events.h & charlie_gameplay.hpp)
 
 Pass w/ Distinction:
 
-Map downloading from server if not found on client. Does not save the map on file only to memory. 
+Map downloading 
+- Client downloads the map from the server if not found on the client. Note: does not save the map on file. 
 - I did not figure out how to send out map (did not fit in one package?) in less packages so now it will send every tile as separate package.
 
 Cut bandwidth usage

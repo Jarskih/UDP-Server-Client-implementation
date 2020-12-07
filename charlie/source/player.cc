@@ -21,6 +21,7 @@ namespace charlie
 		, turret_window_rect_()
 		, point()
 		, input_bits_(0)
+		, fire_(false)
 		, id_(0)
 		, collider_offset_x_(0)
 		, collider_offset_y_(0)
@@ -28,7 +29,6 @@ namespace charlie
 		, tank_turn_speed_(config::PLAYER_TURN_SPEED)
 		, turret_turn_speed_(100)
 		, state_(PlayerState::WAITING_TO_SPAWN)
-		, fire_(false)
 	{
 		fire_delay_ = Time(config::FIRE_DELAY);
 		fire_acc_ = fire_delay_;
@@ -174,14 +174,14 @@ namespace charlie
 		SDL_RenderDrawRect(renderer_, &mouse);
 	}
 
-	void Player::load_body_sprite(const char* body, int srcX, int srcY, int srcW, int srcH)
+	void Player::load_body_sprite(const std::string body, int srcX, int srcY, int srcW, int srcH)
 	{
 		body_sprite_ = Singleton<SpriteHandler>::Get()->create_sprite(body, srcX, srcY, srcW, srcH);
 		body_window_rect_ = { srcX, srcY, body_sprite_->get_area().w, body_sprite_->get_area().h };
 		transform_.set_origin(Vector2(body_window_rect_.w / 2, body_window_rect_.h / 2));
 	}
 
-	void Player::load_turret_sprite(const char* turret, int srcX, int srcY, int srcW, int srcH)
+	void Player::load_turret_sprite(const std::string turret, int srcX, int srcY, int srcW, int srcH)
 	{
 		turret_sprite_ = Singleton<SpriteHandler>::Get()->create_sprite(turret, srcX, srcY, srcW, srcH);
 		turret_window_rect_ = { srcX, srcY, turret_sprite_->get_area().w, turret_sprite_->get_area().h };

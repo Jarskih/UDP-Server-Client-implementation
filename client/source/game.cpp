@@ -88,9 +88,11 @@ namespace charlie
 			for (auto& entity : entities_)
 			{
 				entity.interpolator_.acc_ += dt;
-				entity.transform_.position_ = entity.interpolator_.interpolate_pos(networkinfo_.rtt_avg_);
-				entity.transform_.rotation_ = entity.interpolator_.interpolate_rot();
-				entity.turret_rotation_ = entity.interpolator_.interpolate_turret_rot();
+				gameplay::PositionSnapshot snapshot = entity.interpolator_.interpolate(
+					tickrate_, server_tick_, networkinfo_.rtt_avg_);
+				entity.transform_.position_ = snapshot.position;
+				entity.transform_.rotation_ = snapshot.rotation;
+				entity.turret_rotation_ = snapshot.turret_rotation;
 			}
 
 			for (auto& projectile : projectiles_)
@@ -147,7 +149,7 @@ namespace charlie
 
 		networkinfo_.render(renderer_, connection_, text_handler_);
 
-		if(connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
+		if (connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
 		{
 			SDL_RenderCopy(renderer_, disconnected_->get_texture(), nullptr, nullptr);
 		}
@@ -184,7 +186,7 @@ namespace charlie
 
 				const uint32 id = message.entity_id_;
 
-				gameplay::PosSnapshot snapshot;
+				gameplay::PositionSnapshot snapshot;
 				snapshot.tick_ = server_tick_;
 				snapshot.servertime_ = server_time_;
 				snapshot.position.x_ = message.x_;
@@ -222,7 +224,7 @@ namespace charlie
 				const float correct_dist = 5.0f;
 				if (diff.length() > correct_dist)
 				{
-					player_.transform_.position_ = inputinator_.get_corrected_position(server_tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
+					player_.transform_.position_ = inputinator_.correct_predicted_position(server_tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
 					networkinfo_.input_misprediction_++;
 				}
 
@@ -456,7 +458,6 @@ namespace charlie
 		{
 			if ((*it).id_ == id)
 			{
-				(*it).destroy();
 				entities_.erase(it);
 				break;
 			}

@@ -14,12 +14,12 @@ namespace charlie
 	}
 
 
-	SDLSprite* SpriteHandler::create_sprite(const char* p_filePath, int p_x, int p_y, int p_w, int p_h)
+	SDLSprite* SpriteHandler::create_sprite(const std::string p_filePath, int p_x, int p_y, int p_w, int p_h)
 	{
 		const auto it = textures_.find(p_filePath);
 		if (it == textures_.end())
 		{
-			SDL_Surface* surface = IMG_Load(p_filePath);
+			SDL_Surface* surface = IMG_Load(p_filePath.c_str());
 			if (surface == nullptr)
 			{
 				SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load surface: %s", SDL_GetError());
@@ -28,7 +28,7 @@ namespace charlie
 			SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer_, surface);
 
 			textures_[p_filePath] = texture;
-			SDLSprite* const sprite = new SDLSprite(*texture, p_x, p_y, p_w, p_h);
+			const auto sprite = new SDLSprite(*texture, p_x, p_y, p_w, p_h);
 			sprites_.push_back(sprite);
 			SDL_FreeSurface(surface);
 			return sprite;
@@ -39,6 +39,5 @@ namespace charlie
 			sprites_.push_back(sprite);
 			return sprite;
 		}
-		return nullptr;
 	}
 }
