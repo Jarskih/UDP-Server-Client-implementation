@@ -64,7 +64,7 @@ namespace charlie {
 			void add_snapshot(InputSnapshot snapshot);
 			Vector2 correct_predicted_position(int32 tick, Time tickrate, Vector2 server_position, float speed);
 			Vector2 get_position_from_tick(uint32 tick) const;
-			void modify_position(uint32 tick, const Vector2 position);
+			void update_predicted_position(uint32 tick, const Vector2 position);
 			InputSnapshot get_snapshot(uint32 index);
 		private:
 			static constexpr int buffer_size_ = 60;

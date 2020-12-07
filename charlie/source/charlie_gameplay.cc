@@ -80,10 +80,8 @@ namespace charlie {
 		Vector2 Inputinator::correct_predicted_position(const int32 tick, const Time tickrate, const Vector2 server_position, const float speed)
 		{
 			Vector2 position_at_tick = server_position;
-			for (int i = 0; i < buffer_size_; i++)
+			for (auto input : buffer_)
 			{
-				const auto input = buffer_[i];
-
 				if (input.tick_ > tick)
 				{
 					// simulate player past movement
@@ -108,7 +106,7 @@ namespace charlie {
 
 					direction.normalize();
 					position_at_tick += direction * speed * tickrate.as_seconds();
-					modify_position(tick, position_at_tick);
+					update_predicted_position(input.tick_, position_at_tick);
 				}
 			}
 			return position_at_tick;
@@ -119,9 +117,9 @@ namespace charlie {
 			return buffer_[tick % buffer_size_].position_;
 		}
 
-		void Inputinator::modify_position(const uint32 tick, const Vector2 position)
+		void Inputinator::update_predicted_position(const uint32 tick, const Vector2 position)
 		{
-			buffer_[tick & buffer_size_].position_ = position;
+			buffer_[tick % buffer_size_].position_ = position;
 		}
 
 		InputSnapshot Inputinator::get_snapshot(uint32 tick)
