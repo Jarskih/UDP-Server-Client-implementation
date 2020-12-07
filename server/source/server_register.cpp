@@ -13,7 +13,7 @@ namespace charlie
 
 	void ServerRegister::read_master_server_address()
 	{
-		std::ifstream file(config::MASTER_SERVER_FILE);
+		std::ifstream file(config::MASTER_SERVER_FILE.c_str());
 		if (!file.is_open())
 		{
 			printf("ServerRegister: Failed to open master server file \n");

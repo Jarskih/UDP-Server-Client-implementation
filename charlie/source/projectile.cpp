@@ -84,7 +84,7 @@ namespace charlie
 		//SDL_RenderDrawRect(renderer_, &collider_rect_);
 	}
 
-	void Projectile::load_sprite(const char* body, int srcX, int srcY, int srcW, int srcH)
+	void Projectile::load_sprite(std::string body, int srcX, int srcY, int srcW, int srcH)
 	{
 		sprite_ = Singleton<SpriteHandler>::Get()->create_sprite(body, srcX, srcY, srcW, srcH);
 		window_rect_ = { srcX, srcY, sprite_->get_area().w, sprite_->get_area().h };

@@ -9,7 +9,7 @@ namespace charlie
 	{
 		MasterServerClient();
 		void read_master_server_address();
-		void request_server();
+		void request_server() const;
 		bool receive_messages();
 		network::IPAddress master_server_;
 		network::IPAddress server_;

@@ -3,7 +3,7 @@
 
 namespace charlie
 {
-	SDLSprite::SDLSprite(SDL_Texture& p_texture, int p_x, int p_y, int p_w, int p_h)
+	SDLSprite::SDLSprite(SDL_Texture& p_texture, const int p_x, const int p_y, const int p_w, const int p_h)
 	{
 		texture_ = &p_texture;
 		area_.x = p_x;
@@ -14,7 +14,7 @@ namespace charlie
 
 	void SDLSprite::destroy()
 	{
-		if(texture_ != nullptr)	{
+		if (texture_ != nullptr) {
 			SDL_DestroyTexture(texture_);
 		}
 		texture_ = nullptr;
@@ -22,18 +22,18 @@ namespace charlie
 
 	SDLSprite::~SDLSprite()
 	{
-		if(texture_ != nullptr)	{
+		if (texture_ != nullptr) {
 			SDL_DestroyTexture(texture_);
 		}
 		texture_ = nullptr;
 	}
 
-	SDL_Texture* SDLSprite::get_texture()
+	SDL_Texture* SDLSprite::get_texture() const
 	{
 		return texture_;
 	}
 
-	SDL_Rect SDLSprite::get_area()
+	SDL_Rect SDLSprite::get_area() const
 	{
 		return area_;
 	}

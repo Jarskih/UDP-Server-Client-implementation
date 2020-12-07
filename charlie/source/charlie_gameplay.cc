@@ -116,54 +116,55 @@ namespace charlie {
 		{
 		}
 
-		PosSnapshot::PosSnapshot() : tick_(0), rotation(0), turret_rotation(0)
+		PositionSnapshot::PositionSnapshot() : tick_(0), rotation(0), turret_rotation(0)
 		{
 		}
 
-		Interpolator::Interpolator() : interpolateTime_(Time(0.2)), acc_(Time(0.0))
+
+		Interpolator::Interpolator() : acc_(Time(0.0)), interpolate_time_(0.200f)
 		{
 		}
 
-		Vector2 Interpolator::interpolate_pos(const float rtt) const
+		int Interpolator::get_snapshot_index(const float interpolate_time) const
 		{
+			int snapshot_index = 0;
+
+			for (size_t i = snapshots_.size() - 1; i > 0; i--)
+			{
+				if (snapshots_[i].tick_ < interpolate_time)
+				{
+					snapshot_index = (int)i;
+					break;
+				}
+			}
+			return snapshot_index;
+		}
+
+		PositionSnapshot Interpolator::interpolate(Time tickrate, uint32 server_tick, const float rtt) const
+		{
+			PositionSnapshot snapshot;
+
 			if (snapshots_.size() < 2)
 			{
-				return Vector2(0, 0);
+				return snapshot;
 			}
-			const auto start = snapshots_[snapshots_.size() - 2];
-			const auto end = snapshots_[snapshots_.size() - 1];
-			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
-			const Vector2 newPos = Vector2::lerp(start.position, end.position, t);
-			return newPos;
+
+			// Find snapshot 200ms or more in the past
+			const float interpolate_time = server_tick - (interpolate_time_ / tickrate.as_seconds());
+			const int snapshot_index = get_snapshot_index(interpolate_time);
+
+			const PositionSnapshot& start = snapshots_[snapshot_index];
+			const PositionSnapshot& end = snapshots_[snapshots_.size() - 1];
+			const float delta = tickrate.as_milliseconds() * (end.tick_ - start.tick_);
+			const float t = acc_.as_milliseconds() / delta;
+			snapshot.position = Vector2::lerp(start.position, end.position, t);
+			snapshot.rotation = Vector2::lerp(start.rotation, end.rotation, t);
+			snapshot.turret_rotation = Vector2::lerp(start.turret_rotation, end.turret_rotation, t);
+
+			return snapshot;
 		}
 
-		float Interpolator::interpolate_rot() const
-		{
-			if (snapshots_.size() < 2)
-			{
-				return 0;
-			}
-			const auto start = snapshots_[snapshots_.size() - 2];
-			const auto end = snapshots_[snapshots_.size() - 1];
-			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
-
-			return Vector2::lerp(start.rotation, end.rotation, t);
-		}
-
-		float Interpolator::interpolate_turret_rot() const
-		{
-			if (snapshots_.size() < 2)
-			{
-				return 0;
-			}
-			const auto start = snapshots_[snapshots_.size() - 2];
-			const auto end = snapshots_[snapshots_.size() - 1];
-			const float t = acc_.as_milliseconds() / interpolateTime_.as_milliseconds();
-
-			return Vector2::lerp(start.turret_rotation, end.turret_rotation, t);;
-		}
-
-		void Interpolator::add_position(PosSnapshot snapshot)
+		void Interpolator::add_position(PositionSnapshot snapshot)
 		{
 			snapshots_.push_back(snapshot);
 		}
@@ -183,9 +184,9 @@ namespace charlie {
 			buffer_[snapshot.tick_ % buffer_size_] = snapshot;
 		}
 
-		Vector2 Inputinator::get_corrected_position(const uint32 tick, const Time tickrate, const Vector2 serverpos, const float speed) const
+		Vector2 Inputinator::correct_predicted_position(const uint32 tick, const Time tickrate, const Vector2 server_position, const float speed)
 		{
-			Vector2 startingPos = serverpos;
+			Vector2 position_at_tick = server_position;
 			for (int i = 0; i < buffer_size_; i++)
 			{
 				const auto input = buffer_[i];
@@ -212,18 +213,22 @@ namespace charlie {
 						direction.x_ += 1.0f;
 					}
 
-					if (direction.length() > 0.0f) {
-						direction.normalize();
-						startingPos += direction * speed * tickrate.as_seconds();
-					}
+					direction.normalize();
+					position_at_tick += direction * speed * tickrate.as_seconds();
+					modify_position(tick, position_at_tick);
 				}
 			}
-			return startingPos;
+			return position_at_tick;
 		}
 
-		Vector2 Inputinator::old_pos(uint32 tick) const
+		Vector2 Inputinator::get_position_from_tick(uint32 tick) const
 		{
 			return buffer_[tick % buffer_size_].position_;
+		}
+
+		void Inputinator::modify_position(const uint32 tick, const Vector2 position)
+		{
+			buffer_[tick & buffer_size_].position_ = position;
 		}
 
 		InputSnapshot Inputinator::get_snapshot(uint32 tick)
@@ -246,14 +251,14 @@ namespace charlie {
 			return buffer_[tick % buffer_size_];
 		}
 
-		void ReliableMessageQueue::mark_received(const uint32 id)
+		void ReliableMessageQueue::mark_received(const uint16 id)
 		{
 			for (auto& msg : buffer_)
 			{
-				if (msg.id_ == id)
+				if (msg.seq_ == (int16)id)
 				{
 					msg.received_ = true;
-					printf("RELIABLE MESSAGE: Received message with id %i \n", (int)msg.id_);
+					printf("RELIABLE MESSAGE: Received message with acq %i \n", id);
 					break;
 				}
 			}

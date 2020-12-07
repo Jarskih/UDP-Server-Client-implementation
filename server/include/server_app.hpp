@@ -15,8 +15,6 @@ using namespace charlie;
 struct ServerApp final : SDLApplication, network::IServiceListener, network::IConnectionListener {
 	ServerApp();
 
-	static int register_server(network::IPAddress address, std::string message);
-
 	// note: Application
 	virtual bool on_init();
 	virtual void on_exit();
@@ -45,7 +43,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	void spawn_projectile(Vector2 pos, float rotation, uint32 id);
 	void remove_projectile(uint32 id);
 
-	static void remove_from_array(DynamicArray<Event>& arr, uint32 id);
+	static void remove_from_array(DynamicArray<Event>& arr, uint16 id);
 	static bool contains(const DynamicArray<uint32>& arr, uint32 id);
 
 	// note: Network

@@ -106,7 +106,7 @@ namespace charlie {
 		SDL_Color color, int x, int y)
 	{
 		rect_ = { x, y, static_cast<int>(text.length()) * 10, 15 };
-		SDLSprite* sprite = text_handler.CreateText(text, color, rect_.x, rect_.y, rect_.w, rect_.h);
+		std::unique_ptr<SDLSprite> sprite = text_handler.CreateText(text, color, rect_.x, rect_.y, rect_.w, rect_.h);
 		SDL_RenderCopy(renderer, sprite->get_texture(), nullptr, &rect_);
 		sprite->destroy();
 	}

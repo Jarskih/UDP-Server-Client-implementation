@@ -2,6 +2,7 @@
 #include "charlie.hpp"
 #include "sdl_collider.h"
 #include "sdl_sprite.hpp"
+#include <string>
 
 namespace charlie
 {
@@ -16,7 +17,7 @@ namespace charlie
 
 		void update(Time deltaTime);
 		void render(SDL_Rect cameraPos);
-		void load_sprite(const char* body, int srcX, int srcY, int srcW, int srcH);
+		void load_sprite(std::string body, int srcX, int srcY, int srcW, int srcH);
 		bool is_dead() const;
 		void destroy();
 		void on_collision();

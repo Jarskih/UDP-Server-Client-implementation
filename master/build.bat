@@ -1,0 +1,1 @@
+pkg index.js --target node12-win-x64

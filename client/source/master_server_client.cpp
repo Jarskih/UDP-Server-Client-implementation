@@ -12,7 +12,7 @@ namespace charlie
 
 	void MasterServerClient::read_master_server_address()
 	{
-		std::ifstream file(config::MASTER_SERVER_FILE);
+		std::ifstream file(config::MASTER_SERVER_FILE.c_str());
 		if (!file.is_open())
 		{
 			printf("ServerRegister: Failed to open master server file \n");
@@ -35,16 +35,11 @@ namespace charlie
 		master_server_ = network::IPAddress((uint8)address[0], (uint8)address[1], (uint8)address[2], (uint8)address[3], (uint16)address[4]);
 	}
 
-	void MasterServerClient::request_server()
+	void MasterServerClient::request_server() const
 	{
-		sockaddr_in master = {};
-		master.sin_family = AF_INET;
-		master.sin_port = htons(master_server_.port_);
-		master.sin_addr.s_addr = htonl(master_server_.host_);
-
 		const SOCKET client = socket(AF_INET, SOCK_STREAM, 0);
 
-		const int result = sendto(client, REQUESTSERVER.c_str(), (int)REQUESTSERVER.size(), 0, (const sockaddr*)&master, sizeof(SOCKADDR));
+		const int result = send(client, REQUESTSERVER.c_str(), (int)REQUESTSERVER.size(), 0);
 
 		if (result == -1)
 		{

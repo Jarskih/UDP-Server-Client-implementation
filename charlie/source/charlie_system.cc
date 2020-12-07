@@ -349,7 +349,7 @@ win32_main_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 namespace charlie {
-	
+
 	Point::Point()
 		: x_(0)
 		, y_(0)

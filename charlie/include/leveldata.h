@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <string>
-
 #include "charlie.hpp"
 
 namespace charlie
@@ -15,7 +14,7 @@ namespace charlie
 	struct Leveldata
 	{
 		Leveldata();
-		void get_size(const char* path);
+		void get_size(std::string path);
 		bool create_level(uint8 name);
 		int get_tile_type(int x, int y);
 		Tile get_tile(uint32 tile_number);

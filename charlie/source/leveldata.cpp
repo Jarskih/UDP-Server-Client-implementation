@@ -11,9 +11,9 @@ namespace charlie
 	{
 	}
 
-	void Leveldata::get_size(const char* path)
+	void Leveldata::get_size(const std::string path)
 	{
-		std::ifstream map(path);
+		std::ifstream map(path.c_str());
 		//If the map couldn't be loaded
 		if (!map.is_open())
 		{
@@ -45,9 +45,9 @@ namespace charlie
 
 	bool Leveldata::create_level(uint8 level_id)
 	{
-		const std::string id_string = "map" + std::to_string(level_id) + ".txt";
-		std::string prefix = config::LEVEL_PATH_PREFIX;
-		const char* path = (prefix.append(id_string)).c_str();
+		const auto id_string = "map" + std::to_string(level_id) + ".txt";
+		auto prefix = config::LEVEL_PATH_PREFIX;
+		const auto path = (prefix.append(id_string)).c_str();
 		get_size(path);
 
 		std::ifstream map(path);
@@ -82,7 +82,7 @@ namespace charlie
 					return false;
 				}
 
-				const Tile tile{ (uint8)id, (uint8)x, (uint8)y };
+				const Tile tile{ static_cast<uint8>(id), static_cast<uint8>(x), static_cast<uint8>(y) };
 				tiles_[y * sizeX_ + x] = tile;
 
 			}
@@ -91,9 +91,9 @@ namespace charlie
 		return true;
 	}
 
-	int Leveldata::get_tile_type(int x, int y)
+	int Leveldata::get_tile_type(const int x, const int y)
 	{
-		int type = tiles_[y * sizeX_ + x].tile_id_;
+		const int type = tiles_[y * sizeX_ + x].tile_id_;
 
 		if (type != LevelObjectType::COLLIDER && type != LevelObjectType::FREE && type != LevelObjectType::SPAWN_POINT)
 		{

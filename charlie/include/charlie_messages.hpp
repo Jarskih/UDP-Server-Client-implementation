@@ -36,7 +36,7 @@ namespace charlie {
 		static_assert(NETWORK_MESSAGE_COUNT <= 255, "network message type cannot exceed 255!");
 
 		struct NetworkMessageServerTick {
-			NetworkMessageServerTick();
+			NetworkMessageServerTick() = default;
 			explicit NetworkMessageServerTick(const int64  server_time,
 				const uint32 server_tick);
 
@@ -53,13 +53,13 @@ namespace charlie {
 				return result;
 			}
 
-			uint8 type_;
-			int64 server_time_;
-			uint32 server_tick_;
+			uint8 type_ = NETWORK_MESSAGE_SERVER_TICK;
+			int64 server_time_ = 0;
+			uint32 server_tick_ = 0;
 		};
 
 		struct NetworkMessageEntityState {
-			NetworkMessageEntityState();
+			NetworkMessageEntityState() = default;
 			explicit NetworkMessageEntityState(const Transform& transform, float turret_rotation, uint32 entity_id);
 
 			bool read(NetworkStreamReader& reader);
@@ -78,16 +78,16 @@ namespace charlie {
 				return result;
 			}
 
-			uint8 type_;
-			uint16 x_;
-			uint16 y_;
-			int16 rotation_;
-			uint8 entity_id_;
-			int16 turret_rotation_;
+			uint8 type_ = NETWORK_MESSAGE_ENTITY_STATE;
+			int16 x_ = 0;
+			int16 y_ = 0;
+			int16 rotation_ = 0;
+			uint8 entity_id_ = 0;
+			int16 turret_rotation_ = 0;
 		};
 
 		struct NetworkMessageInputCommand {
-			NetworkMessageInputCommand();
+			NetworkMessageInputCommand() = default;
 			explicit NetworkMessageInputCommand(uint8 bits, float rotation, bool fire);
 
 			bool read(NetworkStreamReader& reader);
@@ -104,14 +104,14 @@ namespace charlie {
 				return result;
 			}
 
-			uint8 type_;
-			uint8 bits_;
-			int16 rot_;
-			bool fire_;
+			uint8 type_ = NETWORK_MESSAGE_INPUT_COMMAND;
+			uint8 bits_ = 0;
+			int16 rot_ = 0;
+			bool fire_ = false;
 		};
 
 		struct NetworkMessagePlayerState {
-			NetworkMessagePlayerState();
+			NetworkMessagePlayerState() = default;
 			explicit NetworkMessagePlayerState(const Transform& transform, float turret_rotation);
 
 			bool read(NetworkStreamReader& reader);
@@ -129,19 +129,18 @@ namespace charlie {
 				return result;
 			}
 
-			uint8 type_;
-			int16 rotation_;
-			uint16 y_;
-			uint16 x_;
-			int16 turret_rotation_;
+			uint8 type_ = NETWORK_MESSAGE_PLAYER_STATE;
+			int16 rotation_ = 0;
+			int16 y_ = 0;
+			int16 x_ = 0;
+			int16 turret_rotation_ = 0;
 		};
 
 		// Reliable messages
 
 		struct NetworkMessageAck
 		{
-			NetworkMessageAck();
-			explicit NetworkMessageAck(const uint32 id);
+			NetworkMessageAck() = default;
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -150,18 +149,16 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_ACK;
 		};
 
 		struct NetworkMessagePlayerSpawn
 		{
-			NetworkMessagePlayerSpawn();
-			explicit NetworkMessagePlayerSpawn(uint32 event_id, uint32 entity_id, const Vector2& position);
+			NetworkMessagePlayerSpawn() = default;
+			NetworkMessagePlayerSpawn(uint32 entity_id, const Vector2& position);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -173,20 +170,19 @@ namespace charlie {
 				result &= stream.serialize(position_.x_);
 				result &= stream.serialize(position_.y_);
 				result &= stream.serialize(entity_id_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
+
+			uint8 type_ = NETWORK_MESSAGE_PLAYER_SPAWN;
 			Vector2 position_;
-			uint8 entity_id_;
-			uint32 event_id_;
+			uint8 entity_id_ = 0;
 		};
 
 		struct NetworkMessageEntitySpawn
 		{
-			NetworkMessageEntitySpawn();
-			explicit NetworkMessageEntitySpawn(uint32 event_id, uint32 entity_id, const Vector2& position);
+			NetworkMessageEntitySpawn() = default;
+			NetworkMessageEntitySpawn(uint32 entity_id, const Vector2& position);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -198,20 +194,18 @@ namespace charlie {
 				result &= stream.serialize(position_.x_);
 				result &= stream.serialize(position_.y_);
 				result &= stream.serialize(entity_id_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
+			uint8 type_ = NETWORK_MESSAGE_ENTITY_SPAWN;
 			Vector2 position_;
-			uint8 entity_id_;
-			uint32 event_id_;
+			uint8 entity_id_ = 0;
 		};
 
 		struct NetworkMessageProjectileSpawn
 		{
-			NetworkMessageProjectileSpawn();
-			explicit NetworkMessageProjectileSpawn(uint32 event_id, uint32 entity_id, uint32 shot_by, const Vector2& position, float rotation);
+			NetworkMessageProjectileSpawn() = default;
+			NetworkMessageProjectileSpawn(uint32 entity_id, uint32 shot_by, const Vector2& position, float rotation);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -222,25 +216,23 @@ namespace charlie {
 				result &= stream.serialize(type_);
 				result &= stream.serialize(entity_id_);
 				result &= stream.serialize(shot_by_);
-				result &= stream.serialize(event_id_);
 				result &= stream.serialize(pos_.x_);
 				result &= stream.serialize(pos_.y_);
 				result &= stream.serialize(rotation_);
 				return result;
 			}
 
-			uint8 type_;
-			uint8 entity_id_;
-			uint8 shot_by_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_PROJECTILE_SPAWN;
+			uint8 entity_id_ = 0;
+			uint8 shot_by_ = 0;
 			Vector2 pos_;
-			float rotation_;
+			float rotation_ = 0;
 		};
 
 		struct NetworkMessagePlayerDisconnected
 		{
-			NetworkMessagePlayerDisconnected();
-			explicit NetworkMessagePlayerDisconnected(uint32 entity_id, uint32 message_id);
+			NetworkMessagePlayerDisconnected() = default;
+			explicit NetworkMessagePlayerDisconnected(uint32 entity_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -250,19 +242,17 @@ namespace charlie {
 				bool result = true;
 				result &= stream.serialize(type_);
 				result &= stream.serialize(entity_id_);
-				result &= stream.serialize(message_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint8 entity_id_;
-			uint32 message_id_;
+			uint8 type_ = NETWORK_MESSAGE_DISCONNECTED;
+			uint8 entity_id_ = 0;
 		};
 
 		struct NetworkMessageProjectileDestroy
 		{
-			NetworkMessageProjectileDestroy();
-			explicit NetworkMessageProjectileDestroy(uint32 entity_id, uint32 event_id);
+			NetworkMessageProjectileDestroy() = default;
+			explicit NetworkMessageProjectileDestroy(uint32 entity_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -272,19 +262,17 @@ namespace charlie {
 				bool result = true;
 				result &= stream.serialize(type_);
 				result &= stream.serialize(entity_id_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint8 entity_id_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_PROJECTILE_DESTROYED;
+			uint8 entity_id_ = 0;
 		};
 
 		struct NetworkMessageEntityDestroy
 		{
-			NetworkMessageEntityDestroy();
-			explicit NetworkMessageEntityDestroy(uint32 entity_id, uint32 event_id);
+			NetworkMessageEntityDestroy() = default;
+			explicit NetworkMessageEntityDestroy(uint32 entity_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -294,19 +282,17 @@ namespace charlie {
 				bool result = true;
 				result &= stream.serialize(type_);
 				result &= stream.serialize(entity_id_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint8 entity_id_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_ENTITY_DESTROYED;
+			uint8 entity_id_ = 0;
 		};
 
 		struct NetworkMessagePlayerDestroy
 		{
-			NetworkMessagePlayerDestroy();
-			explicit NetworkMessagePlayerDestroy(uint32 entity_id, uint32 event_id);
+			NetworkMessagePlayerDestroy() = default;
+			explicit NetworkMessagePlayerDestroy(uint32 entity_id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -316,19 +302,17 @@ namespace charlie {
 				bool result = true;
 				result &= stream.serialize(type_);
 				result &= stream.serialize(entity_id_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint8 entity_id_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_PLAYER_DESTROYED;
+			uint8 entity_id_ = 0;
 		};
 
 		struct NetworkMessageLevelInfo
 		{
-			NetworkMessageLevelInfo();
-			explicit NetworkMessageLevelInfo(uint8 level_id, uint8 size_x_, uint8 size_y_, uint32 event_id);
+			NetworkMessageLevelInfo() = default;
+			NetworkMessageLevelInfo(uint8 level_id, uint8 size_x_, uint8 size_y_);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -340,21 +324,18 @@ namespace charlie {
 				result &= stream.serialize(level_id_);
 				result &= stream.serialize(size_x_);
 				result &= stream.serialize(size_y_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint8 level_id_;
-			uint8 size_x_;
-			uint8 size_y_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_LEVEL_INFO;
+			uint8 level_id_ = 0;
+			uint8 size_x_ = 0;
+			uint8 size_y_ = 0;
 		};
 
 		struct NetworkMessageLevelDataRequest
 		{
-			NetworkMessageLevelDataRequest();
-			explicit NetworkMessageLevelDataRequest(uint32 event_id_);
+			NetworkMessageLevelDataRequest() = default;
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -363,18 +344,16 @@ namespace charlie {
 			{
 				bool result = true;
 				result &= stream.serialize(type_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_LEVEL_REQUEST;
 		};
 
 		struct NetworkMessageLevelData
 		{
-			NetworkMessageLevelData();
-			explicit NetworkMessageLevelData(Tile level_tile, uint32 event_id);
+			NetworkMessageLevelData() = default;
+			explicit NetworkMessageLevelData(Tile level_tile);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -386,20 +365,18 @@ namespace charlie {
 				result &= stream.serialize(level_tile_);
 				result &= stream.serialize(x_);
 				result &= stream.serialize(y_);
-				result &= stream.serialize(event_id_);
 				return result;
 			}
 
-			uint8 type_;
-			uint8 level_tile_;
-			uint8 x_;
-			uint8 y_;
-			uint32 event_id_;
+			uint8 type_ = NETWORK_MESSAGE_LEVEL_DATA;
+			uint8 level_tile_ = 0;
+			uint8 x_ = 0;
+			uint8 y_ = 0;
 		};
 
 		struct NetworkMessageMasterServer
 		{
-			NetworkMessageMasterServer();
+			NetworkMessageMasterServer() = default;
 			explicit NetworkMessageMasterServer(uint8 a_, uint8 b_, uint8 c_, uint8 d_);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -416,11 +393,11 @@ namespace charlie {
 				return result;
 			}
 
-			uint8 type_;
-			uint8 a_;
-			uint8 b_;
-			uint8 c_;
-			uint8 d_;
+			uint8 type_ = NETWORK_MESSAGE_MASTER_SERVER;
+			uint8 a_ = 0;
+			uint8 b_ = 0;
+			uint8 c_ = 0;
+			uint8 d_ = 0;
 		};
 	} // !network
 } // !charlie

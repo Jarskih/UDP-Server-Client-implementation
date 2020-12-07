@@ -35,7 +35,7 @@ namespace charlie
 		static bool contains(const DynamicArray<Projectile>& vector, uint32 id);
 
 		// Messages
-		void create_ack_message(uint32 event_id_);
+		void create_ack_message();
 
 		SDL_Renderer* renderer_;
 

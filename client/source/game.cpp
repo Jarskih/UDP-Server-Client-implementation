@@ -6,6 +6,7 @@
 #include "leveldata.h"
 #include "player.hpp"
 #include "Singleton.hpp"
+#include <math.h> 
 
 namespace charlie
 {
@@ -17,6 +18,7 @@ namespace charlie
 		, local_projectile_index_(0)
 		, level_width_(0)
 		, level_heigth_(0)
+		, disconnected_(nullptr)
 	{
 	}
 
@@ -68,16 +70,16 @@ namespace charlie
 		while (accumulator_ >= tickrate_) {
 			accumulator_ -= tickrate_;
 
-			networkinfo_.update(dt, connection_);
+			networkinfo_.update(tickrate_, connection_);
 
-			player_.update(dt, level_heigth_, level_width_);
+			player_.update(tickrate_, level_heigth_, level_width_);
 
 			{
-				const uint32 delayInTicks = (uint32)(networkinfo_.rtt_avg_ / tickrate_.as_milliseconds());
-
+				const auto send_delay = networkinfo_.rtt_avg_ * 0.5 / tickrate_.as_milliseconds();
+				const int buffer = 2;
 				gameplay::InputSnapshot snapshot;
 				snapshot.input_bits_ = player_.input_bits_;
-				snapshot.tick_ = server_tick_ + delayInTicks;
+				snapshot.tick_ = server_tick_ + (uint32)(ceil(send_delay + buffer));
 				snapshot.position_ = player_.transform_.position_;
 				snapshot.rotation_ = player_.transform_.rotation_;
 				snapshot.turret_rotation = player_.turret_transform_.rotation_;
@@ -87,15 +89,16 @@ namespace charlie
 
 			for (auto& entity : entities_)
 			{
-				entity.interpolator_.acc_ += dt;
-				entity.transform_.position_ = entity.interpolator_.interpolate_pos(networkinfo_.rtt_avg_);
-				entity.transform_.rotation_ = entity.interpolator_.interpolate_rot();
-				entity.turret_rotation_ = entity.interpolator_.interpolate_turret_rot();
+				entity.interpolator_.acc_ += tickrate_;
+				const gameplay::PositionSnapshot snapshot = entity.interpolator_.interpolate(tickrate_, server_tick_, networkinfo_.rtt_avg_);
+				entity.transform_.position_ = snapshot.position;
+				entity.transform_.rotation_ = snapshot.rotation;
+				entity.turret_rotation_ = snapshot.turret_rotation;
 			}
 
 			for (auto& projectile : projectiles_)
 			{
-				projectile.update(dt);
+				projectile.update(tickrate_);
 			}
 
 			cam_.lookAt(player_);
@@ -147,7 +150,7 @@ namespace charlie
 
 		networkinfo_.render(renderer_, connection_, text_handler_);
 
-		if(connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
+		if (connection_.is_disconnected() || connection_.state_ == network::Connection::State::Invalid || connection_.state_ == network::Connection::State::Timedout)
 		{
 			SDL_RenderCopy(renderer_, disconnected_->get_texture(), nullptr, nullptr);
 		}
@@ -170,7 +173,8 @@ namespace charlie
 					assert(!"could not read message!");
 				}
 
-				server_tick_ = message.server_tick_;
+				auto receive_delay = ceil(networkinfo_.rtt_avg_ * 0.5 / tickrate_.as_milliseconds());
+				server_tick_ = message.server_tick_ + (uint32)receive_delay;
 				server_time_ = Time(message.server_time_);
 				lastReceive_ = Time::now();
 			} break;
@@ -184,7 +188,7 @@ namespace charlie
 
 				const uint32 id = message.entity_id_;
 
-				gameplay::PosSnapshot snapshot;
+				gameplay::PositionSnapshot snapshot;
 				snapshot.tick_ = server_tick_;
 				snapshot.servertime_ = server_time_;
 				snapshot.position.x_ = message.x_;
@@ -222,7 +226,7 @@ namespace charlie
 				const float correct_dist = 5.0f;
 				if (diff.length() > correct_dist)
 				{
-					player_.transform_.position_ = inputinator_.get_corrected_position(server_tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
+					player_.transform_.position_ = inputinator_.correct_predicted_position(server_tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
 					networkinfo_.input_misprediction_++;
 				}
 
@@ -247,7 +251,7 @@ namespace charlie
 
 				spawn_player(message);
 
-				create_ack_message(message.event_id_);
+				create_ack_message();
 			} break;
 
 			case network::NETWORK_MESSAGE_ENTITY_SPAWN:
@@ -262,7 +266,7 @@ namespace charlie
 					spawn_entity(message);
 				}
 
-				create_ack_message(message.event_id_);
+				create_ack_message();
 			} break;
 
 			case network::NETWORK_MESSAGE_DISCONNECTED:
@@ -277,7 +281,7 @@ namespace charlie
 					entities_to_remove_.push_back(message.entity_id_);
 				}
 
-				create_ack_message(message.message_id_);
+				create_ack_message();
 			} break;
 			case network::NETWORK_MESSAGE_PLAYER_DESTROYED:
 			{
@@ -288,7 +292,7 @@ namespace charlie
 
 				player_.state_ = PlayerState::DEAD;
 
-				create_ack_message(message.event_id_);
+				create_ack_message();
 
 			} break;
 			case network::NETWORK_MESSAGE_PROJECTILE_SPAWN:
@@ -303,7 +307,7 @@ namespace charlie
 					spawn_projectile(message);
 				}
 
-				create_ack_message(message.event_id_);
+				create_ack_message();
 			} break;
 
 			case network::NETWORK_MESSAGE_PROJECTILE_DESTROYED:
@@ -319,7 +323,7 @@ namespace charlie
 					printf("RELIABLE MESSAGE: Destroying projectile: %i \n", message.entity_id_);
 				}
 
-				create_ack_message(message.event_id_);
+				create_ack_message();
 			} break;
 
 			case network::NETWORK_MESSAGE_ENTITY_DESTROYED:
@@ -335,7 +339,7 @@ namespace charlie
 					printf("RELIABLE MESSAGE: Destroying projectile: %i \n", message.entity_id_);
 				}
 
-				create_ack_message(message.event_id_);
+				create_ack_message();
 			} break;
 
 			case network::NETWORK_MESSAGE_LEVEL_INFO:
@@ -359,14 +363,13 @@ namespace charlie
 				}
 				else
 				{
-
 					// Request level data for current level
 					level_manager_.request_map_data(message.level_id_, message.size_x_, message.size_y_);
-					network::NetworkMessageLevelDataRequest msg(message.event_id_);
+					network::NetworkMessageLevelDataRequest msg;
 					level_message_queue_.push(msg);
 				}
 
-				create_ack_message(message.event_id_);
+				create_ack_message();
 			} break;
 
 			case network::NETWORK_MESSAGE_LEVEL_DATA:
@@ -375,14 +378,13 @@ namespace charlie
 				if (!message.read(reader)) {
 					assert(!"could not read message!");
 				}
-				//printf("RELIABLE MESSAGE: x: %i y: %i id: %i \n", message.x_, message.y_, message.level_tile_);
 
 				level_manager_.create_tile(message.level_tile_, message.x_, message.y_);
-				create_ack_message(message.event_id_);
+				create_ack_message();
 
 				if (!level_manager_.is_done_sending())
 				{
-					network::NetworkMessageLevelDataRequest msg(message.event_id_);
+					network::NetworkMessageLevelDataRequest msg;
 					level_message_queue_.push(msg);
 				}
 
@@ -437,7 +439,7 @@ namespace charlie
 		e.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		e.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		entities_.push_back(e);
-		printf("RELIABLE MESSAGE: Remote player (id %i) spawned with message id: %i \n", message.entity_id_, message.event_id_);
+		printf("RELIABLE MESSAGE: Remote player (id %i) spawned \n", message.entity_id_);
 	}
 
 	void Game::spawn_player(network::NetworkMessagePlayerSpawn message)
@@ -446,7 +448,7 @@ namespace charlie
 		player_.init(renderer_, message.position_, message.entity_id_);
 		player_.load_body_sprite(config::TANK_BODY_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
 		player_.load_turret_sprite(config::TANK_TURRET_SPRITE, 0, 0, config::PLAYER_WIDTH, config::PLAYER_HEIGHT);
-		printf("RELIABLE MESSAGE: Player (id %i) spawned with message id: %i \n", message.entity_id_, message.event_id_);
+		printf("RELIABLE MESSAGE: Player (id %i) spawned \n", message.entity_id_);
 	}
 
 	void Game::remove_entity(uint32 id)
@@ -456,7 +458,6 @@ namespace charlie
 		{
 			if ((*it).id_ == id)
 			{
-				(*it).destroy();
 				entities_.erase(it);
 				break;
 			}
@@ -513,11 +514,10 @@ namespace charlie
 		return false;
 	}
 
-	void Game::create_ack_message(uint32 event_id_)
+	void Game::create_ack_message()
 	{
 		network::NetworkMessageAck msg;
-		msg.event_id_ = event_id_;
 		message_queue_.push(msg);
-		printf("RELIABLE MESSAGE: Message confirmation sent with id %i \n", msg.event_id_);
+		printf("RELIABLE MESSAGE: Message confirmation sent \n");
 	}
 }

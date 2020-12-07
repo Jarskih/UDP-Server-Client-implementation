@@ -19,6 +19,7 @@ ServerApp::ServerApp()
 {
 }
 
+
 bool ServerApp::on_init()
 {
 	network_.set_send_rate(Time(1.0 / 20.0));
@@ -60,14 +61,14 @@ bool ServerApp::on_tick(const Time& dt)
 		accumulator_ -= tickrate_;
 		tick_++;
 
-		server_register_.update(dt);
+		server_register_.update(tickrate_);
 
 		read_input_queue();
-		update_players(dt);
+		update_players(tickrate_);
 
 		for (auto& projectile : projectiles_)
 		{
-			projectile.update(dt);
+			projectile.update(tickrate_);
 		}
 
 		check_collisions();
@@ -175,6 +176,7 @@ void ServerApp::on_disconnect(network::Connection* connection)
 void ServerApp::on_acknowledge(network::Connection* connection,
 	const uint16 sequence)
 {
+	reliable_queue_.mark_received(sequence);
 }
 
 void ServerApp::on_receive(network::Connection* connection,
@@ -204,16 +206,6 @@ void ServerApp::on_receive(network::Connection* connection,
 			}
 		} break;
 
-		case(network::NETWORK_MESSAGE_ACK):
-		{
-			network::NetworkMessageAck msg;
-			if (!msg.read(reader)) {
-				assert(!"could not read command!");
-			}
-
-			reliable_queue_.mark_received(msg.event_id_);
-		} break;
-
 		case(network::NETWORK_MESSAGE_LEVEL_REQUEST):
 		{
 			network::NetworkMessageLevelDataRequest msg;
@@ -223,8 +215,6 @@ void ServerApp::on_receive(network::Connection* connection,
 
 			const Tile tile = level_manager_.get_level_data(id);
 			reliable_events_.send_level_data(tile, id);
-
-			reliable_queue_.mark_received(msg.event_id_);
 		} break;
 
 		default:
@@ -271,16 +261,16 @@ void ServerApp::on_send(network::Connection* connection,
 	// Send reliable messages
 	{
 		// Remove confirmed messages
-		for (auto& msg : reliable_queue_.buffer_)
+		for (const auto& msg : reliable_queue_.buffer_)
 		{
 			if (msg.received_)
 			{
-				remove_from_array(reliable_events_.events_, msg.id_);
+				remove_from_array(reliable_events_.events_, sequence);
 			}
 		}
 
 		// Create message from event
-		for (Event reliable_event : reliable_events_.events_)
+		for (Event& reliable_event : reliable_events_.events_)
 		{
 			if (writer.length() >= 1024 - sizeof(reliable_event))
 			{
@@ -290,14 +280,13 @@ void ServerApp::on_send(network::Connection* connection,
 			if (id == reliable_event.send_to_)
 			{
 				gameplay::Message msg{};
-				msg.id_ = reliable_event.event_id_;
 				msg.seq_ = sequence;
 				msg.received_ = false;
 
 				// Keep track of sent reliable messages
 				reliable_queue_.add_message(msg);
 				write_message(reliable_event, writer);
-				printf("RELIABLE MESSAGE: Sent message with id %i \n", (int)reliable_event.event_id_);
+				printf("RELIABLE MESSAGE: Sent message with id %i \n", sequence);
 			}
 		}
 	}
@@ -309,7 +298,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 	{
 	case(EventType::SPAWN_PLAYER):
 	{
-		network::NetworkMessagePlayerSpawn message(reliable_event.event_id_, reliable_event.entity_id_, reliable_event.pos_);
+		network::NetworkMessagePlayerSpawn message(reliable_event.entity_id_, reliable_event.pos_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -318,7 +307,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::SPAWN_ENTITY):
 	{
-		network::NetworkMessageEntitySpawn message(reliable_event.event_id_, reliable_event.entity_id_, reliable_event.pos_);
+		network::NetworkMessageEntitySpawn message(reliable_event.entity_id_, reliable_event.pos_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -327,7 +316,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::SPAWN_PROJECTILE):
 	{
-		network::NetworkMessageProjectileSpawn message(reliable_event.event_id_, reliable_event.entity_id_, reliable_event.creator_, reliable_event.pos_, reliable_event.rot_);
+		network::NetworkMessageProjectileSpawn message(reliable_event.entity_id_, reliable_event.creator_, reliable_event.pos_, reliable_event.rot_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -336,7 +325,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::DESTROY_PLAYER):
 	{
-		network::NetworkMessagePlayerDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
+		network::NetworkMessagePlayerDestroy message(reliable_event.entity_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -345,7 +334,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::PLAYER_DISCONNECTED):
 	{
-		network::NetworkMessagePlayerDisconnected message(reliable_event.entity_id_, reliable_event.event_id_);
+		network::NetworkMessagePlayerDisconnected message(reliable_event.entity_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -355,7 +344,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::DESTROY_PROJECTILE):
 	{
-		network::NetworkMessageProjectileDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
+		network::NetworkMessageProjectileDestroy message(reliable_event.entity_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -364,7 +353,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::DESTROY_ENTITY):
 	{
-		network::NetworkMessageEntityDestroy message(reliable_event.entity_id_, reliable_event.event_id_);
+		network::NetworkMessageEntityDestroy message(reliable_event.entity_id_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -373,7 +362,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::SEND_LEVEL_INFO):
 	{
-		network::NetworkMessageLevelInfo message(current_map_, (uint8)level_manager_.data_.sizeX_, (uint8)level_manager_.data_.sizeY_, reliable_event.event_id_);
+		network::NetworkMessageLevelInfo message(current_map_, (uint8)level_manager_.data_.sizeX_, (uint8)level_manager_.data_.sizeY_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -382,7 +371,7 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 	case(EventType::SEND_LEVEL_DATA):
 	{
-		network::NetworkMessageLevelData message(reliable_event.tile_, reliable_event.event_id_);
+		network::NetworkMessageLevelData message(reliable_event.tile_);
 		if (!message.write(writer))
 		{
 			assert(!"failed to write message!");
@@ -620,12 +609,12 @@ bool ServerApp::contains(const DynamicArray<uint32>& arr, const uint32 id)
 	return std::find(arr.begin(), arr.end(), id) != arr.end();
 }
 
-void ServerApp::remove_from_array(DynamicArray<Event>& arr, uint32 id)
+void ServerApp::remove_from_array(DynamicArray<Event>& arr, uint16 sequence)
 {
 	auto it = arr.begin();
 	while (it != arr.end())
 	{
-		if ((*it).event_id_ == id)
+		if ((*it).seq_ == sequence)
 		{
 			arr.erase(it);
 			break;
