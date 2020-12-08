@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <string>
 #include "charlie_network.hpp"
-#include <WinSock2.h>
 
 namespace charlie
 {
@@ -9,14 +8,15 @@ namespace charlie
 	{
 		MasterServerClient();
 		void read_master_server_address();
+		void update(const Time& dt);
 		void request_server();
-		bool receive_messages();
+		bool receive_game_server_address();
 		network::IPAddress master_server_;
-		network::IPAddress server_;
-		uint8 buffer_[32];
-		int flags_ = 0;
-
-		network::TCPSocket socket_;
-		std::string REQUESTSERVER = "1";
+		network::IPAddress game_server_;
+		network::UDPSocket socket_;
+		uint8 REQUESTSERVER = 2;
+		bool is_looking_for_server_ = true;
+		Time timer_ = Time(5.0);
+		Time update_delay_ = Time(5.0);
 	};
 }

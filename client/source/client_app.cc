@@ -11,6 +11,7 @@ constexpr auto array_size(T(&)[N])
 
 ClientApp::ClientApp() : state_()
 {
+
 }
 
 bool ClientApp::on_init()
@@ -23,8 +24,6 @@ bool ClientApp::on_init()
 		return false;
 	}
 
-	//master_server_client_.request_server();
-
 	return true;
 }
 
@@ -36,14 +35,19 @@ void ClientApp::on_exit()
 
 bool ClientApp::on_tick(const Time& dt)
 {
-	if (master_server_client_.receive_messages())
+	master_server_client_.update(dt);
+	if (master_server_client_.is_looking_for_server_)
 	{
-		menu_.servers_available_ = true;
-		game_.server_ = master_server_client_.server_;
+		return true;
 	}
 
 	menu_.servers_available_ = true;
-	game_.server_ = network::IPAddress(config::IP_A, config::IP_B, config::IP_C, config::IP_D, config::PORT);
+	game_.server_ = master_server_client_.game_server_;
+	if (state_ == SceneState::MENU)
+	{
+		set_state(SceneState::GAME);
+	}
+
 
 	switch (state_) {
 	case(SceneState::MENU):

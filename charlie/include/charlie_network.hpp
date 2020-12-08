@@ -51,23 +51,6 @@ namespace charlie {
 			uint64 id_;
 		};
 
-		struct TCPSocket
-		{
-			static bool get_address(const UDPSocket& socket, IPAddress& address);
-
-			TCPSocket();
-
-			bool is_valid() const;
-			bool open();
-			bool open(const IPAddress& address);
-			void close();
-
-			bool send(const IPAddress& address, const uint8* data, const int32 length) const;
-			bool receive(IPAddress& address, uint8* data, int32& length) const;
-
-			uint64 id_;
-		};
-
 		struct NetworkStream {
 			NetworkStream();
 

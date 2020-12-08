@@ -7,7 +7,6 @@ namespace charlie
 {
 	ServerRegister::ServerRegister()
 	{
-		update_delay_ = Time(5.0);
 		read_master_server_address();
 	}
 
@@ -36,11 +35,11 @@ namespace charlie
 		master_server_ = network::IPAddress((uint8)address[0], (uint8)address[1], (uint8)address[2], (uint8)address[3], (uint16)address[4]);
 	}
 
-	void ServerRegister::update(const charlie::Time& dt)
+	void ServerRegister::update(const Time& dt)
 	{
 		timer_ += dt;
 
-		if (timer_.as_seconds() > 5)
+		if (timer_.as_seconds() > update_delay_.as_seconds())
 		{
 			printf("ServerRegister: Send heartbeat to master server \n");
 			register_server();
@@ -48,22 +47,25 @@ namespace charlie
 		}
 	}
 
-	void ServerRegister::register_server() const
+	void ServerRegister::register_server()
 	{
-		sockaddr_in local = {};
-		local.sin_family = AF_INET;
-		local.sin_port = htons(master_server_.port_);
-		local.sin_addr.s_addr = htonl(master_server_.host_);
+		network::NetworkStream stream;
+		network::NetworkStreamWriter writer_(stream);
 
-		const SOCKET client = socket(AF_INET, SOCK_DGRAM, 0);
-
-		const int result = sendto(client, HEARTBEAT.c_str(), (int)HEARTBEAT.size(), 0, (const sockaddr*)&local, sizeof(SOCKADDR));
-
-		closesocket(client);
-
-		if (result == -1)
+		if (!writer_.serialize(HEARTBEAT))
 		{
-			printf("ServerRegister: Failed to send register request to master server v");
+			printf("request_server write failed! \n");
+			return;
 		}
+
+		if (!socket_.open())
+		{
+			printf("MasterServerClient::request_server: Failed to open socket \n");
+		}
+		if (!socket_.send(master_server_, writer_.stream_.buffer_, writer_.length()))
+		{
+			printf("request_server send failed! \n");
+		}
+		socket_.close();
 	}
 }

@@ -32,7 +32,7 @@ namespace charlie
 		static const std::string TANK_TURRET_SPRITE("../assets/tank_turret.png");
 		static const std::string TANK_SHELL("../assets/Light_Shell.png");
 		static const std::string FONT_PATH("../assets/font/font.ttf");
-		static const std::string MENU_SCREEN("../assets/menu_screen.png");
+		static const std::string MENU_SCREEN("../assets/menu_master_server.png");
 		static const std::string DISCONNECTED("../assets/disconnected.png");
 		static const std::string DEFEAT_SCREEN("../assets/defeat.png");
 		static const std::string GRASS_TEXTURE("../assets/grass.png");

@@ -80,7 +80,7 @@ namespace charlie {
 		Vector2 Inputinator::correct_predicted_position(const int32 tick, const Time tickrate, const Vector2 server_position, const float speed)
 		{
 			Vector2 position_at_tick = server_position;
-			for (auto input : buffer_)
+			for (const auto& input : buffer_)
 			{
 				if (input.tick_ > tick)
 				{

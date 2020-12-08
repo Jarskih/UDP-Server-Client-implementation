@@ -1,14 +1,14 @@
 var PORT = 5555;
-var HOST = '127.0.0.1';
+var HOST = '192.168.0.101'; // Change to server IP address
 var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 var servers = [];
 var timeOutTime = 30 * 1000; // 30 seconds to ms
 
 const messagetypes = {
-    HEARTBEAT: "0",
-    SERVER_REQUEST: "1",
-    DATA_PACKAGE: "6"
+    HEARTBEAT: 1,
+    SERVER_REQUEST: 2,
+    DATA_PACKAGE: 6
 }
 
 server.on('listening', function () {
@@ -16,27 +16,29 @@ server.on('listening', function () {
     console.log('UDP Server listening on ' + address.address + ":" + address.port);
 });
 
-server.on('message', function (message, remote) {
+server.on('message', function (byteArray, remote) {
 
     servers = servers.filter((server) => {
         return Date.now() - server.time < timeOutTime
     });
 
-    console.log("Message from server:" + remote.address + ':' + remote.port + ' - ' + message.toString());
-    handleMessage(message, remote);
+    handleMessage(byteArray, remote);
 });
 
-function handleMessage(message, remote) {
-    switch (message.toString()) {
-        case (messagetypes.HEARTBEAT):
-            registerServer(remote);
-            break;
-        case (messagetypes.SERVER_REQUEST):
-            sendServer(remote);
-            break;
-        default:
-            console.error("Unknown message");
-            break;
+function handleMessage(byteArray, remote) {
+    var message;
+    for (var i = 0; i < byteArray.length; i++) {
+        message = (message << 8) | byteArray[i];
+    }
+
+    if (message == messagetypes.HEARTBEAT) {
+        registerServer(remote);
+        return;
+    }
+
+    if (message == messagetypes.SERVER_REQUEST) {
+        sendServer(remote);
+        return;
     }
 };
 
@@ -49,7 +51,7 @@ function registerServer(remote) {
     servers.forEach(server => {
         if (server.address === remote.address) {
             server.time = Date.now();
-            console.log("Time updated");
+            console.log("registerServer: Heartbeat received from server");
             updated = true;
             return;
         }
@@ -57,12 +59,13 @@ function registerServer(remote) {
 
     if (!updated) {
         servers.push(connection);
-        console.log("Added server");
+        console.log("registerServer: Added a new server");
         console.table(servers);
     }
 };
 
 function sendServer(remote) {
+    console.log("sendServer: Client requested server address")
     if (servers.length > 0) {
 
         const offset = 0;
@@ -79,10 +82,9 @@ function sendServer(remote) {
         }
 
         server.send(byteArray, offset, byteArray.length, remote.port, remote.address);
-        console.log("Sent server to client");
-        console.log(byteArray);
+        console.log("sendServer: Sent server to client");
     } else {
-        console.log("Could not send server to client. No server registered")
+        console.log("sendServer: Could not send server to client. No server registered")
     }
 }
 

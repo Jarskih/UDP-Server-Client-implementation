@@ -1,11 +1,13 @@
 ﻿#include "master_server_client.h"
 #include <fstream>
+#include <WinSock2.h>
+
 #include "charlie_messages.hpp"
 #include "config.h"
 
 namespace charlie
 {
-	MasterServerClient::MasterServerClient() : buffer_()
+	MasterServerClient::MasterServerClient()
 	{
 		read_master_server_address();
 	}
@@ -33,46 +35,69 @@ namespace charlie
 		}
 
 		master_server_ = network::IPAddress((uint8)address[0], (uint8)address[1], (uint8)address[2], (uint8)address[3], (uint16)address[4]);
+
+		if (!socket_.open())
+		{
+			printf("MasterServerClient::request_server: Failed to open socket \n");
+		}
+	}
+
+	void MasterServerClient::update(const Time& dt)
+	{
+		if (!is_looking_for_server_)
+		{
+			return;
+		}
+
+		timer_ += dt;
+
+		if (timer_.as_seconds() > update_delay_.as_seconds())
+		{
+			printf("MasterServerClient::update: Requesting game server from master server \n");
+			request_server();
+			receive_game_server_address();
+			timer_ = Time(0.0);
+		}
 	}
 
 	void MasterServerClient::request_server()
 	{
-		sockaddr_in master = {};
-		master.sin_family = AF_INET;
-		master.sin_port = htons(master_server_.port_);
-		master.sin_addr.s_addr = htonl(master_server_.host_);
+		network::NetworkStream stream;
+		network::NetworkStreamWriter writer_(stream);
 
-		const SOCKET client = socket(AF_INET, SOCK_STREAM, 0);
-
-		const int result = sendto(client, REQUESTSERVER.c_str(), (int)REQUESTSERVER.size(), 0, (const sockaddr*)&master, sizeof(SOCKADDR));
-
-		if (result == -1)
+		if (!writer_.serialize(REQUESTSERVER))
 		{
-			printf("ServerRegister: Failed to send register request to master server \n");
+			printf("MasterServerClient::request_server: write failed! \n");
+			return;
 		}
-		closesocket(socket_.id_);
+
+		if (!socket_.send(master_server_, writer_.stream_.buffer_, writer_.length()))
+		{
+			printf("MasterServerClient::request_server: send failed! \n");
+		}
 	}
 
-	bool MasterServerClient::receive_messages()
+	bool MasterServerClient::receive_game_server_address()
 	{
 		network::NetworkStream stream;
 
-		const SOCKET client = socket(AF_INET, SOCK_STREAM, 0);
+		socket_.receive(master_server_, stream.buffer_, stream.length_);
 
-		if (recvfrom(client, (char*)stream.buffer_, stream.length_, flags_, (sockaddr*)nullptr, nullptr))
-		{
-			network::NetworkStreamReader reader_(stream);
+		network::NetworkStreamReader reader_(stream);
 
-			while (reader_.position() < reader_.length()) {
+		while (reader_.position() < reader_.length()) {
+			if (reader_.peek() == network::NETWORK_MESSAGE_MASTER_SERVER)
+			{
 				network::NetworkMessageMasterServer packet;
 				if (!packet.read(reader_)) {
-					printf("data packet read failed! \n");
+					printf("Data packet read failed! \n");
 					return false;
 				}
-				server_ = network::IPAddress(packet.a_, packet.b_, packet.c_, packet.d_, config::PORT);
-				closesocket(socket_.id_);
+				game_server_ = network::IPAddress(packet.a_, packet.b_, packet.c_, packet.d_, config::PORT);
+				is_looking_for_server_ = false;
 				return true;
 			}
+			return false;
 		}
 		return false;
 	}

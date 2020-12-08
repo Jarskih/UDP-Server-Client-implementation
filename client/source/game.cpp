@@ -17,6 +17,7 @@ namespace charlie
 		, local_projectile_index_(0)
 		, level_width_(0)
 		, level_heigth_(0)
+		, disconnected_(nullptr)
 	{
 	}
 
