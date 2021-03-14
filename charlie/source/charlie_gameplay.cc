@@ -132,7 +132,6 @@ namespace charlie {
 			{
 				if (snapshot.tick_ >= tick)
 				{
-					printf("get snapshot for tick %i found %i \n", tick, snapshot.tick_);
 					return snapshot;
 				}
 			}

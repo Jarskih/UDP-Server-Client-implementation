@@ -216,35 +216,11 @@ namespace charlie
 				if (!message.read(reader)) {
 					assert(!"could not read message!");
 				}
-
 				if (!inputinator_.hasSnapshot(tick_))
 				{
 					break;
 				}
-
-				// Find old position with ack and compare to server pos
-				gameplay::InputSnapshot input = inputinator_.get_snapshot(tick_);
-
-				auto difference = Vector2(input.position_.x_ - static_cast<float>(message.x_), input.position_.y_ - static_cast<float>(message.y_));
-
-				// If 5px mistake correct calculate new predicted pos using server pos
-				const float correct_dist = 5.0f;
-				if (difference.length() > correct_dist)
-				{
-					player_.transform_.position_ = inputinator_.correct_predicted_position(tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
-					networkinfo_.input_misprediction_++;
-				}
-
-				if (abs(input.turret_rotation - static_cast<float>(message.turret_rotation_)) > correct_dist)
-				{
-					player_.turret_transform_.rotation_ = message.turret_rotation_;
-				}
-
-				if (abs(input.rotation_ - static_cast<float>(message.rotation_)) > correct_dist)
-				{
-					player_.transform_.set_rotation(message.rotation_);
-				}
-
+				correct_position(message);
 			} break;
 
 			case network::NETWORK_MESSAGE_PLAYER_SPAWN:
@@ -417,7 +393,6 @@ namespace charlie
 			}
 		}
 
-
 		if (level_manager_.waiting_for_data())
 		{
 			while (!level_message_queue_.empty() && writer.length() < 1024 - sizeof(network::NetworkMessageLevelDataRequest))
@@ -444,6 +419,37 @@ namespace charlie
 
 		networkinfo_.packet_sent(writer.length());
 	}
+
+	void Game::correct_position(network::NetworkMessagePlayerState message)
+	{
+		// Find old position with ack and compare to server pos
+		gameplay::InputSnapshot input = inputinator_.get_snapshot(tick_);
+
+		const auto difference = Vector2(input.position_.x_ - static_cast<float>(message.x_), input.position_.y_ - static_cast<float>(message.y_));
+
+		// If 5px mistake correct calculate new predicted pos using server pos
+		const float correct_dist = 5.0f;
+		if (difference.length() > correct_dist)
+		{
+			printf("\n Position: x:%f y: %f \n", input.position_.x_, input.position_.y_);
+			printf("Server position: x:%i y: %i \n", message.x_, message.y_);
+			printf("Different position. x:%f y: %f \n\n", difference.x_, difference.y_);
+
+			player_.transform_.position_ = inputinator_.correct_predicted_position(tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
+			networkinfo_.input_misprediction_++;
+		}
+
+		if (abs(input.turret_rotation - static_cast<float>(message.turret_rotation_)) > correct_dist)
+		{
+			player_.turret_transform_.rotation_ = message.turret_rotation_;
+		}
+
+		if (abs(input.rotation_ - static_cast<float>(message.rotation_)) > correct_dist)
+		{
+			player_.transform_.set_rotation(message.rotation_);
+		}
+	}
+
 
 	void Game::spawn_entity(network::NetworkMessageEntitySpawn message)
 	{

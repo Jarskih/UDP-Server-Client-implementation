@@ -29,6 +29,7 @@ namespace charlie
 		void remove_entity(int32 id);
 		void remove_projectile(int32 id);
 		void spawn_projectile(network::NetworkMessageProjectileSpawn message);
+		void correct_position(network::NetworkMessagePlayerState message);
 
 		// Helpers
 		static bool contains(const DynamicArray<Entity>& vector, int32 id);
