@@ -32,9 +32,9 @@ namespace charlie {
 			int32 tick_;
 			uint8 input_bits_;
 			Vector2 position_;
-			float rotation_;
 			float turret_rotation;
 			bool fire_;
+			float rotation_;
 		};
 
 		struct PositionSnapshot
@@ -56,19 +56,21 @@ namespace charlie {
 			Time acc_;
 			const float interpolate_time_;
 			DynamicArray<PositionSnapshot> snapshots_;
+		private:
+			const int buffer_ = 20;
 		};
 
 		struct Inputinator
 		{
-			Inputinator();
 			void add_snapshot(InputSnapshot snapshot);
-			Vector2 correct_predicted_position(int32 tick, Time tickrate, Vector2 server_position, float speed);
-			Vector2 get_position_from_tick(uint32 tick) const;
-			void update_predicted_position(uint32 tick, const Vector2 position);
-			InputSnapshot get_snapshot(uint32 index);
+			Vector2 correct_predicted_position(int32 tick, Time tick_rate, Vector2 server_position, float speed);
+			void update_predicted_position(int32 tick, Vector2 position);
+			InputSnapshot get_snapshot(int32 index);
+			std::deque<InputSnapshot> get_snapshots() const;
+			bool hasSnapshot(int32 server_tick);
 		private:
-			static constexpr int buffer_size_ = 60;
-			InputSnapshot buffer_[buffer_size_];
+			std::deque<InputSnapshot> snapshots_;
+			int size_ = 32;
 		};
 
 		struct Message

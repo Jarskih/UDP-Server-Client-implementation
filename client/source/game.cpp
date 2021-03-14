@@ -69,19 +69,20 @@ namespace charlie
 		while (accumulator_ >= tickrate_) {
 			accumulator_ -= tickrate_;
 
+			tick_ += 1;
+
 			networkinfo_.update(tickrate_, connection_);
 
 			player_.update(tickrate_, level_heigth_, level_width_);
 
 			{
-				const auto send_delay = networkinfo_.rtt_avg_ * 0.5 / tickrate_.as_milliseconds();
-				const int buffer = 2;
 				gameplay::InputSnapshot snapshot;
 				snapshot.input_bits_ = player_.input_bits_;
-				snapshot.tick_ = server_tick_ + (uint32)(ceil(send_delay + buffer));
+				snapshot.tick_ = tick_;
 				snapshot.position_ = player_.transform_.position_;
 				snapshot.rotation_ = player_.transform_.rotation_;
 				snapshot.turret_rotation = player_.turret_transform_.rotation_;
+				snapshot.fire_ = player_.fire_;
 
 				inputinator_.add_snapshot(snapshot);
 			}
@@ -89,7 +90,7 @@ namespace charlie
 			for (auto& entity : entities_)
 			{
 				entity.interpolator_.acc_ += tickrate_;
-				const gameplay::PositionSnapshot snapshot = entity.interpolator_.interpolate(tickrate_, server_tick_, networkinfo_.rtt_avg_);
+				const gameplay::PositionSnapshot snapshot = entity.interpolator_.interpolate(tickrate_, tick_, networkinfo_.rtt_avg_);
 				entity.transform_.position_ = snapshot.position;
 				entity.transform_.rotation_ = snapshot.rotation;
 				entity.turret_rotation_ = snapshot.turret_rotation;
@@ -172,6 +173,9 @@ namespace charlie
 					assert(!"could not read message!");
 				}
 
+				const auto delay = networkinfo_.rtt_avg_ / tickrate_.as_milliseconds();
+				const int buffer = 2;
+				tick_ = message.server_tick_ + static_cast<int32>(delay) + buffer;
 				server_tick_ = message.server_tick_;
 				server_time_ = Time(message.server_time_);
 				lastReceive_ = Time::now();
@@ -187,7 +191,7 @@ namespace charlie
 				const int32 id = message.entity_id_;
 
 				gameplay::PositionSnapshot snapshot;
-				snapshot.tick_ = server_tick_;
+				snapshot.tick_ = tick_;
 				snapshot.servertime_ = server_time_;
 				snapshot.position.x_ = message.x_;
 				snapshot.position.y_ = message.y_;
@@ -213,31 +217,34 @@ namespace charlie
 					assert(!"could not read message!");
 				}
 
+				if (!inputinator_.hasSnapshot(tick_))
+				{
+					break;
+				}
+
 				// Find old position with ack and compare to server pos
-				gameplay::InputSnapshot input = inputinator_.get_snapshot(server_tick_);
+				gameplay::InputSnapshot input = inputinator_.get_snapshot(tick_);
 
-				auto diff = Vector2(input.position_.x_ - (float)message.x_, input.position_.y_ - (float)message.y_);
-
-				diff = player_.transform_.position_ - Vector2(message.x_, message.y_);
+				auto difference = Vector2(input.position_.x_ - static_cast<float>(message.x_), input.position_.y_ - static_cast<float>(message.y_));
 
 				// If 5px mistake correct calculate new predicted pos using server pos
 				const float correct_dist = 5.0f;
-				if (diff.length() > correct_dist)
+				if (difference.length() > correct_dist)
 				{
-					player_.transform_.position_ = inputinator_.correct_predicted_position(server_tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
+					player_.transform_.position_ = inputinator_.correct_predicted_position(tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
 					networkinfo_.input_misprediction_++;
 				}
 
-				if (abs(input.turret_rotation - (float)message.turret_rotation_) > correct_dist)
+				if (abs(input.turret_rotation - static_cast<float>(message.turret_rotation_)) > correct_dist)
 				{
 					player_.turret_transform_.rotation_ = message.turret_rotation_;
 				}
 
-
-				if (abs(input.rotation_ - (float)message.rotation_) > correct_dist)
+				if (abs(input.rotation_ - static_cast<float>(message.rotation_)) > correct_dist)
 				{
 					player_.transform_.set_rotation(message.rotation_);
 				}
+
 			} break;
 
 			case network::NETWORK_MESSAGE_PLAYER_SPAWN:
@@ -400,10 +407,16 @@ namespace charlie
 
 	void Game::on_send(network::Connection* connection, const uint16 sequence, network::NetworkStreamWriter& writer)
 	{
-		network::NetworkMessageInputCommand command(player_.input_bits_, player_.turret_transform_.rotation_, player_.fire_);
-		if (!command.write(writer)) {
-			assert(!"could not write network command!");
+		// Send rate is same as client tick rate (server tick calculated on_receive)
+		if (!inputinator_.get_snapshots().empty())
+		{
+			const auto snapshot = inputinator_.get_snapshots().back();
+			network::NetworkMessageInputCommand command(snapshot.input_bits_, snapshot.turret_rotation, snapshot.fire_, snapshot.tick_);
+			if (!command.write(writer)) {
+				assert(!"could not write network command!");
+			}
 		}
+
 
 		if (level_manager_.waiting_for_data())
 		{

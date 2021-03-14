@@ -191,6 +191,8 @@ void ServerApp::on_receive(network::Connection* connection,
 				assert(!"could not read command!");
 			}
 
+			input_queue_.clear();
+
 			for (auto& player : players_) {
 				if (player.id_ == id) {
 					gameplay::InputCommand cmd{};
@@ -198,7 +200,8 @@ void ServerApp::on_receive(network::Connection* connection,
 					cmd.input_bits_ = command.bits_;
 					cmd.rot_ = command.rot_;
 					cmd.fire_ = command.fire_;
-					input_queue_.push(cmd);
+					cmd.tick_ = command.tick_;
+					input_queue_.push_back(cmd);
 					break;
 				}
 			}
@@ -280,7 +283,7 @@ void ServerApp::on_send(network::Connection* connection,
 		}
 
 		// Create message from event
-		for (Event reliable_event : reliable_events_.events_)
+		for (const Event& reliable_event : reliable_events_.events_)
 		{
 			if (writer.length() >= 1024 - sizeof(reliable_event))
 			{
@@ -398,14 +401,24 @@ void ServerApp::write_message(const Event& reliable_event, network::NetworkStrea
 
 void ServerApp::read_input_queue()
 {
-	while (!input_queue_.empty())
+	for (const auto& input : input_queue_)
 	{
-		const gameplay::InputCommand cmd = input_queue_.front();
-		input_queue_.pop();
-
-		for (auto& player : players_)
+		if (input.tick_ < static_cast<int32>(tick_))
 		{
-			if (player.id_ == cmd.id_)
+			remove_from_deque(input_queue_, tick_);
+		}
+	}
+
+	for (auto& player : players_)
+	{
+		auto temp = input_queue_;
+
+		while (!temp.empty())
+		{
+			const gameplay::InputCommand cmd = temp.front();
+			temp.pop_front();
+
+			if (cmd.tick_ == static_cast<int32>(tick_) && cmd.id_ == player.id_)
 			{
 				player.input_bits_ = cmd.input_bits_;
 				player.turret_transform_.rotation_ = cmd.rot_;
@@ -626,6 +639,20 @@ void ServerApp::remove_from_array(DynamicArray<Event>& arr, int32 id)
 	while (it != arr.end())
 	{
 		if ((*it).event_id_ == id)
+		{
+			arr.erase(it);
+			break;
+		}
+		++it;
+	}
+}
+
+void ServerApp::remove_from_deque(std::deque<gameplay::InputCommand>& arr, int32 tick)
+{
+	auto it = arr.begin();
+	while (it != arr.end())
+	{
+		if ((*it).tick_ == tick)
 		{
 			arr.erase(it);
 			break;

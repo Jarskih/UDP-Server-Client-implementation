@@ -679,7 +679,7 @@ namespace charlie {
 		bool Connection::has_timedout(const Time& time) const
 		{
 			// todo: replace hard coded timeout limit
-			return (time - last_received_time_) >= Time(10.0);
+			return (time - last_received_time_) >= Time(300.0);
 		}
 
 		Time Connection::latency() const

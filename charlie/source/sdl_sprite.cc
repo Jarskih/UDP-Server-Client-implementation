@@ -1,4 +1,3 @@
-#pragma once
 #include "sdl_sprite.hpp"
 
 namespace charlie
@@ -10,14 +9,6 @@ namespace charlie
 		area_.y = p_y;
 		area_.w = p_w;
 		area_.h = p_h;
-	}
-
-	void SDLSprite::destroy()
-	{
-		if (texture_ != nullptr) {
-			SDL_DestroyTexture(texture_);
-		}
-		texture_ = nullptr;
 	}
 
 	SDLSprite::~SDLSprite()

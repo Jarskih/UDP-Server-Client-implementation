@@ -46,6 +46,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	void remove_projectile(int32 id);
 
 	static void remove_from_array(DynamicArray<Event>& arr, int32 id);
+	void remove_from_deque(std::deque<gameplay::InputCommand>& arr, int32 tick);
 	static bool contains(const DynamicArray<int32>& arr, int32 id);
 
 	// note: Network
@@ -59,7 +60,7 @@ struct ServerApp final : SDLApplication, network::IServiceListener, network::ICo
 	DynamicArray<Event> spawn_event_list;
 	DynamicArray<Event> destroy_event_list_;
 	ReliableEvents reliable_events_;
-	Queue<gameplay::InputCommand> input_queue_;
+	std::deque<gameplay::InputCommand> input_queue_;
 
 	// note: gameplay
 	Camera cam_;

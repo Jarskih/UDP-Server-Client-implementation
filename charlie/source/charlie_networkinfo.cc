@@ -108,7 +108,6 @@ namespace charlie {
 		rect_ = { x, y, static_cast<int>(text.length()) * 10, 15 };
 		std::unique_ptr<SDLSprite> sprite = text_handler.CreateText(text, color, rect_.x, rect_.y, rect_.w, rect_.h);
 		SDL_RenderCopy(renderer, sprite->get_texture(), nullptr, &rect_);
-		sprite->destroy();
 	}
 
 	void Networkinfo::packet_received(int32 size)

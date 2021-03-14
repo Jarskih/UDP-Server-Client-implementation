@@ -88,7 +88,7 @@ namespace charlie {
 
 		struct NetworkMessageInputCommand {
 			NetworkMessageInputCommand();
-			explicit NetworkMessageInputCommand(uint8 bits, float rotation, bool fire);
+			explicit NetworkMessageInputCommand(uint8 bits, float rotation, bool fire, int32 tick);
 
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
@@ -101,6 +101,7 @@ namespace charlie {
 				result &= stream.serialize(bits_);
 				result &= stream.serialize(rot_);
 				result &= stream.serialize(fire_);
+				result &= stream.serialize(tick_);
 				return result;
 			}
 
@@ -108,6 +109,7 @@ namespace charlie {
 			uint8 bits_;
 			int16 rot_;
 			bool fire_;
+			uint32 tick_;
 		};
 
 		struct NetworkMessagePlayerState {
@@ -141,7 +143,7 @@ namespace charlie {
 		struct NetworkMessageAck
 		{
 			NetworkMessageAck();
-			explicit NetworkMessageAck(const uint32 id);
+			explicit NetworkMessageAck(const int32 id);
 			bool read(NetworkStreamReader& reader);
 			bool write(NetworkStreamWriter& writer);
 
@@ -155,7 +157,7 @@ namespace charlie {
 			}
 
 			uint8 type_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessagePlayerSpawn
@@ -180,7 +182,7 @@ namespace charlie {
 			uint8 type_;
 			Vector2 position_;
 			uint8 entity_id_;
-			uint32 event_id_;
+			int32 event_id_;
 		};
 
 		struct NetworkMessageEntitySpawn

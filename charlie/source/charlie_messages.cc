@@ -69,11 +69,12 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageInputCommand::NetworkMessageInputCommand(uint8 bits, float rotation, bool fire)
+		NetworkMessageInputCommand::NetworkMessageInputCommand(uint8 bits, float rotation, bool fire, int32 tick)
 			: type_(NETWORK_MESSAGE_INPUT_COMMAND)
 			, bits_(bits)
 			, rot_((int16)rotation)
 			, fire_(fire)
+			, tick_(tick)
 		{
 		}
 
@@ -168,7 +169,7 @@ namespace charlie {
 		{
 		}
 
-		NetworkMessageAck::NetworkMessageAck(const uint32 id)
+		NetworkMessageAck::NetworkMessageAck(const int32 id)
 			: type_(NETWORK_MESSAGE_ACK)
 			, event_id_(id)
 		{

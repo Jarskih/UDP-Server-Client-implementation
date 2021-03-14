@@ -5,7 +5,7 @@
 namespace charlie {
 	namespace gameplay {
 
-		InputSnapshot::InputSnapshot() : tick_(0), input_bits_(0), rotation_(0), turret_rotation(0), fire_(false)
+		InputSnapshot::InputSnapshot() : tick_(0), input_bits_(0), turret_rotation(0), fire_(false), rotation_(0)
 		{
 		}
 
@@ -64,23 +64,26 @@ namespace charlie {
 
 		void Interpolator::clear_old_snapshots()
 		{
-			while (snapshots_.size() > 20)
+			while (snapshots_.size() > buffer_)
 			{
 				snapshots_.erase(snapshots_.begin());
 			}
 		}
 
-		Inputinator::Inputinator() : buffer_{} {}
-
 		void Inputinator::add_snapshot(InputSnapshot snapshot)
 		{
-			buffer_[snapshot.tick_ % buffer_size_] = snapshot;
+			if (snapshots_.size() > static_cast<size_t>(size_))
+			{
+				snapshots_.pop_front();
+			}
+
+			snapshots_.emplace_back(snapshot);
 		}
 
-		Vector2 Inputinator::correct_predicted_position(const int32 tick, const Time tickrate, const Vector2 server_position, const float speed)
+		Vector2 Inputinator::correct_predicted_position(const int32 tick, const Time tick_rate, const Vector2 server_position, const float speed)
 		{
 			Vector2 position_at_tick = server_position;
-			for (const auto& input : buffer_)
+			for (const auto& input : snapshots_)
 			{
 				if (input.tick_ > tick)
 				{
@@ -105,26 +108,52 @@ namespace charlie {
 					}
 
 					direction.normalize();
-					position_at_tick += direction * speed * tickrate.as_seconds();
+					position_at_tick += direction * speed * tick_rate.as_seconds();
 					update_predicted_position(input.tick_, position_at_tick);
 				}
 			}
 			return position_at_tick;
 		}
 
-		Vector2 Inputinator::get_position_from_tick(uint32 tick) const
+		void Inputinator::update_predicted_position(const int32 tick, const Vector2 position)
 		{
-			return buffer_[tick % buffer_size_].position_;
+			for (InputSnapshot& snapshot : snapshots_)
+			{
+				if (snapshot.tick_ == tick)
+				{
+					snapshot.position_ = position;
+				}
+			}
 		}
 
-		void Inputinator::update_predicted_position(const uint32 tick, const Vector2 position)
+		InputSnapshot Inputinator::get_snapshot(int32 tick)
 		{
-			buffer_[tick % buffer_size_].position_ = position;
+			for (const InputSnapshot& snapshot : snapshots_)
+			{
+				if (snapshot.tick_ >= tick)
+				{
+					printf("get snapshot for tick %i found %i \n", tick, snapshot.tick_);
+					return snapshot;
+				}
+			}
+			return {};
 		}
 
-		InputSnapshot Inputinator::get_snapshot(uint32 tick)
+		std::deque<InputSnapshot> Inputinator::get_snapshots() const
 		{
-			return buffer_[tick % buffer_size_];
+			return snapshots_;
+		}
+
+		bool Inputinator::hasSnapshot(int32 server_tick)
+		{
+			for (const InputSnapshot& snapshot : snapshots_)
+			{
+				if (snapshot.tick_ == server_tick)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		ReliableMessageQueue::ReliableMessageQueue() : buffer_{}, index_(0)
