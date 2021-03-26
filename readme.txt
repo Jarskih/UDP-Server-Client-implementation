@@ -1,5 +1,3 @@
-Jari Hanski
-
 Implemented a simple tank game multiplayer game in C++ using UDP client server architecture.
 
 Features:
