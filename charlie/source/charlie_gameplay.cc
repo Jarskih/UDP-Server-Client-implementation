@@ -130,7 +130,7 @@ namespace charlie {
 		{
 			for (const InputSnapshot& snapshot : snapshots_)
 			{
-				if (snapshot.tick_ >= tick)
+				if (snapshot.tick_ == tick)
 				{
 					return snapshot;
 				}

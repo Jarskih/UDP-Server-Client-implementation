@@ -60,14 +60,14 @@ bool ServerApp::on_tick(const Time& dt)
 		accumulator_ -= tickrate_;
 		tick_++;
 
-		server_register_.update(dt);
+		server_register_.update(tickrate_);
 
 		read_input_queue();
-		update_players(dt);
+		update_players(tickrate_);
 
 		for (auto& projectile : projectiles_)
 		{
-			projectile.update(dt);
+			projectile.update(tickrate_);
 		}
 
 		check_collisions();

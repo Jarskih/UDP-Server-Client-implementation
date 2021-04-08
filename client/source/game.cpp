@@ -431,23 +431,14 @@ namespace charlie
 		const float correct_dist = 5.0f;
 		if (difference.length() > correct_dist)
 		{
-			printf("\n Position: x:%f y: %f \n", input.position_.x_, input.position_.y_);
-			printf("Server position: x:%i y: %i \n", message.x_, message.y_);
-			printf("Different position. x:%f y: %f \n\n", difference.x_, difference.y_);
-
+			// printf("Correction: x:%f y:%f server x:%i y:%i \n", input.position_.x_, input.position_.y_, message.x_, message.y_);
 			player_.transform_.position_ = inputinator_.correct_predicted_position(tick_, tickrate_, Vector2(message.x_, message.y_), player_.speed_);
 			networkinfo_.input_misprediction_++;
 		}
 
-		if (abs(input.turret_rotation - static_cast<float>(message.turret_rotation_)) > correct_dist)
-		{
-			player_.turret_transform_.rotation_ = message.turret_rotation_;
-		}
+		player_.turret_transform_.rotation_ = message.turret_rotation_;
 
-		if (abs(input.rotation_ - static_cast<float>(message.rotation_)) > correct_dist)
-		{
-			player_.transform_.set_rotation(message.rotation_);
-		}
+		player_.transform_.set_rotation(message.rotation_);
 	}
 
 

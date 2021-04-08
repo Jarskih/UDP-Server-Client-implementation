@@ -57,7 +57,7 @@ namespace charlie {
 			const float interpolate_time_;
 			DynamicArray<PositionSnapshot> snapshots_;
 		private:
-			const int buffer_ = 20;
+			const int buffer_ = 50;
 		};
 
 		struct Inputinator
